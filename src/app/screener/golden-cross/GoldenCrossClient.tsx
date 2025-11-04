@@ -45,6 +45,8 @@ type GoldenCrossCompany = {
   profitability_status: "profitable" | "unprofitable" | "unknown";
   revenue_growth_quarters: number;
   income_growth_quarters: number;
+  revenue_avg_growth_rate: number | null;
+  income_avg_growth_rate: number | null;
   ordered: boolean;
   just_turned: boolean;
 };
@@ -135,6 +137,18 @@ export default function GoldenCrossClient({
     parseAsInteger.withDefault(3)
   );
 
+  // 매출 성장률 (%)
+  const [revenueGrowthRate, setRevenueGrowthRate] = useQueryState(
+    "revenueGrowthRate",
+    parseAsInteger
+  );
+
+  // EPS 성장률 (%)
+  const [incomeGrowthRate, setIncomeGrowthRate] = useQueryState(
+    "incomeGrowthRate",
+    parseAsInteger
+  );
+
   // 로컬 input 상태 (입력 중에는 리패치 안함)
   const [inputValue, setInputValue] = useState(lookbackDays.toString());
 
@@ -146,10 +160,14 @@ export default function GoldenCrossClient({
     newRevenueGrowth: boolean,
     newIncomeGrowth: boolean,
     newRevenueGrowthQuarters?: number,
-    newIncomeGrowthQuarters?: number
+    newIncomeGrowthQuarters?: number,
+    newRevenueGrowthRate?: number | null,
+    newIncomeGrowthRate?: number | null
   ) => {
     // 이전 캐시 무효화 (모든 필터 포함)
-    const oldTag = `golden-cross-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${incomeGrowth}-${incomeGrowthQuarters}`;
+    const oldTag = `golden-cross-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${
+      revenueGrowthRate ?? ""
+    }-${incomeGrowth}-${incomeGrowthQuarters}-${incomeGrowthRate ?? ""}`;
     await fetch("/api/cache/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -169,6 +187,12 @@ export default function GoldenCrossClient({
     if (newIncomeGrowthQuarters !== undefined) {
       await setIncomeGrowthQuarters(newIncomeGrowthQuarters);
     }
+    if (newRevenueGrowthRate !== undefined) {
+      await setRevenueGrowthRate(newRevenueGrowthRate);
+    }
+    if (newIncomeGrowthRate !== undefined) {
+      await setIncomeGrowthRate(newIncomeGrowthRate);
+    }
 
     // 서버 컴포넌트 리패치 (transition으로 감싸서 로딩 표시)
     startTransition(() => {
@@ -187,7 +211,9 @@ export default function GoldenCrossClient({
         revenueGrowth,
         incomeGrowth,
         revenueGrowthQuarters,
-        incomeGrowthQuarters
+        incomeGrowthQuarters,
+        revenueGrowthRate,
+        incomeGrowthRate
       );
     }
   };
@@ -214,7 +240,9 @@ export default function GoldenCrossClient({
                   revenueGrowth,
                   incomeGrowth,
                   revenueGrowthQuarters,
-                  incomeGrowthQuarters
+                  incomeGrowthQuarters,
+                  revenueGrowthRate,
+                  incomeGrowthRate
                 )
               }
               disabled={isPending}
@@ -238,7 +266,9 @@ export default function GoldenCrossClient({
                   revenueGrowth,
                   incomeGrowth,
                   revenueGrowthQuarters,
-                  incomeGrowthQuarters
+                  incomeGrowthQuarters,
+                  revenueGrowthRate,
+                  incomeGrowthRate
                 )
               }
               disabled={isPending}
@@ -289,7 +319,9 @@ export default function GoldenCrossClient({
                   value,
                   incomeGrowth,
                   revenueGrowthQuarters,
-                  incomeGrowthQuarters
+                  incomeGrowthQuarters,
+                  revenueGrowthRate,
+                  incomeGrowthRate
                 )
               }
               revenueGrowthQuarters={revenueGrowthQuarters}
@@ -301,7 +333,23 @@ export default function GoldenCrossClient({
                   revenueGrowth,
                   incomeGrowth,
                   value,
-                  incomeGrowthQuarters
+                  incomeGrowthQuarters,
+                  revenueGrowthRate,
+                  incomeGrowthRate
+                )
+              }
+              revenueGrowthRate={revenueGrowthRate}
+              setRevenueGrowthRate={(value) =>
+                handleFilterChange(
+                  justTurned,
+                  lookbackDays,
+                  profitability,
+                  revenueGrowth,
+                  incomeGrowth,
+                  revenueGrowthQuarters,
+                  incomeGrowthQuarters,
+                  value,
+                  incomeGrowthRate
                 )
               }
               incomeGrowth={incomeGrowth}
@@ -313,7 +361,9 @@ export default function GoldenCrossClient({
                   revenueGrowth,
                   value,
                   revenueGrowthQuarters,
-                  incomeGrowthQuarters
+                  incomeGrowthQuarters,
+                  revenueGrowthRate,
+                  incomeGrowthRate
                 )
               }
               incomeGrowthQuarters={incomeGrowthQuarters}
@@ -325,17 +375,35 @@ export default function GoldenCrossClient({
                   revenueGrowth,
                   incomeGrowth,
                   revenueGrowthQuarters,
+                  value,
+                  revenueGrowthRate,
+                  incomeGrowthRate
+                )
+              }
+              incomeGrowthRate={incomeGrowthRate}
+              setIncomeGrowthRate={(value) =>
+                handleFilterChange(
+                  justTurned,
+                  lookbackDays,
+                  profitability,
+                  revenueGrowth,
+                  incomeGrowth,
+                  revenueGrowthQuarters,
+                  incomeGrowthQuarters,
+                  revenueGrowthRate,
                   value
                 )
               }
             />
 
             {/* 구분선 */}
-            <div className="w-px h-6 bg-border"></div>
+            <div className="w-px h-12 bg-border"></div>
 
             {/* 수익성 드롭다운 - 제일 오른쪽 */}
-            <div className="flex items-center space-x-3 bg-card rounded-md px-3 py-2 border shadow-sm hover:bg-accent/50 transition-colors">
-              <label className="text-sm font-medium leading-none">수익성</label>
+            <div className="flex items-center gap-3 bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors h-12">
+              <label className="text-sm font-semibold leading-none">
+                수익성
+              </label>
               <Select
                 value={profitability}
                 onValueChange={(value: string) =>
@@ -346,12 +414,14 @@ export default function GoldenCrossClient({
                     revenueGrowth,
                     incomeGrowth,
                     revenueGrowthQuarters,
-                    incomeGrowthQuarters
+                    incomeGrowthQuarters,
+                    revenueGrowthRate,
+                    incomeGrowthRate
                   )
                 }
                 disabled={isPending}
               >
-                <SelectTrigger className="w-[80px] h-8 text-sm">
+                <SelectTrigger className="w-[80px] h-8 text-sm border-border">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="min-w-[80px]">
@@ -464,12 +534,20 @@ export default function GoldenCrossClient({
                 )}
                 {revenueGrowth && (
                   <span className="ml-2">
-                    • 매출 {revenueGrowthQuarters}분기 연속 상승 종목만
+                    • 매출{" "}
+                    {revenueGrowthRate !== null
+                      ? `${revenueGrowthQuarters}분기 연속 상승 + 평균 성장률 ${revenueGrowthRate}% 이상`
+                      : `${revenueGrowthQuarters}분기 연속 상승`}{" "}
+                    종목만
                   </span>
                 )}
                 {incomeGrowth && (
                   <span className="ml-2">
-                    • 수익 {incomeGrowthQuarters}분기 연속 상승 종목만
+                    • 수익{" "}
+                    {incomeGrowthRate !== null
+                      ? `${incomeGrowthQuarters}분기 연속 상승 + 평균 성장률 ${incomeGrowthRate}% 이상`
+                      : `${incomeGrowthQuarters}분기 연속 상승`}{" "}
+                    종목만
                   </span>
                 )}
               </TableCaption>
