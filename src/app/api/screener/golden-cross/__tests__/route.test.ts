@@ -144,5 +144,38 @@ describe("GET /api/screener/golden-cross", () => {
     const response = await GET(request);
     expect(response.status).toBe(200);
   });
+
+  it("유효하지 않은 revenueGrowthRate 값 처리 (NaN)", async () => {
+    const url =
+      "http://localhost:3000/api/screener/golden-cross?revenueGrowthRate=abc";
+    const request = new Request(url);
+
+    const response = await GET(request);
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toContain("revenueGrowthRate must be a valid number");
+  });
+
+  it("유효하지 않은 incomeGrowthRate 값 처리 (NaN)", async () => {
+    const url =
+      "http://localhost:3000/api/screener/golden-cross?incomeGrowthRate=xyz";
+    const request = new Request(url);
+
+    const response = await GET(request);
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toContain("incomeGrowthRate must be a valid number");
+  });
+
+  it("Infinity 값 처리", async () => {
+    const url =
+      "http://localhost:3000/api/screener/golden-cross?revenueGrowthRate=Infinity";
+    const request = new Request(url);
+
+    const response = await GET(request);
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toContain("revenueGrowthRate must be a valid number");
+  });
 });
 

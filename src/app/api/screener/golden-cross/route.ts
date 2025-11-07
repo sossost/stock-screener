@@ -40,13 +40,29 @@ export async function GET(req: Request) {
       searchParams.get("incomeGrowthQuarters") ?? 3
     ); // 수익 성장 연속 분기 수
     const revenueGrowthRateParam = searchParams.get("revenueGrowthRate");
-    const revenueGrowthRate = revenueGrowthRateParam
-      ? Number(revenueGrowthRateParam)
-      : null; // 매출 최소 성장률 (%), null이면 연속 분기 수 기준
+    let revenueGrowthRate = null;
+    if (revenueGrowthRateParam) {
+      const parsed = Number(revenueGrowthRateParam);
+      if (isNaN(parsed) || !isFinite(parsed)) {
+        return NextResponse.json(
+          { error: "revenueGrowthRate must be a valid number" },
+          { status: 400 }
+        );
+      }
+      revenueGrowthRate = parsed;
+    }
     const incomeGrowthRateParam = searchParams.get("incomeGrowthRate");
-    const incomeGrowthRate = incomeGrowthRateParam
-      ? Number(incomeGrowthRateParam)
-      : null; // EPS 최소 성장률 (%), null이면 연속 분기 수 기준
+    let incomeGrowthRate = null;
+    if (incomeGrowthRateParam) {
+      const parsed = Number(incomeGrowthRateParam);
+      if (isNaN(parsed) || !isFinite(parsed)) {
+        return NextResponse.json(
+          { error: "incomeGrowthRate must be a valid number" },
+          { status: 400 }
+        );
+      }
+      incomeGrowthRate = parsed;
+    }
 
     // 유효성 검사
     if (revenueGrowthQuarters < 2 || revenueGrowthQuarters > 8) {

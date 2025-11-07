@@ -1,6 +1,6 @@
 # ETL 자동화 시스템 구현 계획 (GitHub Actions 기반)
 
-**Branch**: `etl-automation-github` | **Date**: 2025-01-27 | **Plan**: [link]
+**Branch**: `etl-automation-github` | **Date**: 2025-10-25 | **Plan**: [link]
 **Input**: ETL 자동화 시스템 명세서 기반 기술 구현 계획
 
 ## Technical Context
@@ -368,4 +368,4 @@ interface ETLLogsResponse {
 
 ---
 
-**Version**: 1.0.0 | **Created**: 2025-01-27 | **Last Updated**: 2025-01-27
+**Version**: 1.0.0 | **Created**: 2025-10-25 | **Last Updated**: 2025-10-25

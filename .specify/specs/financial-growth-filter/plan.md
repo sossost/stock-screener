@@ -1,6 +1,6 @@
 # Implementation Plan: 매출/수익 성장성 필터
 
-**Branch**: `feature/financial-growth-filter` | **Date**: 2025-01-27 | **Spec**: [link]
+**Branch**: `feature/financial-growth-filter` | **Date**: 2025-10-27 | **Spec**: [link]
 **Input**: Feature specification from `/specs/financial-growth-filter/spec.md`
 
 ## Summary

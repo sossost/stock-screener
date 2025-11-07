@@ -1,6 +1,6 @@
 # Implementation Plan: Golden Cross 스크리너 성장률 필터 기능
 
-**Branch**: `feature/golden-cross-growth-rate-filter` | **Date**: 2025-01-27 | **Spec**: [spec.md](./spec.md)
+**Branch**: `feature/golden-cross-growth-rate-filter` | **Date**: 2025-11-04 | **Spec**: [spec.md](./spec.md)
 
 ## Summary
 

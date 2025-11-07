@@ -1,7 +1,7 @@
 # Feature Specification: Golden Cross 스크리너 성장률 필터 기능
 
 **Feature Branch**: `feature/golden-cross-growth-rate-filter`  
-**Created**: 2025-01-27  
+**Created**: 2025-11-04  
 **Status**: Draft
 
 ## User Scenarios & Testing _(mandatory)_

@@ -1,6 +1,6 @@
 # ETL 자동화 시스템 명세서 (GitHub Actions 기반)
 
-**Branch**: `etl-automation-github` | **Date**: 2025-01-27 | **Spec**: [link]
+**Branch**: `etl-automation-github` | **Date**: 2025-10-25 | **Spec**: [link]
 **Input**: GitHub Actions를 활용한 ETL 자동화 시스템 구축
 
 ## Summary
@@ -244,4 +244,4 @@
 
 ---
 
-**Version**: 1.0.0 | **Created**: 2025-01-27 | **Last Updated**: 2025-01-27
+**Version**: 1.0.0 | **Created**: 2025-10-25 | **Last Updated**: 2025-10-25
