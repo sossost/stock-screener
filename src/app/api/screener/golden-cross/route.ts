@@ -23,6 +23,7 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
 
+    const goldenCross = searchParams.get("goldenCross") !== "false"; // 기본값: true
     const justTurned = searchParams.get("justTurned") === "true";
     const lookbackDays = Number(searchParams.get("lookbackDays") ?? 10); // 기본 10일
     const maxRn = 1 + lookbackDays; // rn 범위 계산
@@ -108,7 +109,7 @@ export async function GET(req: Request) {
           (SELECT MAX(date)::date FROM daily_prices)
         ) AS d
       ),
-      -- 1) 최신일 정배열 후보 추출 (빠름)
+      -- 1) 최신일 후보 추출 (Golden Cross 필터에 따라 정배열 조건 적용)
       cur AS (
         SELECT
           dm.symbol,
@@ -122,7 +123,7 @@ export async function GET(req: Request) {
         LEFT JOIN daily_prices pr
           ON pr.symbol = dm.symbol AND pr.date::date = ld.d
         WHERE dm.ma20 IS NOT NULL AND dm.ma50 IS NOT NULL AND dm.ma100 IS NOT NULL AND dm.ma200 IS NOT NULL
-          AND dm.ma20 > dm.ma50 AND dm.ma50 > dm.ma100 AND dm.ma100 > dm.ma200
+          ${goldenCross ? sql`AND dm.ma20 > dm.ma50 AND dm.ma50 > dm.ma100 AND dm.ma100 > dm.ma200` : sql``}
           -- 정상적인 주식만 필터링 (워런트, 우선주, ETF 등 제외)
           AND dm.symbol ~ '^[A-Z]{1,5}$'
           AND dm.symbol NOT LIKE '%W'
@@ -169,7 +170,7 @@ export async function GET(req: Request) {
           WHERE dp.date::date >= ( (SELECT d FROM last_d) - INTERVAL '220 day' )
         ) b
       ),
-      -- 과거 lookbackDays일 범위에서 정배열이 아닌 날의 개수를 체크
+      -- 과거 lookbackDays일 범위에서 정배열이 아닌 날의 개수를 체크 (Golden Cross 필터가 활성화된 경우만)
       prev_status AS (
         SELECT 
           symbol,
@@ -357,9 +358,9 @@ export async function GET(req: Request) {
         ) recent_quarters
       ) qf ON true
       WHERE 1=1
-        -- justTurned: 최근 lookbackDays일 이내에 정배열이 아닌 날이 하나라도 있어야 함
+        -- justTurned: 최근 lookbackDays일 이내에 정배열이 아닌 날이 하나라도 있어야 함 (Golden Cross 필터가 활성화된 경우만)
         ${
-          justTurned
+          justTurned && goldenCross
             ? sql`AND COALESCE(ps.non_ordered_days_count, 0) > 0`
             : sql``
         }

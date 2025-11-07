@@ -96,6 +96,10 @@ export default function GoldenCrossClient({
   const [isPending, startTransition] = useTransition();
 
   // URL 쿼리 파라미터를 직접 상태로 사용
+  const [goldenCross, setGoldenCross] = useQueryState(
+    "goldenCross",
+    parseAsBoolean.withDefault(true)
+  );
   const [justTurned, setJustTurned] = useQueryState(
     "justTurned",
     parseAsBoolean.withDefault(false)
@@ -154,6 +158,7 @@ export default function GoldenCrossClient({
 
   // 필터 변경 시 캐시 무효화 후 리패치
   const handleFilterChange = async (
+    newGoldenCross: boolean,
     newJustTurned: boolean,
     newLookbackDays: number,
     newProfitability: "all" | "profitable" | "unprofitable",
@@ -164,10 +169,11 @@ export default function GoldenCrossClient({
     newRevenueGrowthRate?: number | null,
     newIncomeGrowthRate?: number | null
   ) => {
+    // Golden Cross 필터가 비활성화되면 "최근 전환" 옵션도 비활성화
+    const finalJustTurned = newGoldenCross ? newJustTurned : false;
+
     // 이전 캐시 무효화 (모든 필터 포함)
-    const oldTag = `golden-cross-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${
-      revenueGrowthRate ?? ""
-    }-${incomeGrowth}-${incomeGrowthQuarters}-${incomeGrowthRate ?? ""}`;
+    const oldTag = `golden-cross-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${incomeGrowth}-${incomeGrowthQuarters}`;
     await fetch("/api/cache/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -175,7 +181,8 @@ export default function GoldenCrossClient({
     });
 
     // URL 업데이트
-    await setJustTurned(newJustTurned);
+    await setGoldenCross(newGoldenCross);
+    await setJustTurned(finalJustTurned);
     await setLookbackDays(newLookbackDays);
     await setProfitability(newProfitability);
     await setRevenueGrowth(newRevenueGrowth);
@@ -205,6 +212,7 @@ export default function GoldenCrossClient({
     const newValue = Number(inputValue);
     if (newValue >= 1 && newValue <= 60 && newValue !== lookbackDays) {
       handleFilterChange(
+        goldenCross,
         justTurned,
         newValue,
         profitability,
@@ -221,9 +229,7 @@ export default function GoldenCrossClient({
   return (
     <Card className="p-4">
       <CardHeader>
-        <CardTitle className="text-xl font-bold">
-          📈 Golden Cross 스크리너
-        </CardTitle>
+        <CardTitle className="text-xl font-bold">📈 주식 스크리너</CardTitle>
         <div className="flex items-center gap-6 mt-4 flex-wrap min-h-[32px]">
           {/* 정배열 필터 */}
           <div className="flex items-center space-x-2">
@@ -234,6 +240,7 @@ export default function GoldenCrossClient({
               checked={!justTurned}
               onChange={() =>
                 handleFilterChange(
+                  goldenCross,
                   false,
                   lookbackDays,
                   profitability,
@@ -260,6 +267,7 @@ export default function GoldenCrossClient({
               checked={justTurned}
               onChange={() =>
                 handleFilterChange(
+                  goldenCross,
                   true,
                   lookbackDays,
                   profitability,
@@ -306,6 +314,9 @@ export default function GoldenCrossClient({
             <span className="text-sm text-gray-600">일</span>
           </div>
 
+          {/* 구분선 */}
+          <div className="w-px h-12 bg-border"></div>
+
           {/* 성장성 필터들 + 수익성 드롭다운 - 오른쪽 끝 */}
           <div className="flex items-center space-x-3 ml-auto">
             {/* 성장성 필터 컴포넌트 */}
@@ -313,6 +324,7 @@ export default function GoldenCrossClient({
               revenueGrowth={revenueGrowth}
               setRevenueGrowth={(value) =>
                 handleFilterChange(
+                  goldenCross,
                   justTurned,
                   lookbackDays,
                   profitability,
@@ -327,6 +339,7 @@ export default function GoldenCrossClient({
               revenueGrowthQuarters={revenueGrowthQuarters}
               setRevenueGrowthQuarters={(value) =>
                 handleFilterChange(
+                  goldenCross,
                   justTurned,
                   lookbackDays,
                   profitability,
@@ -341,6 +354,7 @@ export default function GoldenCrossClient({
               revenueGrowthRate={revenueGrowthRate}
               setRevenueGrowthRate={(value) =>
                 handleFilterChange(
+                  goldenCross,
                   justTurned,
                   lookbackDays,
                   profitability,
@@ -355,6 +369,7 @@ export default function GoldenCrossClient({
               incomeGrowth={incomeGrowth}
               setIncomeGrowth={(value) =>
                 handleFilterChange(
+                  goldenCross,
                   justTurned,
                   lookbackDays,
                   profitability,
@@ -369,6 +384,7 @@ export default function GoldenCrossClient({
               incomeGrowthQuarters={incomeGrowthQuarters}
               setIncomeGrowthQuarters={(value) =>
                 handleFilterChange(
+                  goldenCross,
                   justTurned,
                   lookbackDays,
                   profitability,
@@ -383,6 +399,7 @@ export default function GoldenCrossClient({
               incomeGrowthRate={incomeGrowthRate}
               setIncomeGrowthRate={(value) =>
                 handleFilterChange(
+                  goldenCross,
                   justTurned,
                   lookbackDays,
                   profitability,
@@ -408,6 +425,7 @@ export default function GoldenCrossClient({
                 value={profitability}
                 onValueChange={(value: string) =>
                   handleFilterChange(
+                    goldenCross,
                     justTurned,
                     lookbackDays,
                     value as "all" | "profitable" | "unprofitable",
@@ -521,9 +539,11 @@ export default function GoldenCrossClient({
             )}
             <Table>
               <TableCaption>
-                {justTurned
-                  ? `최근 ${lookbackDays}일 이내에 MA20 > MA50 > MA100 > MA200 정배열로 전환한 종목`
-                  : "MA20 > MA50 > MA100 > MA200 정배열 조건을 만족하는 종목"}
+                {goldenCross
+                  ? justTurned
+                    ? `최근 ${lookbackDays}일 이내에 MA20 > MA50 > MA100 > MA200 정배열로 전환한 종목`
+                    : "MA20 > MA50 > MA100 > MA200 정배열 조건을 만족하는 종목"
+                  : "모든 종목"}
                 {profitability !== "all" && (
                   <span className="ml-2">
                     •{" "}

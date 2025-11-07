@@ -13,6 +13,7 @@ type SearchParams = {
   incomeGrowth?: string;
   incomeGrowthQuarters?: string;
   incomeGrowthRate?: string;
+  goldenCross?: string;
 };
 
 async function fetchGoldenCrossData(searchParams: SearchParams) {
@@ -25,6 +26,7 @@ async function fetchGoldenCrossData(searchParams: SearchParams) {
   const incomeGrowth = searchParams.incomeGrowth === "true";
   const incomeGrowthQuarters = searchParams.incomeGrowthQuarters || "3";
   const incomeGrowthRate = searchParams.incomeGrowthRate;
+  const goldenCross = searchParams.goldenCross !== "false"; // 기본값: true
 
   const params = new URLSearchParams({
     justTurned: justTurned.toString(),
@@ -34,6 +36,7 @@ async function fetchGoldenCrossData(searchParams: SearchParams) {
     revenueGrowthQuarters: revenueGrowthQuarters,
     incomeGrowth: incomeGrowth.toString(),
     incomeGrowthQuarters: incomeGrowthQuarters,
+    goldenCross: goldenCross.toString(),
   });
 
   if (revenueGrowthRate) {
@@ -46,7 +49,7 @@ async function fetchGoldenCrossData(searchParams: SearchParams) {
   // 캐시 태그 생성 (필터별로 다른 태그 - 모든 필터 포함)
   const cacheTag = `golden-cross-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${
     revenueGrowthRate ?? ""
-  }-${incomeGrowth}-${incomeGrowthQuarters}-${incomeGrowthRate ?? ""}`;
+  }-${incomeGrowth}-${incomeGrowthQuarters}-${incomeGrowthRate ?? ""}-${goldenCross}`;
 
   // 서버 사이드에서 내부 API 호출
   const response = await fetch(
