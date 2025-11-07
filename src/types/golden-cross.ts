@@ -15,6 +15,10 @@ export interface GoldenCrossCompany {
   profitability_status: "profitable" | "unprofitable" | "unknown";
   revenue_growth_status: "growing" | "not_growing" | "unknown";
   income_growth_status: "growing" | "not_growing" | "unknown";
+  revenue_growth_quarters: number;
+  income_growth_quarters: number;
+  revenue_avg_growth_rate: number | null;
+  income_avg_growth_rate: number | null;
   ordered: boolean;
   just_turned: boolean;
 }

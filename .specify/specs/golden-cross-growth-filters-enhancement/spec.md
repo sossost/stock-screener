@@ -1,7 +1,7 @@
 # Feature Specification: Golden Cross 스크리너 성장성 필터 기능 강화
 
 **Feature Branch**: `feature/golden-cross-growth-filters-enhancement`  
-**Created**: 2025-01-27  
+**Created**: 2025-10-28  
 **Status**: In Progress  
 **Input**: Golden Cross 스크리너에 매출/수익 성장성 필터 추가 및 차트 데이터 8분기로 확장
 

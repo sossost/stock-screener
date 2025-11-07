@@ -1,7 +1,7 @@
 # Task List: Golden Cross 스크리너 성장성 필터 기능 강화
 
 **Feature Branch**: `feature/golden-cross-growth-filters-enhancement`  
-**Created**: 2025-01-27  
+**Created**: 2025-10-28  
 **Status**: Draft  
 **Total Tasks**: 25
 

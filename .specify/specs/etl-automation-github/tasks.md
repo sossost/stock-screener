@@ -1,6 +1,6 @@
 # ETL 자동화 시스템 작업 목록 (GitHub Actions 기반)
 
-**Branch**: `etl-automation-github` | **Date**: 2025-01-27 | **Tasks**: [link]
+**Branch**: `etl-automation-github` | **Date**: 2025-10-25 | **Tasks**: [link]
 **Input**: ETL 자동화 시스템 구현 계획 기반 상세 작업 목록
 
 ## User Story 1: 기본 워크플로우 설정
@@ -433,4 +433,4 @@
 
 ---
 
-**Version**: 1.0.0 | **Created**: 2025-01-27 | **Last Updated**: 2025-01-27
+**Version**: 1.0.0 | **Created**: 2025-10-25 | **Last Updated**: 2025-10-25

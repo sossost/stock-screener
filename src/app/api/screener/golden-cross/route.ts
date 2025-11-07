@@ -39,6 +39,30 @@ export async function GET(req: Request) {
     const incomeGrowthQuarters = Number(
       searchParams.get("incomeGrowthQuarters") ?? 3
     ); // 수익 성장 연속 분기 수
+    const revenueGrowthRateParam = searchParams.get("revenueGrowthRate");
+    let revenueGrowthRate = null;
+    if (revenueGrowthRateParam) {
+      const parsed = Number(revenueGrowthRateParam);
+      if (isNaN(parsed) || !isFinite(parsed)) {
+        return NextResponse.json(
+          { error: "revenueGrowthRate must be a valid number" },
+          { status: 400 }
+        );
+      }
+      revenueGrowthRate = parsed;
+    }
+    const incomeGrowthRateParam = searchParams.get("incomeGrowthRate");
+    let incomeGrowthRate = null;
+    if (incomeGrowthRateParam) {
+      const parsed = Number(incomeGrowthRateParam);
+      if (isNaN(parsed) || !isFinite(parsed)) {
+        return NextResponse.json(
+          { error: "incomeGrowthRate must be a valid number" },
+          { status: 400 }
+        );
+      }
+      incomeGrowthRate = parsed;
+    }
 
     // 유효성 검사
     if (revenueGrowthQuarters < 2 || revenueGrowthQuarters > 8) {
@@ -50,6 +74,24 @@ export async function GET(req: Request) {
     if (incomeGrowthQuarters < 2 || incomeGrowthQuarters > 8) {
       return NextResponse.json(
         { error: "incomeGrowthQuarters must be between 2 and 8" },
+        { status: 400 }
+      );
+    }
+    if (
+      revenueGrowthRate !== null &&
+      (revenueGrowthRate < 0 || revenueGrowthRate > 1000)
+    ) {
+      return NextResponse.json(
+        { error: "revenueGrowthRate must be between 0 and 1000" },
+        { status: 400 }
+      );
+    }
+    if (
+      incomeGrowthRate !== null &&
+      (incomeGrowthRate < 0 || incomeGrowthRate > 1000)
+    ) {
+      return NextResponse.json(
+        { error: "incomeGrowthRate must be between 0 and 1000" },
         { status: 400 }
       );
     }
@@ -148,7 +190,9 @@ export async function GET(req: Request) {
         qf.eps_q1         AS latest_eps,
         -- 성장성 정보
         qf.revenue_growth_quarters,
-        qf.income_growth_quarters
+        qf.income_growth_quarters,
+        qf.revenue_avg_growth_rate,
+        qf.income_avg_growth_rate
       FROM candidates cand
       LEFT JOIN prev_status ps ON ps.symbol = cand.symbol
       LEFT JOIN symbols s ON s.symbol = cand.symbol
@@ -239,7 +283,67 @@ export async function GET(req: Request) {
               ), 
               0
             )
-          ) as income_growth_quarters
+          ) as income_growth_quarters,
+          -- 평균 매출 성장률 계산 (N분기 동안 분기별 성장률의 평균)
+          -- LAG 함수로 이전 분기와 비교하여 분기별 성장률 계산 후 AVG
+          (
+            WITH revenue_data AS (
+              SELECT 
+                revenue::numeric as rev, 
+                period_end_date,
+                ROW_NUMBER() OVER (ORDER BY period_end_date DESC) as rn
+              FROM quarterly_financials
+              WHERE symbol = cand.symbol
+                AND revenue IS NOT NULL
+              ORDER BY period_end_date DESC
+              LIMIT ${revenueGrowthQuarters}
+            ),
+            revenue_growth_rates AS (
+              SELECT 
+                rev,
+                LAG(rev) OVER (ORDER BY period_end_date ASC) as prev_rev,
+                CASE 
+                  WHEN LAG(rev) OVER (ORDER BY period_end_date ASC) = 0 THEN NULL
+                  WHEN LAG(rev) OVER (ORDER BY period_end_date ASC) IS NULL THEN NULL
+                  ELSE ((rev - LAG(rev) OVER (ORDER BY period_end_date ASC)) / 
+                        NULLIF(LAG(rev) OVER (ORDER BY period_end_date ASC), 0)) * 100
+                END as growth_rate
+              FROM revenue_data
+            )
+            SELECT AVG(growth_rate)::numeric as avg_growth_rate
+            FROM revenue_growth_rates
+            WHERE growth_rate IS NOT NULL
+          ) as revenue_avg_growth_rate,
+          -- 평균 EPS 성장률 계산 (N분기 동안 분기별 성장률의 평균)
+          -- LAG 함수로 이전 분기와 비교하여 분기별 성장률 계산 후 AVG
+          (
+            WITH income_data AS (
+              SELECT 
+                eps_diluted::numeric as eps, 
+                period_end_date,
+                ROW_NUMBER() OVER (ORDER BY period_end_date DESC) as rn
+              FROM quarterly_financials
+              WHERE symbol = cand.symbol
+                AND eps_diluted IS NOT NULL
+              ORDER BY period_end_date DESC
+              LIMIT ${incomeGrowthQuarters}
+            ),
+            income_growth_rates AS (
+              SELECT 
+                eps,
+                LAG(eps) OVER (ORDER BY period_end_date ASC) as prev_eps,
+                CASE 
+                  WHEN LAG(eps) OVER (ORDER BY period_end_date ASC) = 0 THEN NULL
+                  WHEN LAG(eps) OVER (ORDER BY period_end_date ASC) IS NULL THEN NULL
+                  ELSE ((eps - LAG(eps) OVER (ORDER BY period_end_date ASC)) / 
+                        NULLIF(LAG(eps) OVER (ORDER BY period_end_date ASC), 0)) * 100
+                END as growth_rate
+              FROM income_data
+            )
+            SELECT AVG(growth_rate)::numeric as avg_growth_rate
+            FROM income_growth_rates
+            WHERE growth_rate IS NOT NULL
+          ) as income_avg_growth_rate
         FROM (
           SELECT 
             period_end_date,
@@ -267,16 +371,22 @@ export async function GET(req: Request) {
             ? sql`AND qf.eps_q1 IS NOT NULL AND qf.eps_q1 < 0`
             : sql``
         }
-        -- 매출 성장성 필터
+        -- 매출 성장성 필터 (연속 분기 수 + 평균 성장률)
+        -- 연속 분기 수는 항상 체크하고, 성장률이 설정되어 있으면 추가로 평균 성장률도 체크
         ${
           revenueGrowth
-            ? sql`AND qf.revenue_growth_quarters >= ${revenueGrowthQuarters}`
+            ? revenueGrowthRate !== null
+              ? sql`AND qf.revenue_growth_quarters >= ${revenueGrowthQuarters} AND qf.revenue_avg_growth_rate IS NOT NULL AND qf.revenue_avg_growth_rate >= ${revenueGrowthRate}`
+              : sql`AND qf.revenue_growth_quarters >= ${revenueGrowthQuarters}`
             : sql``
         }
-        -- 수익 성장성 필터
+        -- 수익 성장성 필터 (연속 분기 수 + 평균 성장률)
+        -- 연속 분기 수는 항상 체크하고, 성장률이 설정되어 있으면 추가로 평균 성장률도 체크
         ${
           incomeGrowth
-            ? sql`AND qf.income_growth_quarters >= ${incomeGrowthQuarters}`
+            ? incomeGrowthRate !== null
+              ? sql`AND qf.income_growth_quarters >= ${incomeGrowthQuarters} AND qf.income_avg_growth_rate IS NOT NULL AND qf.income_avg_growth_rate >= ${incomeGrowthRate}`
+              : sql`AND qf.income_growth_quarters >= ${incomeGrowthQuarters}`
             : sql``
         }
       ORDER BY s.market_cap DESC NULLS LAST, cand.symbol ASC;
@@ -291,6 +401,8 @@ export async function GET(req: Request) {
       latest_eps: number | null;
       revenue_growth_quarters: number | null;
       income_growth_quarters: number | null;
+      revenue_avg_growth_rate: number | null;
+      income_avg_growth_rate: number | null;
     };
 
     const results = rows.rows as QueryResult[];
@@ -309,6 +421,8 @@ export async function GET(req: Request) {
           : "unknown",
       revenue_growth_quarters: r.revenue_growth_quarters || 0,
       income_growth_quarters: r.income_growth_quarters || 0,
+      revenue_avg_growth_rate: r.revenue_avg_growth_rate,
+      income_avg_growth_rate: r.income_avg_growth_rate,
       ordered: true,
       just_turned: justTurned,
     }));

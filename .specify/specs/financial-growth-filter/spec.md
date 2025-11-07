@@ -1,7 +1,7 @@
 # Feature Specification: 매출/수익 성장성 필터
 
 **Feature Branch**: `feature/financial-growth-filter`  
-**Created**: 2025-01-27  
+**Created**: 2025-10-27  
 **Status**: Draft
 
 ## User Scenarios & Testing _(mandatory)_
