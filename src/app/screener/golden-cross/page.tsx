@@ -1,16 +1,7 @@
-import React, { Suspense } from "react";
-import { Navigation } from "@/components/navigation";
-import { DataWrapper } from "./DataWrapper";
-import { TableSkeleton } from "./TableSkeleton";
+import { redirect } from "next/navigation";
 
 type SearchParams = {
-  justTurned?: string;
-  lookbackDays?: string;
-  profitability?: string;
-  revenueGrowth?: string;
-  revenueGrowthQuarters?: string;
-  incomeGrowth?: string;
-  incomeGrowthQuarters?: string;
+  [key: string]: string | string[] | undefined;
 };
 
 const GoldenCrossPage = async ({
@@ -19,17 +10,21 @@ const GoldenCrossPage = async ({
   searchParams: Promise<SearchParams>;
 }) => {
   const resolvedParams = await searchParams;
+  
+  // 쿼리 파라미터를 유지하면서 메인 페이지로 리다이렉트
+  const params = new URLSearchParams();
+  Object.entries(resolvedParams).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => params.append(key, v));
+      } else {
+        params.set(key, value);
+      }
+    }
+  });
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <Navigation title="📈 Golden Cross 스크리너" />
-      <div className="container mx-auto px-4 py-8">
-        <Suspense fallback={<TableSkeleton />}>
-          <DataWrapper searchParams={resolvedParams} />
-        </Suspense>
-      </div>
-    </div>
-  );
+  const queryString = params.toString();
+  redirect(`/${queryString ? `?${queryString}` : ""}`);
 };
 
 export default GoldenCrossPage;
