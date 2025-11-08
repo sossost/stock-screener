@@ -9,6 +9,9 @@ import {
 import { useRouter } from "next/navigation";
 import React, { useState, useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CategoryFilterBox } from "@/components/filters/CategoryFilterBox";
+import { CategoryFilterDialog } from "@/components/filters/CategoryFilterDialog";
+import type { FilterState, FilterCategory } from "@/lib/filter-summary";
 import {
   Table,
   TableBody,
@@ -19,16 +22,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatNumber } from "@/utils/format";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 // Switch 컴포넌트가 없으므로 간단한 토글 버튼 사용
 import { QuarterlyBarChart } from "@/components/charts/QuarterlyBarChart";
-import { GrowthFilterControls } from "@/components/filters/GrowthFilterControls";
 
 type QuarterlyFinancial = {
   period_end_date: string;
@@ -96,6 +91,10 @@ export default function GoldenCrossClient({
   const [isPending, startTransition] = useTransition();
 
   // URL 쿼리 파라미터를 직접 상태로 사용
+  const [ordered, setOrdered] = useQueryState(
+    "ordered",
+    parseAsBoolean.withDefault(true)
+  );
   const [goldenCross, setGoldenCross] = useQueryState(
     "goldenCross",
     parseAsBoolean.withDefault(true)
@@ -153,11 +152,27 @@ export default function GoldenCrossClient({
     parseAsInteger
   );
 
-  // 로컬 input 상태 (입력 중에는 리패치 안함)
-  const [inputValue, setInputValue] = useState(lookbackDays.toString());
+  // 필터 팝업 상태 (카테고리별)
+  const [openCategory, setOpenCategory] = useState<FilterCategory | null>(null);
+
+  // 현재 필터 상태
+  const currentFilterState: FilterState = {
+    ordered,
+    goldenCross,
+    justTurned,
+    lookbackDays,
+    profitability,
+    revenueGrowth,
+    revenueGrowthQuarters,
+    revenueGrowthRate: revenueGrowthRate ?? null,
+    incomeGrowth,
+    incomeGrowthQuarters,
+    incomeGrowthRate: incomeGrowthRate ?? null,
+  };
 
   // 필터 변경 시 캐시 무효화 후 리패치
   const handleFilterChange = async (
+    newOrdered: boolean,
     newGoldenCross: boolean,
     newJustTurned: boolean,
     newLookbackDays: number,
@@ -169,11 +184,11 @@ export default function GoldenCrossClient({
     newRevenueGrowthRate?: number | null,
     newIncomeGrowthRate?: number | null
   ) => {
-    // Golden Cross 필터가 비활성화되면 "최근 전환" 옵션도 비활성화
-    const finalJustTurned = newGoldenCross ? newJustTurned : false;
+    // 정배열 필터가 비활성화되면 "최근 전환" 옵션도 비활성화
+    const finalJustTurned = newOrdered ? newJustTurned : false;
 
     // 이전 캐시 무효화 (모든 필터 포함)
-    const oldTag = `golden-cross-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${incomeGrowth}-${incomeGrowthQuarters}`;
+    const oldTag = `golden-cross-${ordered}-${goldenCross}-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${incomeGrowth}-${incomeGrowthQuarters}`;
     await fetch("/api/cache/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -181,6 +196,7 @@ export default function GoldenCrossClient({
     });
 
     // URL 업데이트
+    await setOrdered(newOrdered);
     await setGoldenCross(newGoldenCross);
     await setJustTurned(finalJustTurned);
     await setLookbackDays(newLookbackDays);
@@ -207,15 +223,60 @@ export default function GoldenCrossClient({
     });
   };
 
-  // 기간 입력 확정 (blur 또는 Enter)
-  const handleLookbackConfirm = () => {
-    const newValue = Number(inputValue);
-    if (newValue >= 1 && newValue <= 60 && newValue !== lookbackDays) {
+  // 필터 팝업에서 적용 버튼 클릭 시 (카테고리별 부분 업데이트)
+  const handleFilterApply = (newState: Partial<FilterState>) => {
+    handleFilterChange(
+      newState.ordered ?? ordered,
+      newState.goldenCross ?? goldenCross,
+      newState.justTurned ?? justTurned,
+      newState.lookbackDays ?? lookbackDays,
+      newState.profitability ?? profitability,
+      newState.revenueGrowth ?? revenueGrowth,
+      newState.incomeGrowth ?? incomeGrowth,
+      newState.revenueGrowthQuarters ?? revenueGrowthQuarters,
+      newState.incomeGrowthQuarters ?? incomeGrowthQuarters,
+      newState.revenueGrowthRate ?? revenueGrowthRate ?? null,
+      newState.incomeGrowthRate ?? incomeGrowthRate ?? null
+    );
+  };
+
+  // 필터 초기화 (카테고리별)
+  const handleFilterReset = (category: FilterCategory) => {
+    if (category === "ma") {
       handleFilterChange(
+        true, // ordered
+        true, // goldenCross
+        false, // justTurned
+        10, // lookbackDays
+        profitability,
+        revenueGrowth,
+        incomeGrowth,
+        revenueGrowthQuarters,
+        incomeGrowthQuarters,
+        revenueGrowthRate,
+        incomeGrowthRate
+      );
+    } else if (category === "growth") {
+      handleFilterChange(
+        ordered,
         goldenCross,
         justTurned,
-        newValue,
+        lookbackDays,
         profitability,
+        false, // revenueGrowth
+        false, // incomeGrowth
+        3, // revenueGrowthQuarters
+        3, // incomeGrowthQuarters
+        null, // revenueGrowthRate
+        null // incomeGrowthRate
+      );
+    } else if (category === "profitability") {
+      handleFilterChange(
+        ordered,
+        goldenCross,
+        justTurned,
+        lookbackDays,
+        "all", // profitability
         revenueGrowth,
         incomeGrowth,
         revenueGrowthQuarters,
@@ -230,239 +291,48 @@ export default function GoldenCrossClient({
     <Card className="p-4">
       <CardHeader>
         <CardTitle className="text-xl font-bold">📈 주식 스크리너</CardTitle>
-        <div className="flex items-center gap-6 mt-4 flex-wrap min-h-[32px]">
-          {/* 정배열 필터 */}
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="all"
-              name="alignment-filter"
-              checked={!justTurned}
-              onChange={() =>
-                handleFilterChange(
-                  goldenCross,
-                  false,
-                  lookbackDays,
-                  profitability,
-                  revenueGrowth,
-                  incomeGrowth,
-                  revenueGrowthQuarters,
-                  incomeGrowthQuarters,
-                  revenueGrowthRate,
-                  incomeGrowthRate
-                )
-              }
-              disabled={isPending}
-              className="w-4 h-4 text-blue-600 disabled:opacity-50"
-            />
-            <label htmlFor="all" className="text-sm font-medium">
-              전체 정배열
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="recent"
-              name="alignment-filter"
-              checked={justTurned}
-              onChange={() =>
-                handleFilterChange(
-                  goldenCross,
-                  true,
-                  lookbackDays,
-                  profitability,
-                  revenueGrowth,
-                  incomeGrowth,
-                  revenueGrowthQuarters,
-                  incomeGrowthQuarters,
-                  revenueGrowthRate,
-                  incomeGrowthRate
-                )
-              }
-              disabled={isPending}
-              className="w-4 h-4 text-blue-600 disabled:opacity-50"
-            />
-            <label htmlFor="recent" className="text-sm font-medium">
-              최근 전환
-            </label>
-          </div>
-          <div
-            className={`flex items-center space-x-2 transition-opacity duration-200 ${
-              justTurned ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
-          >
-            <label htmlFor="lookback" className="text-sm font-medium">
-              기간:
-            </label>
-            <input
-              type="number"
-              id="lookback"
-              min="1"
-              max="60"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onBlur={handleLookbackConfirm}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleLookbackConfirm();
-                  e.currentTarget.blur();
-                }
-              }}
-              disabled={isPending}
-              className="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            />
-            <span className="text-sm text-gray-600">일</span>
-          </div>
+        <div className="flex items-stretch gap-3 mt-4 flex-wrap">
+          {/* 이평선 필터박스 */}
+          <CategoryFilterBox
+            category="ma"
+            filterState={currentFilterState}
+            onClick={() => setOpenCategory("ma")}
+            disabled={isPending}
+          />
 
-          {/* 구분선 */}
-          <div className="w-px h-12 bg-border"></div>
+          {/* 성장성 필터박스 */}
+          <CategoryFilterBox
+            category="growth"
+            filterState={currentFilterState}
+            onClick={() => setOpenCategory("growth")}
+            disabled={isPending}
+          />
 
-          {/* 성장성 필터들 + 수익성 드롭다운 - 오른쪽 끝 */}
-          <div className="flex items-center space-x-3 ml-auto">
-            {/* 성장성 필터 컴포넌트 */}
-            <GrowthFilterControls
-              revenueGrowth={revenueGrowth}
-              setRevenueGrowth={(value) =>
-                handleFilterChange(
-                  goldenCross,
-                  justTurned,
-                  lookbackDays,
-                  profitability,
-                  value,
-                  incomeGrowth,
-                  revenueGrowthQuarters,
-                  incomeGrowthQuarters,
-                  revenueGrowthRate,
-                  incomeGrowthRate
-                )
-              }
-              revenueGrowthQuarters={revenueGrowthQuarters}
-              setRevenueGrowthQuarters={(value) =>
-                handleFilterChange(
-                  goldenCross,
-                  justTurned,
-                  lookbackDays,
-                  profitability,
-                  revenueGrowth,
-                  incomeGrowth,
-                  value,
-                  incomeGrowthQuarters,
-                  revenueGrowthRate,
-                  incomeGrowthRate
-                )
-              }
-              revenueGrowthRate={revenueGrowthRate}
-              setRevenueGrowthRate={(value) =>
-                handleFilterChange(
-                  goldenCross,
-                  justTurned,
-                  lookbackDays,
-                  profitability,
-                  revenueGrowth,
-                  incomeGrowth,
-                  revenueGrowthQuarters,
-                  incomeGrowthQuarters,
-                  value,
-                  incomeGrowthRate
-                )
-              }
-              incomeGrowth={incomeGrowth}
-              setIncomeGrowth={(value) =>
-                handleFilterChange(
-                  goldenCross,
-                  justTurned,
-                  lookbackDays,
-                  profitability,
-                  revenueGrowth,
-                  value,
-                  revenueGrowthQuarters,
-                  incomeGrowthQuarters,
-                  revenueGrowthRate,
-                  incomeGrowthRate
-                )
-              }
-              incomeGrowthQuarters={incomeGrowthQuarters}
-              setIncomeGrowthQuarters={(value) =>
-                handleFilterChange(
-                  goldenCross,
-                  justTurned,
-                  lookbackDays,
-                  profitability,
-                  revenueGrowth,
-                  incomeGrowth,
-                  revenueGrowthQuarters,
-                  value,
-                  revenueGrowthRate,
-                  incomeGrowthRate
-                )
-              }
-              incomeGrowthRate={incomeGrowthRate}
-              setIncomeGrowthRate={(value) =>
-                handleFilterChange(
-                  goldenCross,
-                  justTurned,
-                  lookbackDays,
-                  profitability,
-                  revenueGrowth,
-                  incomeGrowth,
-                  revenueGrowthQuarters,
-                  incomeGrowthQuarters,
-                  revenueGrowthRate,
-                  value
-                )
-              }
-            />
-
-            {/* 구분선 */}
-            <div className="w-px h-12 bg-border"></div>
-
-            {/* 수익성 드롭다운 - 제일 오른쪽 */}
-            <div className="flex items-center gap-3 bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors h-12">
-              <label className="text-sm font-semibold leading-none">
-                수익성
-              </label>
-              <Select
-                value={profitability}
-                onValueChange={(value: string) =>
-                  handleFilterChange(
-                    goldenCross,
-                    justTurned,
-                    lookbackDays,
-                    value as "all" | "profitable" | "unprofitable",
-                    revenueGrowth,
-                    incomeGrowth,
-                    revenueGrowthQuarters,
-                    incomeGrowthQuarters,
-                    revenueGrowthRate,
-                    incomeGrowthRate
-                  )
-                }
-                disabled={isPending}
-              >
-                <SelectTrigger className="w-[80px] h-8 text-sm border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="min-w-[80px]">
-                  <SelectItem value="all" className="cursor-pointer text-sm">
-                    전체
-                  </SelectItem>
-                  <SelectItem
-                    value="profitable"
-                    className="cursor-pointer text-sm"
-                  >
-                    흑자
-                  </SelectItem>
-                  <SelectItem
-                    value="unprofitable"
-                    className="cursor-pointer text-sm"
-                  >
-                    적자
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          {/* 수익성 필터박스 */}
+          <CategoryFilterBox
+            category="profitability"
+            filterState={currentFilterState}
+            onClick={() => setOpenCategory("profitability")}
+            disabled={isPending}
+          />
         </div>
+
+        {/* 카테고리별 필터 설정 팝업 */}
+        {openCategory && (
+          <CategoryFilterDialog
+            category={openCategory}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) {
+                setOpenCategory(null);
+              }
+            }}
+            filterState={currentFilterState}
+            onApply={handleFilterApply}
+            onReset={() => handleFilterReset(openCategory)}
+            disabled={isPending}
+          />
+        )}
       </CardHeader>
       <CardContent>
         {isPending ? (
@@ -539,11 +409,16 @@ export default function GoldenCrossClient({
             )}
             <Table>
               <TableCaption>
-                {goldenCross
+                {ordered
                   ? justTurned
                     ? `최근 ${lookbackDays}일 이내에 MA20 > MA50 > MA100 > MA200 정배열로 전환한 종목`
                     : "MA20 > MA50 > MA100 > MA200 정배열 조건을 만족하는 종목"
+                  : goldenCross
+                  ? "MA50 > MA200 골든크로스 조건을 만족하는 종목"
                   : "모든 종목"}
+                {goldenCross && ordered && (
+                  <span className="ml-2">• 골든크로스 (MA50 {">"} MA200)</span>
+                )}
                 {profitability !== "all" && (
                   <span className="ml-2">
                     •{" "}
