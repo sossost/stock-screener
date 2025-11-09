@@ -30,6 +30,8 @@ export interface GoldenCrossResponse {
 
 // API 파라미터 타입
 export interface GoldenCrossParams {
+  ordered?: boolean; // MA20 > MA50 > MA100 > MA200 정배열 조건 적용 여부
+  goldenCross?: boolean; // MA50 > MA200 조건 적용 여부
   justTurned?: boolean;
   lookbackDays?: number;
   minMcap?: number;
@@ -39,6 +41,12 @@ export interface GoldenCrossParams {
   profitability?: "all" | "profitable" | "unprofitable";
   revenueGrowth?: boolean;
   incomeGrowth?: boolean;
+}
+
+// 이평선 필터 상태 타입
+export interface MAFilterState {
+  ordered: boolean; // MA20 > MA50 > MA100 > MA200 정배열
+  goldenCross: boolean; // MA50 > MA200
 }
 
 // 성장성 상태 타입

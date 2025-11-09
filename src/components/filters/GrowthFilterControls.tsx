@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useCallback } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface GrowthFilterControlsProps {
   revenueGrowth: boolean;
@@ -125,16 +126,14 @@ export const GrowthFilterControls = memo(function GrowthFilterControls({
   }, [incomeRateInput, incomeGrowthRate, setIncomeGrowthRate]);
 
   return (
-    <div className="flex items-center space-x-3">
+    <div className="flex flex-col gap-4 w-full">
       {/* 매출 성장 필터 */}
       <div className="flex items-center gap-3 bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors h-12">
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="revenueGrowth"
             checked={revenueGrowth}
-            onChange={(e) => setRevenueGrowth(e.target.checked)}
-            className="h-4 w-4 rounded border border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            onCheckedChange={(checked) => setRevenueGrowth(checked === true)}
           />
           <label
             htmlFor="revenueGrowth"
@@ -201,18 +200,13 @@ export const GrowthFilterControls = memo(function GrowthFilterControls({
         </div>
       </div>
 
-      {/* 구분선 */}
-      <div className="w-px h-12 bg-border"></div>
-
       {/* 수익 성장 필터 */}
       <div className="flex items-center gap-3 bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors h-12">
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="incomeGrowth"
             checked={incomeGrowth}
-            onChange={(e) => setIncomeGrowth(e.target.checked)}
-            className="h-4 w-4 rounded border border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            onCheckedChange={(checked) => setIncomeGrowth(checked === true)}
           />
           <label
             htmlFor="incomeGrowth"

@@ -23,7 +23,10 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
 
-    const goldenCross = searchParams.get("goldenCross") !== "false"; // 기본값: true
+    // 이평선 필터 파라미터 (기본값: true로 설정하여 기존 동작 유지)
+    const ordered = searchParams.get("ordered") !== "false"; // 기본값: true (정배열 조건)
+    const goldenCross = searchParams.get("goldenCross") !== "false"; // 기본값: true (골든크로스 조건)
+    
     const justTurned = searchParams.get("justTurned") === "true";
     const lookbackDays = Number(searchParams.get("lookbackDays") ?? 10); // 기본 10일
     const maxRn = 1 + lookbackDays; // rn 범위 계산
@@ -123,7 +126,8 @@ export async function GET(req: Request) {
         LEFT JOIN daily_prices pr
           ON pr.symbol = dm.symbol AND pr.date::date = ld.d
         WHERE dm.ma20 IS NOT NULL AND dm.ma50 IS NOT NULL AND dm.ma100 IS NOT NULL AND dm.ma200 IS NOT NULL
-          ${goldenCross ? sql`AND dm.ma20 > dm.ma50 AND dm.ma50 > dm.ma100 AND dm.ma100 > dm.ma200` : sql``}
+          ${ordered ? sql`AND dm.ma20 > dm.ma50 AND dm.ma50 > dm.ma100 AND dm.ma100 > dm.ma200` : sql``}
+          ${goldenCross ? sql`AND dm.ma50 > dm.ma200` : sql``}
           -- 정상적인 주식만 필터링 (워런트, 우선주, ETF 등 제외)
           AND dm.symbol ~ '^[A-Z]{1,5}$'
           AND dm.symbol NOT LIKE '%W'
@@ -358,9 +362,9 @@ export async function GET(req: Request) {
         ) recent_quarters
       ) qf ON true
       WHERE 1=1
-        -- justTurned: 최근 lookbackDays일 이내에 정배열이 아닌 날이 하나라도 있어야 함 (Golden Cross 필터가 활성화된 경우만)
+        -- justTurned: 최근 lookbackDays일 이내에 정배열이 아닌 날이 하나라도 있어야 함 (정배열 필터가 활성화된 경우만)
         ${
-          justTurned && goldenCross
+          justTurned && ordered
             ? sql`AND COALESCE(ps.non_ordered_days_count, 0) > 0`
             : sql``
         }
