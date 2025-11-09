@@ -16,6 +16,8 @@ interface GrowthFilterControlsProps {
   setIncomeGrowthQuarters: (value: number) => void;
   incomeGrowthRate: number | null;
   setIncomeGrowthRate: (value: number | null) => void;
+  pegFilter: boolean;
+  setPegFilter: (value: boolean) => void;
 }
 
 export const GrowthFilterControls = memo(function GrowthFilterControls({
@@ -31,6 +33,8 @@ export const GrowthFilterControls = memo(function GrowthFilterControls({
   setIncomeGrowthQuarters,
   incomeGrowthRate,
   setIncomeGrowthRate,
+  pegFilter,
+  setPegFilter,
 }: GrowthFilterControlsProps) {
   // 로컬 상태로 입력값 관리 (입력 중에는 API 호출 안함)
   const [revenueQuartersInput, setRevenueQuartersInput] = React.useState(
@@ -270,6 +274,24 @@ export const GrowthFilterControls = memo(function GrowthFilterControls({
             />
             <span className="text-xs text-muted-foreground">%</span>
           </div>
+        </div>
+      </div>
+
+      {/* PEG 필터 */}
+      <div className="flex items-center gap-3 bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors h-12">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="pegFilter"
+            checked={pegFilter}
+            onCheckedChange={(checked) => setPegFilter(checked === true)}
+          />
+          <label
+            htmlFor="pegFilter"
+            className="text-sm font-semibold leading-none cursor-pointer select-none"
+          >
+            저평가
+          </label>
+          <span className="text-xs text-muted-foreground">(PEG {"<"} 1)</span>
         </div>
       </div>
     </div>

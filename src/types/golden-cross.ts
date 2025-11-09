@@ -21,6 +21,8 @@ export interface GoldenCrossCompany {
   income_avg_growth_rate: number | null;
   ordered: boolean;
   just_turned: boolean;
+  pe_ratio: number | null;
+  peg_ratio: number | null;
 }
 
 export interface GoldenCrossResponse {
