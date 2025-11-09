@@ -235,8 +235,12 @@ export default function GoldenCrossClient({
       newState.incomeGrowth ?? incomeGrowth,
       newState.revenueGrowthQuarters ?? revenueGrowthQuarters,
       newState.incomeGrowthQuarters ?? incomeGrowthQuarters,
-      newState.revenueGrowthRate ?? revenueGrowthRate ?? null,
-      newState.incomeGrowthRate ?? incomeGrowthRate ?? null
+      Object.prototype.hasOwnProperty.call(newState, "revenueGrowthRate")
+        ? newState.revenueGrowthRate ?? null
+        : revenueGrowthRate ?? null,
+      Object.prototype.hasOwnProperty.call(newState, "incomeGrowthRate")
+        ? newState.incomeGrowthRate ?? null
+        : incomeGrowthRate ?? null
     );
   };
 
