@@ -15,6 +15,7 @@ export interface FilterState {
   incomeGrowth?: boolean;
   incomeGrowthQuarters?: number;
   incomeGrowthRate?: number | null;
+  pegFilter?: boolean; // PEG < 1 필터
 }
 
 export interface FilterSummary {
@@ -60,29 +61,50 @@ export function getMAFilterSummary(filterState: FilterState): FilterSummary {
 /**
  * 성장성 필터 요약
  */
-export function getGrowthFilterSummary(filterState: FilterState): FilterSummary {
+export function getGrowthFilterSummary(
+  filterState: FilterState
+): FilterSummary {
   const activeFilters: string[] = [];
 
   // 매출 성장 필터
   if (filterState.revenueGrowth) {
-    if (filterState.revenueGrowthRate !== null && filterState.revenueGrowthRate !== undefined) {
+    if (
+      filterState.revenueGrowthRate !== null &&
+      filterState.revenueGrowthRate !== undefined
+    ) {
       activeFilters.push(
-        `매출 ${filterState.revenueGrowthQuarters ?? 3}분기 연속 + 평균 ${filterState.revenueGrowthRate}%`
+        `매출 ${filterState.revenueGrowthQuarters ?? 3}분기 연속 + 평균 ${
+          filterState.revenueGrowthRate
+        }%`
       );
     } else {
-      activeFilters.push(`매출 ${filterState.revenueGrowthQuarters ?? 3}분기 연속`);
+      activeFilters.push(
+        `매출 ${filterState.revenueGrowthQuarters ?? 3}분기 연속`
+      );
     }
   }
 
   // 수익 성장 필터
   if (filterState.incomeGrowth) {
-    if (filterState.incomeGrowthRate !== null && filterState.incomeGrowthRate !== undefined) {
+    if (
+      filterState.incomeGrowthRate !== null &&
+      filterState.incomeGrowthRate !== undefined
+    ) {
       activeFilters.push(
-        `수익 ${filterState.incomeGrowthQuarters ?? 3}분기 연속 + 평균 ${filterState.incomeGrowthRate}%`
+        `수익 ${filterState.incomeGrowthQuarters ?? 3}분기 연속 + 평균 ${
+          filterState.incomeGrowthRate
+        }%`
       );
     } else {
-      activeFilters.push(`수익 ${filterState.incomeGrowthQuarters ?? 3}분기 연속`);
+      activeFilters.push(
+        `수익 ${filterState.incomeGrowthQuarters ?? 3}분기 연속`
+      );
     }
+  }
+
+  // PEG 필터
+  if (filterState.pegFilter) {
+    activeFilters.push("PEG < 1");
   }
 
   const count = activeFilters.length;

@@ -44,6 +44,8 @@ type GoldenCrossCompany = {
   income_avg_growth_rate: number | null;
   ordered: boolean;
   just_turned: boolean;
+  pe_ratio: number | null;
+  peg_ratio: number | null;
 };
 
 type GoldenCrossClientProps = {
@@ -81,6 +83,16 @@ function prepareChartData(
     value: type === "revenue" ? f.revenue : f.eps_diluted,
     date: f.period_end_date,
   }));
+}
+
+/**
+ * PER 또는 PEG 값을 포맷팅 (소수점 2자리, null이면 "-")
+ * @param value - PER 또는 PEG 값
+ * @returns 포맷팅된 문자열
+ */
+function formatRatio(value: number | null): string {
+  if (value === null || value === undefined) return "-";
+  return value.toFixed(2);
 }
 
 export default function GoldenCrossClient({
@@ -152,6 +164,12 @@ export default function GoldenCrossClient({
     parseAsInteger
   );
 
+  // PEG 필터 (PEG < 1)
+  const [pegFilter, setPegFilter] = useQueryState(
+    "pegFilter",
+    parseAsBoolean.withDefault(false)
+  );
+
   // 필터 팝업 상태 (카테고리별)
   const [openCategory, setOpenCategory] = useState<FilterCategory | null>(null);
 
@@ -168,6 +186,7 @@ export default function GoldenCrossClient({
     incomeGrowth,
     incomeGrowthQuarters,
     incomeGrowthRate: incomeGrowthRate ?? null,
+    pegFilter,
   };
 
   // 필터 변경 시 캐시 무효화 후 리패치
@@ -182,13 +201,18 @@ export default function GoldenCrossClient({
     newRevenueGrowthQuarters?: number,
     newIncomeGrowthQuarters?: number,
     newRevenueGrowthRate?: number | null,
-    newIncomeGrowthRate?: number | null
+    newIncomeGrowthRate?: number | null,
+    newPegFilter?: boolean
   ) => {
     // 정배열 필터가 비활성화되면 "최근 전환" 옵션도 비활성화
     const finalJustTurned = newOrdered ? newJustTurned : false;
 
     // 이전 캐시 무효화 (모든 필터 포함)
-    const oldTag = `golden-cross-${ordered}-${goldenCross}-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${incomeGrowth}-${incomeGrowthQuarters}`;
+    const oldTag = `golden-cross-${ordered}-${goldenCross}-${justTurned}-${lookbackDays}-${profitability}-${revenueGrowth}-${revenueGrowthQuarters}-${
+      revenueGrowthRate ?? ""
+    }-${incomeGrowth}-${incomeGrowthQuarters}-${
+      incomeGrowthRate ?? ""
+    }-${pegFilter}`;
     await fetch("/api/cache/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -216,6 +240,9 @@ export default function GoldenCrossClient({
     if (newIncomeGrowthRate !== undefined) {
       await setIncomeGrowthRate(newIncomeGrowthRate);
     }
+    if (newPegFilter !== undefined) {
+      await setPegFilter(newPegFilter);
+    }
 
     // 서버 컴포넌트 리패치 (transition으로 감싸서 로딩 표시)
     startTransition(() => {
@@ -240,7 +267,10 @@ export default function GoldenCrossClient({
         : revenueGrowthRate ?? null,
       Object.prototype.hasOwnProperty.call(newState, "incomeGrowthRate")
         ? newState.incomeGrowthRate ?? null
-        : incomeGrowthRate ?? null
+        : incomeGrowthRate ?? null,
+      Object.prototype.hasOwnProperty.call(newState, "pegFilter")
+        ? newState.pegFilter ?? false
+        : pegFilter
     );
   };
 
@@ -258,7 +288,8 @@ export default function GoldenCrossClient({
         revenueGrowthQuarters,
         incomeGrowthQuarters,
         revenueGrowthRate,
-        incomeGrowthRate
+        incomeGrowthRate,
+        pegFilter
       );
     } else if (category === "growth") {
       handleFilterChange(
@@ -272,7 +303,8 @@ export default function GoldenCrossClient({
         3, // revenueGrowthQuarters
         3, // incomeGrowthQuarters
         null, // revenueGrowthRate
-        null // incomeGrowthRate
+        null, // incomeGrowthRate
+        false // pegFilter
       );
     } else if (category === "profitability") {
       handleFilterChange(
@@ -286,7 +318,8 @@ export default function GoldenCrossClient({
         revenueGrowthQuarters,
         incomeGrowthQuarters,
         revenueGrowthRate,
-        incomeGrowthRate
+        incomeGrowthRate,
+        pegFilter
       );
     }
   };
@@ -342,20 +375,23 @@ export default function GoldenCrossClient({
         {isPending ? (
           // 로딩 중일 때 테이블 스켈레톤만 표시
           <>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
               <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
               <div className="h-4 w-40 bg-gray-200 animate-pulse rounded" />
             </div>
             <Table>
+              <TableCaption>
+                <div className="h-4 w-64 bg-gray-200 animate-pulse rounded" />
+              </TableCaption>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Symbol</TableHead>
+                  <TableHead>종목</TableHead>
                   <TableHead className="text-right w-[200px]">
-                    Market Cap
+                    시가총액
                   </TableHead>
-                  <TableHead className="text-right w-[140px]">
-                    Last Close
-                  </TableHead>
+                  <TableHead className="text-right w-[140px]">종가</TableHead>
+                  <TableHead className="text-right w-[100px]">PER</TableHead>
+                  <TableHead className="text-right w-[100px]">PEG</TableHead>
                   <TableHead className="w-[160px] text-right">
                     매출 (8Q)
                   </TableHead>
@@ -372,20 +408,28 @@ export default function GoldenCrossClient({
                       <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
                     </TableCell>
                     {/* Market Cap */}
-                    <TableCell className="text-right">
+                    <TableCell className="text-right w-[200px]">
                       <div className="h-4 w-20 bg-gray-200 animate-pulse rounded ml-auto" />
                     </TableCell>
                     {/* Last Close */}
-                    <TableCell className="text-right">
+                    <TableCell className="text-right w-[140px]">
                       <div className="h-4 w-20 bg-gray-200 animate-pulse rounded ml-auto" />
                     </TableCell>
+                    {/* PER */}
+                    <TableCell className="text-right w-[100px]">
+                      <div className="h-4 w-16 bg-gray-200 animate-pulse rounded ml-auto" />
+                    </TableCell>
+                    {/* PEG */}
+                    <TableCell className="text-right w-[100px]">
+                      <div className="h-4 w-16 bg-gray-200 animate-pulse rounded ml-auto" />
+                    </TableCell>
                     {/* 매출 차트 */}
-                    <TableCell>
-                      <div className="h-7 w-20 bg-gray-200 animate-pulse rounded ml-auto" />
+                    <TableCell className="w-[160px]">
+                      <div className="h-7 w-full bg-gray-200 animate-pulse rounded" />
                     </TableCell>
                     {/* EPS 차트 */}
-                    <TableCell>
-                      <div className="h-7 w-20 bg-gray-200 animate-pulse rounded ml-auto" />
+                    <TableCell className="w-[160px]">
+                      <div className="h-7 w-full bg-gray-200 animate-pulse rounded" />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -452,13 +496,13 @@ export default function GoldenCrossClient({
               </TableCaption>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Symbol</TableHead>
+                  <TableHead>종목</TableHead>
                   <TableHead className="text-right w-[200px]">
-                    Market Cap
+                    시가총액
                   </TableHead>
-                  <TableHead className="text-right w-[140px]">
-                    Last Close
-                  </TableHead>
+                  <TableHead className="text-right w-[140px]">종가</TableHead>
+                  <TableHead className="text-right w-[100px]">PER</TableHead>
+                  <TableHead className="text-right w-[100px]">PEG</TableHead>
                   <TableHead className="w-[160px] text-right">
                     매출 (8Q)
                   </TableHead>
@@ -483,17 +527,27 @@ export default function GoldenCrossClient({
                     </TableCell>
 
                     {/* Market Cap */}
-                    <TableCell className="text-right font-medium">
+                    <TableCell className="text-right font-medium w-[200px]">
                       {c.market_cap ? formatNumber(c.market_cap) : "-"}
                     </TableCell>
 
                     {/* Last Close */}
-                    <TableCell className="text-right">
+                    <TableCell className="text-right w-[140px]">
                       ${formatNumber(c.last_close)}
                     </TableCell>
 
+                    {/* PER */}
+                    <TableCell className="text-right w-[100px]">
+                      {formatRatio(c.pe_ratio)}
+                    </TableCell>
+
+                    {/* PEG */}
+                    <TableCell className="text-right w-[100px]">
+                      {formatRatio(c.peg_ratio)}
+                    </TableCell>
+
                     {/* 매출 차트 */}
-                    <TableCell>
+                    <TableCell className="w-[160px]">
                       <QuarterlyBarChart
                         data={prepareChartData(
                           c.quarterly_financials,
@@ -506,7 +560,7 @@ export default function GoldenCrossClient({
                     </TableCell>
 
                     {/* EPS 차트 */}
-                    <TableCell>
+                    <TableCell className="w-[160px]">
                       <QuarterlyBarChart
                         data={prepareChartData(c.quarterly_financials, "eps")}
                         type="eps"

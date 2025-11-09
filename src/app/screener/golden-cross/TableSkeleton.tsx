@@ -14,28 +14,38 @@ export function TableSkeleton() {
     <Card className="p-4">
       <CardHeader>
         <CardTitle className="text-xl font-bold">
-          📈 Golden Cross 스크리너
+          📈 주식 스크리너
         </CardTitle>
-        <div className="flex items-center gap-6 mt-4 flex-wrap">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-24" />
+        <div className="flex items-stretch gap-3 mt-4 flex-wrap">
+          {/* 이평선 필터박스 스켈레톤 */}
+          <Skeleton className="h-12 w-[140px] rounded-lg" />
+          {/* 성장성 필터박스 스켈레톤 */}
+          <Skeleton className="h-12 w-[140px] rounded-lg" />
+          {/* 수익성 필터박스 스켈레톤 */}
+          <Skeleton className="h-12 w-[140px] rounded-lg" />
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-40" />
         </div>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Symbol</TableHead>
-              <TableHead className="text-right">Market Cap</TableHead>
-              <TableHead className="text-right">Last Close</TableHead>
-              <TableHead className="text-right">MA20</TableHead>
-              <TableHead className="text-right">MA50</TableHead>
-              <TableHead className="text-right">MA100</TableHead>
-              <TableHead className="text-right">MA200</TableHead>
+              <TableHead>종목</TableHead>
+              <TableHead className="text-right w-[200px]">
+                시가총액
+              </TableHead>
+              <TableHead className="text-right w-[140px]">종가</TableHead>
+              <TableHead className="text-right w-[100px]">PER</TableHead>
+              <TableHead className="text-right w-[100px]">PEG</TableHead>
+              <TableHead className="w-[160px] text-right">
+                매출 (8Q)
+              </TableHead>
+              <TableHead className="w-[160px] text-right">
+                EPS (8Q)
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -44,23 +54,23 @@ export function TableSkeleton() {
                 <TableCell>
                   <Skeleton className="h-4 w-16" />
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right w-[200px]">
                   <Skeleton className="h-4 w-20 ml-auto" />
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right w-[140px]">
+                  <Skeleton className="h-4 w-20 ml-auto" />
+                </TableCell>
+                <TableCell className="text-right w-[100px]">
                   <Skeleton className="h-4 w-16 ml-auto" />
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right w-[100px]">
                   <Skeleton className="h-4 w-16 ml-auto" />
                 </TableCell>
-                <TableCell className="text-right">
-                  <Skeleton className="h-4 w-16 ml-auto" />
+                <TableCell className="w-[160px]">
+                  <Skeleton className="h-7 w-full" />
                 </TableCell>
-                <TableCell className="text-right">
-                  <Skeleton className="h-4 w-16 ml-auto" />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Skeleton className="h-4 w-16 ml-auto" />
+                <TableCell className="w-[160px]">
+                  <Skeleton className="h-7 w-full" />
                 </TableCell>
               </TableRow>
             ))}

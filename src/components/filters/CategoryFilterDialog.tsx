@@ -64,6 +64,7 @@ export function CategoryFilterDialog({
         incomeGrowth: filterState.incomeGrowth ?? false,
         incomeGrowthQuarters: filterState.incomeGrowthQuarters ?? 3,
         incomeGrowthRate: filterState.incomeGrowthRate ?? null,
+        pegFilter: filterState.pegFilter ?? false,
       };
     } else if (category === "profitability") {
       return {
@@ -74,7 +75,8 @@ export function CategoryFilterDialog({
   }, [category, filterState]);
 
   // 팝업 내부에서만 사용하는 임시 상태
-  const [tempState, setTempState] = useState<Partial<FilterState>>(initialTempState);
+  const [tempState, setTempState] =
+    useState<Partial<FilterState>>(initialTempState);
   const [inputValue, setInputValue] = useState(
     filterState.lookbackDays?.toString() || "10"
   );
@@ -125,19 +127,19 @@ export function CategoryFilterDialog({
         incomeGrowth: false,
         incomeGrowthQuarters: 3,
         incomeGrowthRate: null,
+        pegFilter: false,
       });
     } else if (category === "profitability") {
       setTempState({
         profitability: "all",
       });
     }
+    onReset();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full"
-      >
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full">
         <DialogHeader>
           <DialogTitle>{categoryLabels[category]}</DialogTitle>
           <DialogDescription>
@@ -167,7 +169,7 @@ export function CategoryFilterDialog({
                     정배열
                   </label>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    (MA20 {'>'} MA50 {'>'} MA100 {'>'} MA200)
+                    (MA20 {">"} MA50 {">"} MA100 {">"} MA200)
                   </span>
                 </div>
 
@@ -194,7 +196,10 @@ export function CategoryFilterDialog({
                       {tempState.justTurned && (
                         <>
                           <div className="w-px h-4 bg-border mx-1" />
-                          <label htmlFor="lookback-days" className="text-xs text-muted-foreground font-medium">
+                          <label
+                            htmlFor="lookback-days"
+                            className="text-xs text-muted-foreground font-medium"
+                          >
                             기간:
                           </label>
                           <input
@@ -207,7 +212,9 @@ export function CategoryFilterDialog({
                             disabled={disabled}
                             className="w-16 px-2 py-1 text-xs border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
                           />
-                          <span className="text-xs text-muted-foreground">일</span>
+                          <span className="text-xs text-muted-foreground">
+                            일
+                          </span>
                         </>
                       )}
                     </div>
@@ -236,7 +243,7 @@ export function CategoryFilterDialog({
                     골든크로스
                   </label>
                   <span className="text-xs text-muted-foreground">
-                    (MA50 {'>'} MA200)
+                    (MA50 {">"} MA200)
                   </span>
                 </div>
               </div>
@@ -271,6 +278,10 @@ export function CategoryFilterDialog({
                 setIncomeGrowthRate={(value) =>
                   setTempState({ ...tempState, incomeGrowthRate: value })
                 }
+                pegFilter={tempState.pegFilter ?? false}
+                setPegFilter={(value) =>
+                  setTempState({ ...tempState, pegFilter: value })
+                }
               />
             </div>
           )}
@@ -287,7 +298,10 @@ export function CategoryFilterDialog({
                   onValueChange={(value: string) =>
                     setTempState({
                       ...tempState,
-                      profitability: value as "all" | "profitable" | "unprofitable",
+                      profitability: value as
+                        | "all"
+                        | "profitable"
+                        | "unprofitable",
                     })
                   }
                   disabled={disabled}
@@ -329,7 +343,11 @@ export function CategoryFilterDialog({
             초기화
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleCancel} disabled={disabled}>
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={disabled}
+            >
               취소
             </Button>
             <Button onClick={handleApply} disabled={disabled}>
@@ -341,4 +359,3 @@ export function CategoryFilterDialog({
     </Dialog>
   );
 }
-

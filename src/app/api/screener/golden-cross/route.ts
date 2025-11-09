@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     // 이평선 필터 파라미터 (기본값: true로 설정하여 기존 동작 유지)
     const ordered = searchParams.get("ordered") !== "false"; // 기본값: true (정배열 조건)
     const goldenCross = searchParams.get("goldenCross") !== "false"; // 기본값: true (골든크로스 조건)
-    
+
     const justTurned = searchParams.get("justTurned") === "true";
     const lookbackDays = Number(searchParams.get("lookbackDays") ?? 10); // 기본 10일
     const maxRn = 1 + lookbackDays; // rn 범위 계산
@@ -37,6 +37,7 @@ export async function GET(req: Request) {
     const profitability = searchParams.get("profitability") ?? "all"; // 수익성 필터
     const revenueGrowth = searchParams.get("revenueGrowth") === "true"; // 매출 성장 필터 (boolean)
     const incomeGrowth = searchParams.get("incomeGrowth") === "true"; // 수익 성장 필터 (boolean)
+    const pegFilter = searchParams.get("pegFilter") === "true"; // PEG < 1 필터 (boolean)
     const revenueGrowthQuarters = Number(
       searchParams.get("revenueGrowthQuarters") ?? 3
     ); // 매출 성장 연속 분기 수
@@ -126,7 +127,11 @@ export async function GET(req: Request) {
         LEFT JOIN daily_prices pr
           ON pr.symbol = dm.symbol AND pr.date::date = ld.d
         WHERE dm.ma20 IS NOT NULL AND dm.ma50 IS NOT NULL AND dm.ma100 IS NOT NULL AND dm.ma200 IS NOT NULL
-          ${ordered ? sql`AND dm.ma20 > dm.ma50 AND dm.ma50 > dm.ma100 AND dm.ma100 > dm.ma200` : sql``}
+          ${
+            ordered
+              ? sql`AND dm.ma20 > dm.ma50 AND dm.ma50 > dm.ma100 AND dm.ma100 > dm.ma200`
+              : sql``
+          }
           ${goldenCross ? sql`AND dm.ma50 > dm.ma200` : sql``}
           -- 정상적인 주식만 필터링 (워런트, 우선주, ETF 등 제외)
           AND dm.symbol ~ '^[A-Z]{1,5}$'
@@ -197,7 +202,10 @@ export async function GET(req: Request) {
         qf.revenue_growth_quarters,
         qf.income_growth_quarters,
         qf.revenue_avg_growth_rate,
-        qf.income_avg_growth_rate
+        qf.income_avg_growth_rate,
+        -- 밸류에이션 지표
+        qr.pe_ratio,
+        qr.peg_ratio
       FROM candidates cand
       LEFT JOIN prev_status ps ON ps.symbol = cand.symbol
       LEFT JOIN symbols s ON s.symbol = cand.symbol
@@ -361,6 +369,16 @@ export async function GET(req: Request) {
           LIMIT 8
         ) recent_quarters
       ) qf ON true
+      -- 최신 분기의 PER 및 PEG 데이터 JOIN
+      LEFT JOIN LATERAL (
+        SELECT 
+          pe_ratio::numeric as pe_ratio,
+          peg_ratio::numeric as peg_ratio
+        FROM quarterly_ratios
+        WHERE symbol = cand.symbol
+        ORDER BY period_end_date DESC
+        LIMIT 1
+      ) qr ON true
       WHERE 1=1
         -- justTurned: 최근 lookbackDays일 이내에 정배열이 아닌 날이 하나라도 있어야 함 (정배열 필터가 활성화된 경우만)
         ${
@@ -394,6 +412,12 @@ export async function GET(req: Request) {
               : sql`AND qf.income_growth_quarters >= ${incomeGrowthQuarters}`
             : sql``
         }
+        -- PEG 필터 (0 <= PEG < 1, 음수 제외)
+        ${
+          pegFilter
+            ? sql`AND qr.peg_ratio IS NOT NULL AND qr.peg_ratio::numeric >= 0 AND qr.peg_ratio::numeric < 1`
+            : sql``
+        }
       ORDER BY s.market_cap DESC NULLS LAST, cand.symbol ASC;
     `);
 
@@ -408,6 +432,8 @@ export async function GET(req: Request) {
       income_growth_quarters: number | null;
       revenue_avg_growth_rate: number | null;
       income_avg_growth_rate: number | null;
+      pe_ratio: number | string | null;
+      peg_ratio: number | string | null;
     };
 
     const results = rows.rows as QueryResult[];
@@ -430,6 +456,22 @@ export async function GET(req: Request) {
       income_avg_growth_rate: r.income_avg_growth_rate,
       ordered: true,
       just_turned: justTurned,
+      pe_ratio: (() => {
+        const val = r.pe_ratio;
+        if (val === null || val === undefined || val === "") return null;
+        const str = String(val).trim();
+        if (str === "" || str === "null" || str === "undefined") return null;
+        const num = parseFloat(str);
+        return isNaN(num) || !isFinite(num) ? null : num;
+      })(),
+      peg_ratio: (() => {
+        const val = r.peg_ratio;
+        if (val === null || val === undefined || val === "") return null;
+        const str = String(val).trim();
+        if (str === "" || str === "null" || str === "undefined") return null;
+        const num = parseFloat(str);
+        return isNaN(num) || !isFinite(num) ? null : num;
+      })(),
     }));
 
     return NextResponse.json({
