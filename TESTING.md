@@ -2,7 +2,7 @@
 
 ## 테스트 환경 설정
 
-이 프로젝트는 **Vitest**를 사용하여 테스트를 작성합니다.
+이 프로젝트는 **Vitest**를 사용하여 테스트를 작성합니다. 웹앱 소스와 테스트는 `apps/web` 아래에 있으며, 루트에서 `yarn test`를 실행해도 `apps/web` 워크스페이스가 실행됩니다.
 
 ### 설치된 패키지
 
@@ -35,19 +35,19 @@ yarn test src/lib/__tests__/growth-rate.test.ts
 
 ### 단위 테스트
 
-- **경로**: `src/lib/__tests__/`
+- **경로**: `apps/web/src/lib/__tests__/`
 - **목적**: 순수 함수 및 유틸리티 로직 테스트
 - **예시**: `growth-rate.test.ts` - 성장률 계산 로직
 
 ### API 테스트
 
-- **경로**: `src/app/api/**/__tests__/`
+- **경로**: `apps/web/src/app/api/**/__tests__/`
 - **목적**: API 엔드포인트 검증
 - **예시**: `route.test.ts` - Golden Cross API 파라미터 검증
 
 ### 컴포넌트 테스트
 
-- **경로**: `src/components/**/__tests__/`
+- **경로**: `apps/web/src/components/**/__tests__/`
 - **목적**: React 컴포넌트 동작 검증
 - **예시**: `GrowthFilterControls.test.tsx` - 필터 UI 동작
 
@@ -122,9 +122,9 @@ describe("GrowthFilterControls", () => {
 
 ## 주요 테스트 파일
 
-- `src/lib/__tests__/growth-rate.test.ts`: 성장률 계산 로직
-- `src/app/api/screener/golden-cross/__tests__/route.test.ts`: API 라우트
-- `src/components/filters/__tests__/GrowthFilterControls.test.tsx`: 필터 컴포넌트
+- `apps/web/src/lib/__tests__/growth-rate.test.ts`: 성장률 계산 로직
+- `apps/web/src/app/api/screener/golden-cross/__tests__/route.test.ts`: API 라우트
+- `apps/web/src/components/filters/__tests__/GrowthFilterControls.test.tsx`: 필터 컴포넌트
 
 ## 문제 해결
 
@@ -143,4 +143,3 @@ describe("GrowthFilterControls", () => {
 
 - `vitest.setup.ts`에서 환경변수 설정
 - 각 테스트에서 필요한 환경변수만 설정
-
