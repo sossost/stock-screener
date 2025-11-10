@@ -217,14 +217,14 @@ Task: "Create [Entity2] model in src/models/[entity2].py"
 2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
 3. Complete Phase 3: User Story 1
 4. **STOP and VALIDATE**: Test User Story 1 independently
-5. Deploy/demo if ready
+5. **사용자가 빌드/배포 테스트 및 커밋 수행**
 
 ### Incremental Delivery
 
 1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
-3. Add User Story 2 → Test independently → Deploy/Demo
-4. Add User Story 3 → Test independently → Deploy/Demo
+2. Add User Story 1 → Test independently → **사용자가 빌드/배포 테스트 및 커밋 수행**
+3. Add User Story 2 → Test independently → **사용자가 빌드/배포 테스트 및 커밋 수행**
+4. Add User Story 3 → Test independently → **사용자가 빌드/배포 테스트 및 커밋 수행**
 5. Each story adds value without breaking previous stories
 
 ### Parallel Team Strategy
@@ -246,6 +246,6 @@ With multiple developers:
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
 - Verify tests fail before implementing
-- Commit after each task or logical group
+- **⚠️ 중요: 빌드 테스트, 배포 테스트, 커밋은 사용자가 직접 수행합니다. AI는 구현만 담당합니다.**
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
