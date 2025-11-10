@@ -1,6 +1,6 @@
-import React, { Suspense } from "react";
-import { DataWrapper } from "@/app/screener/golden-cross/DataWrapper";
-import { TableSkeleton } from "@/app/screener/golden-cross/TableSkeleton";
+import React from "react";
+import { DataWrapper } from "@/app/screener/main/DataWrapper";
+import { Navigation } from "@/components/navigation";
 
 type SearchParams = {
   justTurned?: string;
@@ -24,10 +24,9 @@ const Home = async ({
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <Navigation showPortfolioButton={true} />
       <div className="container mx-auto px-4 py-8">
-        <Suspense fallback={<TableSkeleton />}>
-          <DataWrapper searchParams={resolvedParams} />
-        </Suspense>
+        <DataWrapper searchParams={resolvedParams} />
       </div>
     </div>
   );

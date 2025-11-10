@@ -6,6 +6,7 @@ import {
   unique,
   index,
   boolean,
+  serial,
 } from "drizzle-orm/pg-core";
 
 export const symbols = pgTable("symbols", {
@@ -168,5 +169,21 @@ export const dailyMa = pgTable(
   (t) => ({
     uq: unique("uq_daily_ma_symbol_date").on(t.symbol, t.date),
     idx_sym_date: index("idx_daily_ma_symbol_date").on(t.symbol, t.date),
+  })
+);
+
+export const portfolio = pgTable(
+  "portfolio",
+  {
+    id: serial("id").primaryKey(),
+    sessionId: text("session_id").notNull(),
+    symbol: text("symbol")
+      .notNull()
+      .references(() => symbols.symbol, { onDelete: "cascade" }),
+    addedAt: timestamp("added_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    uq: unique("uq_portfolio_session_symbol").on(t.sessionId, t.symbol),
+    idx_session: index("idx_portfolio_session").on(t.sessionId),
   })
 );
