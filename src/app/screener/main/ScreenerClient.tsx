@@ -68,10 +68,10 @@ export default function ScreenerClient({
   };
 
   return (
-    <Card className="p-4">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold">📈 주식 스크리너</CardTitle>
-        <div className="flex items-stretch gap-3 mt-4 flex-wrap">
+    <Card className="px-4 pb-4">
+      <CardHeader className="pt-4 px-4">
+        <CardTitle className="text-xl font-bold"></CardTitle>
+        <div className="flex items-stretch gap-3 flex-wrap">
           {/* 이평선 필터박스 */}
           <CategoryFilterBox
             category="ma"
@@ -126,7 +126,7 @@ export default function ScreenerClient({
           />
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4">
         {isPending && !isSearching ? (
           // 서버 필터 변경 중일 때만 테이블 스켈레톤 표시 (클라이언트 검색 중에는 제외)
           <div>
@@ -149,4 +149,3 @@ export default function ScreenerClient({
     </Card>
   );
 }
-

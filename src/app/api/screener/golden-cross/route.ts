@@ -4,8 +4,7 @@ import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
 import { handleApiError, logError } from "@/lib/errors";
 
-// 동적 라우트 강제 (쿼리 파라미터 사용)
-export const dynamic = "force-dynamic";
+// 캐싱을 위해 dynamic 제거 (기본값 사용)
 
 // 캐싱 설정: 24시간 (종가 기준 데이터, 하루 1회 갱신)
 // Next.js는 정적 분석을 위해 리터럴 값만 허용 (계산식/상수 참조 불가)
