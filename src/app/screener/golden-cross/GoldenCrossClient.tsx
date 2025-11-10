@@ -190,7 +190,7 @@ export default function GoldenCrossClient({
   useEffect(() => {
     const timer = setTimeout(() => {
       startTransition(() => {
-        setTickerSearch(tickerSearchInput);
+        setTickerSearch(tickerSearchInput.trim());
       });
     }, 300);
 
