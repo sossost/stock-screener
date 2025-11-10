@@ -83,3 +83,68 @@ export function getProfitabilityLabel(
       return "-";
   }
 }
+
+/**
+ * 날짜 문자열을 "Q1 2024" 형식의 분기 문자열로 변환
+ * @param dateString - "2024-03-31" 형식의 날짜 문자열
+ * @returns "Q1 2024" 형식의 분기 문자열
+ * @note timezone 의존성을 제거하기 위해 문자열을 직접 파싱합니다
+ */
+export function formatQuarter(dateString: string): string {
+  // "YYYY-MM-DD" 형식에서 직접 파싱하여 timezone 의존성 제거
+  const parts = dateString.split("-");
+  if (parts.length !== 3) {
+    // 예상치 못한 형식인 경우 fallback
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const quarter = Math.ceil(month / 3);
+    return `Q${quarter} ${year}`;
+  }
+  
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  
+  if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+    // 유효하지 않은 값인 경우 fallback
+    const date = new Date(dateString);
+    const fallbackYear = date.getFullYear();
+    const fallbackMonth = date.getMonth() + 1;
+    const quarter = Math.ceil(fallbackMonth / 3);
+    return `Q${quarter} ${fallbackYear}`;
+  }
+  
+  const quarter = Math.ceil(month / 3);
+  return `Q${quarter} ${year}`;
+}
+
+/**
+ * PER 또는 PEG 값을 포맷팅 (소수점 2자리, null이면 "-")
+ * @param value - PER 또는 PEG 값
+ * @returns 포맷팅된 문자열
+ */
+export function formatRatio(value: number | null): string {
+  if (value === null || value === undefined) return "-";
+  return value.toFixed(2);
+}
+
+/**
+ * 주가를 통화 형식으로 포맷팅 (소수점 2자리, 천 단위 구분)
+ * @param value - 주가 값 (문자열 또는 숫자)
+ * @returns 포맷팅된 문자열 (예: "$1,240.50")
+ */
+export function formatPrice(value: string | number | null): string {
+  if (value === null || value === undefined) return "-";
+  
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  
+  if (isNaN(num) || !Number.isFinite(num)) return "-";
+  
+  // 통화 형식으로 포맷팅 (소수점 2자리, 천 단위 구분)
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
