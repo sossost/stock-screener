@@ -83,3 +83,26 @@ export function getProfitabilityLabel(
       return "-";
   }
 }
+
+/**
+ * 날짜 문자열을 "Q1 2024" 형식의 분기 문자열로 변환
+ * @param dateString - "2024-03-31" 형식의 날짜 문자열
+ * @returns "Q1 2024" 형식의 분기 문자열
+ */
+export function formatQuarter(dateString: string): string {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const quarter = Math.ceil(month / 3);
+  return `Q${quarter} ${year}`;
+}
+
+/**
+ * PER 또는 PEG 값을 포맷팅 (소수점 2자리, null이면 "-")
+ * @param value - PER 또는 PEG 값
+ * @returns 포맷팅된 문자열
+ */
+export function formatRatio(value: number | null): string {
+  if (value === null || value === undefined) return "-";
+  return value.toFixed(2);
+}

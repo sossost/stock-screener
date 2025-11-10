@@ -25,6 +25,29 @@ export interface GoldenCrossCompany {
   peg_ratio: number | null;
 }
 
+// 스크리너 컴포넌트용 타입 (revenue_growth_status, income_growth_status 제외)
+export interface ScreenerCompany {
+  symbol: string;
+  market_cap: string | null;
+  last_close: string;
+  quarterly_financials: QuarterlyFinancial[];
+  profitability_status: "profitable" | "unprofitable" | "unknown";
+  revenue_growth_quarters: number;
+  income_growth_quarters: number;
+  revenue_avg_growth_rate: number | null;
+  income_avg_growth_rate: number | null;
+  ordered: boolean;
+  just_turned: boolean;
+  pe_ratio: number | null;
+  peg_ratio: number | null;
+}
+
+// 스크리너 클라이언트 Props 타입
+export interface ScreenerClientProps {
+  data: ScreenerCompany[];
+  tradeDate: string | null;
+}
+
 export interface GoldenCrossResponse {
   data: GoldenCrossCompany[];
   trade_date: string;

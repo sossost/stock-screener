@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
-import { DataWrapper } from "@/app/screener/golden-cross/DataWrapper";
-import { TableSkeleton } from "@/app/screener/golden-cross/TableSkeleton";
+import { DataWrapper } from "@/app/screener/main/DataWrapper";
+import { TableSkeleton } from "@/app/screener/main/TableSkeleton";
 
 type SearchParams = {
   justTurned?: string;
