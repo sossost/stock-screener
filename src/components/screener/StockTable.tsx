@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatNumber, formatRatio } from "@/utils/format";
+import { formatNumber, formatRatio, formatPrice } from "@/utils/format";
 import { prepareChartData } from "@/utils/chart-data";
 import { QuarterlyBarChart } from "@/components/charts/QuarterlyBarChart";
 
@@ -175,7 +175,7 @@ export function StockTable({
 
               {/* Last Close */}
               <TableCell className="text-right w-[140px]">
-                ${formatNumber(c.last_close)}
+                {formatPrice(c.last_close)}
               </TableCell>
 
               {/* PER */}
