@@ -12,13 +12,18 @@
 
 # testing
 /coverage
+/apps/web/coverage
+/apps/web/node_modules
+/apps/web/.vite
 
 # next.js
 /.next/
 /out/
+/apps/web/.next/
+/apps/web/out/
 
 # production
-/build
+/apps/web/build
 
 # misc
 .DS_Store
