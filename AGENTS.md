@@ -3,13 +3,14 @@
 ## Project Structure & Module Organization
 - Root: workspace orchestrator (`package.json` with workspaces), shared tools in `.specify/`, future shared packages under `packages/`.
 - `apps/web`: Next.js 15 app. Routes and API handlers in `apps/web/src/app`, global styles in `apps/web/src/app/globals.css`, reusable UI in `apps/web/src/components` (tests in `__tests__/`), domain helpers in `apps/web/src/lib` and `apps/web/src/utils`, DB schema in `apps/web/src/db`, ETL jobs in `apps/web/src/etl`.
+- `apps/mobile`: Expo 54 TypeScript app (React Native 0.81). Entry at `apps/mobile/App.tsx`/`index.ts`, config in `apps/mobile/app.json`, assets in `apps/mobile/assets`.
 - `apps/web/drizzle`: generated migrations; `apps/web/drizzle.config.ts` configures paths.
 - `apps/web/public`: static assets.
 - Aliases: `@/*` points to `apps/web/src/*` (see `apps/web/tsconfig.json` and `apps/web/vitest.config.ts`).
 
 ## Build, Test, and Development Commands
-- From repo root: `yarn dev|lint|build|start|test|test:all` forward to the web app workspace.
-- In `apps/web`: `yarn dev` (Turbopack), `yarn lint`, `yarn build`, `yarn start`.
+- From repo root: `yarn dev|lint|build|start|test|test:all` forward to the web app workspace; `yarn dev:mobile` starts the Expo dev server.
+- In `apps/web`: `yarn dev` (Turbopack), `yarn lint`, `yarn build`, `yarn start`. In `apps/mobile`: `yarn start`/`yarn ios`/`yarn android` (Expo).
 - Tests (Vitest): `yarn test`, `yarn test:watch`, `yarn test:ui`, `yarn test:coverage`, `yarn test:all` (tests then build).
 - ETL/DB: `yarn db:push`, `yarn db:gen`, `yarn etl:symbols`, `yarn etl:daily-prices`, `yarn etl:daily-ma`, `yarn etl:quarterly-financials` (backfill variants available).
 

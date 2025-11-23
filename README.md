@@ -187,6 +187,10 @@ yarn feature:checklist      # 피쳐 개발 체크리스트 확인
 yarn etl:daily-prices       # 주가 업데이트
 yarn etl:daily-ma          # 이동평균선 계산
 yarn etl:cleanup-invalid-symbols  # 비정상 종목 정리
+# 모바일(Expo) 개발
+yarn dev:mobile             # Expo dev 서버
+yarn workspace mobile ios   # iOS (Xcode 필요)
+yarn workspace mobile android # Android 에뮬레이터/디바이스
 ```
 
 ## 🚀 새로운 피쳐 개발하기
