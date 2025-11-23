@@ -30,6 +30,8 @@
     "etl:backfill-daily-prices": "yarn workspace web etl:backfill-daily-prices",
     "etl:daily-ma": "yarn workspace web etl:daily-ma",
     "etl:backfill-daily-ma": "yarn workspace web etl:backfill-daily-ma",
+    "etl:rs": "yarn workspace web etl:rs",
+    "etl:rs-backfill": "yarn workspace web etl:rs-backfill",
     "etl:cleanup-invalid-symbols": "yarn workspace web etl:cleanup-invalid-symbols",
     "etl:quarterly-financials": "yarn workspace web etl:quarterly-financials"
   }

@@ -11,6 +11,7 @@ export interface GoldenCrossCompany {
   symbol: string;
   market_cap: string | null;
   last_close: string;
+  rs_score: number | null;
   quarterly_financials: QuarterlyFinancial[];
   profitability_status: "profitable" | "unprofitable" | "unknown";
   revenue_growth_status: "growing" | "not_growing" | "unknown";
@@ -30,6 +31,7 @@ export interface ScreenerCompany {
   symbol: string;
   market_cap: string | null;
   last_close: string;
+  rs_score: number | null;
   quarterly_financials: QuarterlyFinancial[];
   profitability_status: "profitable" | "unprofitable" | "unknown";
   revenue_growth_quarters: number;

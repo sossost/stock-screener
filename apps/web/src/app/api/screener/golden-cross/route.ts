@@ -119,7 +119,8 @@ export async function GET(req: Request) {
           dm.date::date AS d,
           dm.ma20, dm.ma50, dm.ma100, dm.ma200,
           dm.vol_ma30,
-          pr.adj_close::numeric AS close
+          pr.adj_close::numeric AS close,
+          pr.rs_score
         FROM daily_ma dm
         JOIN last_d ld
           ON dm.date::date = ld.d
@@ -142,7 +143,7 @@ export async function GET(req: Request) {
       ),
       -- 2) 필수 컷(시총/가격/거래소/거래량) 먼저 가볍게 적용해서 "후보" 축소
       candidates AS (
-        SELECT c.symbol, c.d, c.ma20, c.ma50, c.ma100, c.ma200, c.vol_ma30, c.close
+        SELECT c.symbol, c.d, c.ma20, c.ma50, c.ma100, c.ma200, c.vol_ma30, c.close, c.rs_score
         FROM cur c
         JOIN symbols s ON s.symbol = c.symbol
         WHERE
@@ -193,6 +194,7 @@ export async function GET(req: Request) {
         cand.symbol,
         cand.d            AS trade_date,
         cand.close        AS last_close,
+        cand.rs_score     AS rs_score,
         s.market_cap,
         -- 재무 데이터 (최근 8개 분기)
         qf.quarterly_data,
@@ -424,6 +426,7 @@ export async function GET(req: Request) {
       symbol: string;
       trade_date: string;
       last_close: number;
+      rs_score: number | null;
       market_cap: number | null;
       quarterly_data: any[] | null;
       latest_eps: number | null;
@@ -442,6 +445,10 @@ export async function GET(req: Request) {
       symbol: r.symbol,
       market_cap: r.market_cap?.toString() || null,
       last_close: r.last_close.toString(),
+      rs_score:
+        r.rs_score === null || r.rs_score === undefined
+          ? null
+          : Number(r.rs_score),
       quarterly_financials: r.quarterly_data || [],
       profitability_status:
         r.latest_eps !== null && r.latest_eps > 0

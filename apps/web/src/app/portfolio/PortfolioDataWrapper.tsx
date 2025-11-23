@@ -230,6 +230,7 @@ async function fetchPortfolioData() {
     trade_date: string;
     last_close: number;
     market_cap: number | null;
+    rs_score: number | null;
     quarterly_data: any[] | null;
     latest_eps: number | null;
     revenue_growth_quarters: number | null;
@@ -247,6 +248,10 @@ async function fetchPortfolioData() {
     symbol: r.symbol,
     market_cap: r.market_cap?.toString() || null,
     last_close: r.last_close.toString(),
+    rs_score:
+      r.rs_score === null || r.rs_score === undefined
+        ? null
+        : Number(r.rs_score),
     quarterly_financials: r.quarterly_data || [],
     profitability_status:
       r.latest_eps !== null && r.latest_eps > 0
@@ -292,4 +297,3 @@ export async function PortfolioDataWrapper() {
     />
   );
 }
-

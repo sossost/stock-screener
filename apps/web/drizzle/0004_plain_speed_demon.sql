@@ -1,0 +1,1 @@
+ALTER TABLE "daily_prices" ADD COLUMN "rs_score" integer;

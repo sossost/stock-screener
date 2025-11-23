@@ -267,6 +267,10 @@ export async function GET(request: NextRequest) {
         income_avg_growth_rate: r.income_avg_growth_rate,
         ordered: true,
         just_turned: false,
+        rs_score:
+          r.rs_score === null || r.rs_score === undefined
+            ? null
+            : Number(r.rs_score),
         pe_ratio: parseRatio(r.pe_ratio),
         peg_ratio: parseRatio(r.peg_ratio),
       }));
