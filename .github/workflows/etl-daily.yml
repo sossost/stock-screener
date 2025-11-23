@@ -88,11 +88,21 @@ jobs:
           yarn etl:daily-ma
           echo "✅ Daily MA ETL completed!"
 
+      - name: Run RS ETL
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGSSLMODE: no-verify
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        run: |
+          echo "📊 Computing RS (12/6/3M weighted)..."
+          yarn etl:rs
+          echo "✅ RS ETL completed!"
+
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: daily-ma-logs
+          name: daily-ma-rs-logs
           path: |
             *.log
             logs/

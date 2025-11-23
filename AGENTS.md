@@ -11,6 +11,7 @@
 ## Build, Test, and Development Commands
 - From repo root: `yarn dev|lint|build|start|test|test:all` forward to the web app workspace; `yarn dev:mobile` starts the Expo dev server.
 - In `apps/web`: `yarn dev` (Turbopack), `yarn lint`, `yarn build`, `yarn start`. In `apps/mobile`: `yarn start`/`yarn ios`/`yarn android` (Expo).
+- ETL/DB (web): `yarn db:push`, `yarn etl:daily-prices`, `yarn etl:daily-ma`, `yarn etl:rs` / `yarn etl:rs-backfill`(12M/6M/3M 가중 RS), `yarn etl:quarterly-financials` 등.
 - Tests (Vitest): `yarn test`, `yarn test:watch`, `yarn test:ui`, `yarn test:coverage`, `yarn test:all` (tests then build).
 - ETL/DB: `yarn db:push`, `yarn db:gen`, `yarn etl:symbols`, `yarn etl:daily-prices`, `yarn etl:daily-ma`, `yarn etl:quarterly-financials` (backfill variants available).
 

@@ -40,7 +40,8 @@ async function fetchPortfolioData() {
       SELECT DISTINCT ON (symbol)
         symbol,
         adj_close::numeric AS close,
-        date::date AS trade_date
+        date::date AS trade_date,
+        rs_score
       FROM daily_prices
       WHERE symbol = ANY(ARRAY[${sql.join(symbols.map(s => sql`${s}`), sql`, `)}])
         AND date::date = (SELECT d FROM last_d)
@@ -49,6 +50,7 @@ async function fetchPortfolioData() {
       lp.symbol,
       lp.trade_date,
       lp.close AS last_close,
+      lp.rs_score,
       s.market_cap,
       qf.quarterly_data,
       qf.latest_eps,
@@ -230,6 +232,7 @@ async function fetchPortfolioData() {
     trade_date: string;
     last_close: number;
     market_cap: number | null;
+    rs_score: number | null;
     quarterly_data: any[] | null;
     latest_eps: number | null;
     revenue_growth_quarters: number | null;
@@ -247,6 +250,10 @@ async function fetchPortfolioData() {
     symbol: r.symbol,
     market_cap: r.market_cap?.toString() || null,
     last_close: r.last_close.toString(),
+    rs_score:
+      r.rs_score === null || r.rs_score === undefined
+        ? null
+        : Number(r.rs_score),
     quarterly_financials: r.quarterly_data || [],
     profitability_status:
       r.latest_eps !== null && r.latest_eps > 0
@@ -292,4 +299,3 @@ export async function PortfolioDataWrapper() {
     />
   );
 }
-

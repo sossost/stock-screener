@@ -7,6 +7,7 @@ import {
   index,
   boolean,
   serial,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const symbols = pgTable("symbols", {
@@ -138,6 +139,7 @@ export const dailyPrices = pgTable(
     close: numeric("close"),
     adjClose: numeric("adj_close"),
     volume: numeric("volume"),
+    rsScore: integer("rs_score"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

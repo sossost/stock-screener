@@ -18,6 +18,7 @@ import { QuarterlyBarChart } from "@/components/charts/QuarterlyBarChart";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 
 interface StockTableProps {
   data: ScreenerCompany[];
@@ -25,6 +26,53 @@ interface StockTableProps {
   tickerSearch?: string;
   tradeDate?: string | null;
   totalCount?: number;
+}
+
+type SortKey =
+  | "symbol"
+  | "market_cap"
+  | "last_close"
+  | "pe_ratio"
+  | "peg_ratio"
+  | "rs_score";
+
+type SortState = {
+  key: SortKey;
+  direction: "asc" | "desc";
+};
+
+function SortHeader({
+  label,
+  active,
+  direction,
+  tooltip,
+}: {
+  label: string;
+  active: boolean;
+  direction: "asc" | "desc";
+  tooltip?: string;
+}) {
+  const Icon = direction === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <span className="relative inline-flex items-center gap-1 select-none whitespace-nowrap group">
+      {tooltip && (
+        <span
+          className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden -translate-x-1/2 w-52 whitespace-normal text-left rounded bg-gray-900 px-3 py-2 text-xs text-white shadow group-hover:block"
+          role="tooltip"
+        >
+          {tooltip}
+        </span>
+      )}
+      <span className="inline-flex w-3 justify-center">
+        <Icon
+          className={`h-3 w-3 transition-opacity ${
+            active ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      </span>
+      {label}
+    </span>
+  );
 }
 
 /**
@@ -132,7 +180,80 @@ export function StockTable({
     await togglePortfolio(symbol);
   };
 
-  if (data.length === 0 && tickerSearch) {
+  const [sort, setSort] = React.useState<SortState>({
+    key: "market_cap",
+    direction: "desc",
+  });
+
+  const sortedData = React.useMemo(() => {
+    const toNum = (value: string | number | null | undefined) => {
+      if (value === null || value === undefined) return null;
+      const num =
+        typeof value === "number" ? value : parseFloat(String(value));
+      return isNaN(num) || !isFinite(num) ? null : num;
+    };
+
+    const arr = [...data];
+    arr.sort((a, b) => {
+      const dir = sort.direction === "asc" ? 1 : -1;
+      let aVal: string | number | null = null;
+      let bVal: string | number | null = null;
+
+      switch (sort.key) {
+        case "symbol":
+          aVal = a.symbol;
+          bVal = b.symbol;
+          break;
+        case "market_cap":
+          aVal = toNum(a.market_cap);
+          bVal = toNum(b.market_cap);
+          break;
+        case "last_close":
+          aVal = toNum(a.last_close);
+          bVal = toNum(b.last_close);
+          break;
+        case "pe_ratio":
+          aVal = toNum(a.pe_ratio);
+          bVal = toNum(b.pe_ratio);
+          break;
+        case "peg_ratio":
+          aVal = toNum(a.peg_ratio);
+          bVal = toNum(b.peg_ratio);
+          break;
+        case "rs_score":
+          aVal = toNum(a.rs_score);
+          bVal = toNum(b.rs_score);
+          break;
+        default:
+          break;
+      }
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return aVal.localeCompare(bVal) * dir;
+      }
+
+      const aNum = typeof aVal === "number" ? aVal : null;
+      const bNum = typeof bVal === "number" ? bVal : null;
+
+      if (aNum === null && bNum === null) return 0;
+      if (aNum === null) return 1;
+      if (bNum === null) return -1;
+      if (aNum === bNum) return 0;
+      return aNum > bNum ? dir : -dir;
+    });
+
+    return arr;
+  }, [data, sort]);
+
+  const handleSort = (key: SortKey) => {
+    setSort((prev) =>
+      prev.key === key
+        ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "desc" }
+    );
+  };
+
+  if (sortedData.length === 0 && tickerSearch) {
     return (
       <div className="py-12 text-center text-muted-foreground">
         <p className="text-lg font-medium">검색 결과가 없습니다</p>
@@ -145,18 +266,18 @@ export function StockTable({
 
   return (
     <>
-      {data.length > 0 && (
+      {sortedData.length > 0 && (
         <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
           <div>
             {tickerSearch ? (
               <>
                 검색 결과:{" "}
                 <span className="font-semibold text-blue-600">
-                  {data.length}
+                  {sortedData.length}
                 </span>
                 개 / 전체{" "}
                 <span className="font-semibold">
-                  {totalCount ?? data.length}
+                  {totalCount ?? sortedData.length}
                 </span>
                 개
               </>
@@ -164,7 +285,7 @@ export function StockTable({
               <>
                 총{" "}
                 <span className="font-semibold text-blue-600">
-                  {data.length}
+                  {sortedData.length}
                 </span>
                 개 종목
               </>
@@ -183,19 +304,86 @@ export function StockTable({
         </TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead>종목</TableHead>
-            <TableHead className="text-right w-[200px]">시가총액</TableHead>
-            <TableHead className="text-right w-[140px]">종가</TableHead>
-            <TableHead className="text-right w-[100px]">PER</TableHead>
-            <TableHead className="text-right w-[100px]">PEG</TableHead>
+            <TableHead className="w-[48px] text-center">#</TableHead>
+            <TableHead
+              className="cursor-pointer"
+              onClick={() => handleSort("symbol")}
+            >
+              <SortHeader
+                label="종목"
+                active={sort.key === "symbol"}
+                direction={sort.direction}
+                tooltip={"종목 코드로 정렬합니다.\n클릭 시 오름/내림차순이 바뀝니다."}
+              />
+            </TableHead>
+            <TableHead
+              className="text-right w-[180px] cursor-pointer"
+              onClick={() => handleSort("market_cap")}
+            >
+              <SortHeader
+                label="시가총액"
+                active={sort.key === "market_cap"}
+                direction={sort.direction}
+              />
+            </TableHead>
+            <TableHead
+              className="text-right w-[120px] cursor-pointer"
+              onClick={() => handleSort("last_close")}
+            >
+              <SortHeader
+                label="종가"
+                active={sort.key === "last_close"}
+                direction={sort.direction}
+              />
+            </TableHead>
+            <TableHead
+              className="text-right w-[90px] cursor-pointer"
+              onClick={() => handleSort("rs_score")}
+            >
+              <SortHeader
+                label="RS"
+                active={sort.key === "rs_score"}
+                direction={sort.direction}
+                tooltip={`상대강도(RS): 최근 12/6/3개월 성과를 가중합(0.4/0.35/0.25)한 점수입니다.\n높을수록 최근까지 상대적으로 강한 흐름입니다.`}
+              />
+            </TableHead>
+            <TableHead
+              className="text-right w-[90px] cursor-pointer"
+              onClick={() => handleSort("pe_ratio")}
+            >
+              <SortHeader
+                label="PER"
+                active={sort.key === "pe_ratio"}
+                direction={sort.direction}
+                tooltip={
+                  "주가수익비율(PER) 기준으로 정렬합니다.\n낮은 PER은 이익 대비 주가가 낮다는 뜻입니다(업종별로 해석이 다를 수 있음)."
+                }
+              />
+            </TableHead>
+            <TableHead
+              className="text-right w-[90px] cursor-pointer"
+              onClick={() => handleSort("peg_ratio")}
+            >
+              <SortHeader
+                label="PEG"
+                active={sort.key === "peg_ratio"}
+                direction={sort.direction}
+                tooltip={
+                  "성장 대비 밸류에이션(PEG) 기준으로 정렬합니다.\n1 미만이면 성장률 대비 저평가일 가능성이 있습니다."
+                }
+              />
+            </TableHead>
             <TableHead className="w-[160px] text-right">매출 (8Q)</TableHead>
             <TableHead className="w-[160px] text-right">EPS (8Q)</TableHead>
             <TableHead className="w-[80px] text-center"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((c, idx) => (
+          {sortedData.map((c, idx) => (
             <TableRow key={`${c.symbol}-${idx}`}>
+              <TableCell className="text-center text-sm text-muted-foreground">
+                {idx + 1}
+              </TableCell>
               {/* Symbol */}
               <TableCell className="font-semibold">
                 <a
@@ -216,6 +404,11 @@ export function StockTable({
               {/* Last Close */}
               <TableCell className="text-right w-[140px]">
                 {formatPrice(c.last_close)}
+              </TableCell>
+
+              {/* RS */}
+              <TableCell className="text-right w-[90px] font-semibold">
+                {c.rs_score ?? "-"}
               </TableCell>
 
               {/* PER */}
