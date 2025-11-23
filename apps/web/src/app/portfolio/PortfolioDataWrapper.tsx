@@ -40,7 +40,8 @@ async function fetchPortfolioData() {
       SELECT DISTINCT ON (symbol)
         symbol,
         adj_close::numeric AS close,
-        date::date AS trade_date
+        date::date AS trade_date,
+        rs_score
       FROM daily_prices
       WHERE symbol = ANY(ARRAY[${sql.join(symbols.map(s => sql`${s}`), sql`, `)}])
         AND date::date = (SELECT d FROM last_d)
@@ -49,6 +50,7 @@ async function fetchPortfolioData() {
       lp.symbol,
       lp.trade_date,
       lp.close AS last_close,
+      lp.rs_score,
       s.market_cap,
       qf.quarterly_data,
       qf.latest_eps,
