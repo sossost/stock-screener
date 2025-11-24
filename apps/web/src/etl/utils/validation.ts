@@ -16,7 +16,7 @@ export function validateEnvironmentVariables(): ValidationResult {
   const warnings: string[] = [];
 
   // 필수 환경 변수 확인
-  const requiredEnvVars = ["DATABASE_URL", "FMP_API_KEY"];
+  const requiredEnvVars = ["DATABASE_URL"];
 
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
