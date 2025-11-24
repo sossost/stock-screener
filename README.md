@@ -201,14 +201,15 @@ yarn workspace mobile android # Android 에뮬레이터/디바이스
 
 새로운 피쳐를 개발할 때는 다음 워크플로우를 따르세요:
 
-1. **스펙 작성** → `.specify/specs/[feature-name]/spec.md`
-2. **플랜 작성** → `.specify/specs/[feature-name]/plan.md`
-3. **태스크 작성** → `.specify/specs/[feature-name]/tasks.md`
-4. **구현** → 백엔드 → 프론트엔드 → 타입
-5. **테스트** → 단위 테스트 → API 테스트 → 컴포넌트 테스트
-6. **리팩토링** → 코드 품질 개선
-7. **문서화** → README 업데이트
-8. **빌드 테스트** → `yarn test:all`
+1. **브랜치 생성** → `git checkout -b feature/<name>` (새 작업은 항상 별도 브랜치에서 시작)
+2. **스펙/플랜/태스크 작성** → `.specify/templates/feature-template.md`를 참고해 `.specify/specs/[feature-name]/spec.md`에 작성
+3. **구현** → 백엔드 → 프론트엔드 → 타입
+4. **테스트** → 단위 테스트 → API 테스트 → 컴포넌트 테스트
+5. **리팩토링** → 코드 품질 개선
+6. **문서화** → README/AGENTS/스펙 업데이트
+7. **빌드 테스트** → `yarn test:all` 또는 `yarn build`
+
+추가 가이드: `docs/FEATURE_DEVELOPMENT_WORKFLOW.md`, `docs/TESTING.md`, `docs/REFACTORING_REVIEW.md` 참고.
 
 자세한 내용은 [FEATURE_DEVELOPMENT_WORKFLOW.md](.specify/templates/FEATURE_DEVELOPMENT_WORKFLOW.md) 참고
 
