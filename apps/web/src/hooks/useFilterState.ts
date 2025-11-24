@@ -37,6 +37,10 @@ export function useFilterState() {
       "unprofitable",
     ] as const).withDefault("all")
   );
+  const [turnAround, setTurnAround] = useQueryState(
+    "turnAround",
+    parseAsBoolean.withDefault(false)
+  );
 
   // 성장성 필터
   const [revenueGrowth, setRevenueGrowth] = useQueryState(
@@ -83,6 +87,8 @@ export function useFilterState() {
     // 수익성 필터
     profitability,
     setProfitability,
+    turnAround,
+    setTurnAround,
     // 성장성 필터
     revenueGrowth,
     setRevenueGrowth,
@@ -101,4 +107,3 @@ export function useFilterState() {
     setPegFilter,
   };
 }
-

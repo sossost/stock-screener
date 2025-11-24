@@ -24,6 +24,7 @@ export interface GoldenCrossCompany {
   just_turned: boolean;
   pe_ratio: number | null;
   peg_ratio: number | null;
+  turned_profitable?: boolean | null;
 }
 
 // 스크리너 컴포넌트용 타입 (revenue_growth_status, income_growth_status 제외)
@@ -42,6 +43,7 @@ export interface ScreenerCompany {
   just_turned: boolean;
   pe_ratio: number | null;
   peg_ratio: number | null;
+  turned_profitable?: boolean | null;
 }
 
 // 스크리너 클라이언트 Props 타입
@@ -66,6 +68,7 @@ export interface GoldenCrossParams {
   minAvgVol?: number;
   allowOTC?: boolean;
   profitability?: "all" | "profitable" | "unprofitable";
+  turnAround?: boolean;
   revenueGrowth?: boolean;
   incomeGrowth?: boolean;
 }
