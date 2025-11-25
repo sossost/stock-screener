@@ -9,6 +9,7 @@ export interface FilterState {
   justTurned?: boolean;
   lookbackDays?: number;
   profitability?: "all" | "profitable" | "unprofitable";
+  turnAround?: boolean;
   revenueGrowth?: boolean;
   revenueGrowthQuarters?: number;
   revenueGrowthRate?: number | null;
@@ -135,6 +136,9 @@ export function getProfitabilityFilterSummary(
     activeFilters.push("흑자");
   } else if (filterState.profitability === "unprofitable") {
     activeFilters.push("적자");
+  }
+  if (filterState.turnAround) {
+    activeFilters.push("최근 분기 흑자 전환");
   }
 
   const count = activeFilters.length;

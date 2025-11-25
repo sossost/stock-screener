@@ -9,6 +9,7 @@ type SearchParams = {
   justTurned?: string;
   lookbackDays?: string;
   profitability?: string;
+  turnAround?: string;
   revenueGrowth?: string;
   revenueGrowthQuarters?: string;
   revenueGrowthRate?: string;
@@ -24,6 +25,7 @@ async function fetchScreenerData(searchParams: SearchParams) {
   const justTurned = searchParams.justTurned === "true";
   const lookbackDays = searchParams.lookbackDays || "10";
   const profitability = searchParams.profitability || "all";
+  const turnAround = searchParams.turnAround === "true";
   const revenueGrowth = searchParams.revenueGrowth === "true";
   const revenueGrowthQuarters = searchParams.revenueGrowthQuarters || "3";
   const revenueGrowthRate = searchParams.revenueGrowthRate;
@@ -38,6 +40,7 @@ async function fetchScreenerData(searchParams: SearchParams) {
     justTurned: justTurned.toString(),
     lookbackDays: lookbackDays,
     profitability: profitability,
+    turnAround: turnAround.toString(),
     revenueGrowth: revenueGrowth.toString(),
     revenueGrowthQuarters: revenueGrowthQuarters,
     incomeGrowth: incomeGrowth.toString(),
@@ -57,7 +60,7 @@ async function fetchScreenerData(searchParams: SearchParams) {
     revenueGrowthRate ?? ""
   }-${incomeGrowth}-${incomeGrowthQuarters}-${
     incomeGrowthRate ?? ""
-  }-${pegFilter}`;
+  }-${pegFilter}-${turnAround}`;
 
   // 서버 사이드에서 내부 API 호출
   const response = await fetch(
@@ -88,4 +91,3 @@ export async function DataWrapper({ searchParams }: DataWrapperProps) {
     <ScreenerClient data={data.data || []} tradeDate={data.trade_date} />
   );
 }
-

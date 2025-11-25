@@ -17,6 +17,7 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
     newJustTurned: boolean,
     newLookbackDays: number,
     newProfitability: "all" | "profitable" | "unprofitable",
+    newTurnAround: boolean,
     newRevenueGrowth: boolean,
     newIncomeGrowth: boolean,
     newRevenueGrowthQuarters?: number,
@@ -33,7 +34,7 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
       filterState.revenueGrowthRate ?? ""
     }-${filterState.incomeGrowth}-${filterState.incomeGrowthQuarters}-${
       filterState.incomeGrowthRate ?? ""
-    }-${filterState.pegFilter}`;
+    }-${filterState.pegFilter}-${filterState.turnAround ?? false}`;
     await fetch("/api/cache/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -46,6 +47,7 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
     await filterState.setJustTurned(finalJustTurned);
     await filterState.setLookbackDays(newLookbackDays);
     await filterState.setProfitability(newProfitability);
+    await filterState.setTurnAround(newTurnAround);
     await filterState.setRevenueGrowth(newRevenueGrowth);
     await filterState.setIncomeGrowth(newIncomeGrowth);
 
@@ -79,6 +81,7 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
       newState.justTurned ?? filterState.justTurned,
       newState.lookbackDays ?? filterState.lookbackDays,
       newState.profitability ?? filterState.profitability,
+      newState.turnAround ?? filterState.turnAround ?? false,
       newState.revenueGrowth ?? filterState.revenueGrowth,
       newState.incomeGrowth ?? filterState.incomeGrowth,
       newState.revenueGrowthQuarters ?? filterState.revenueGrowthQuarters,
@@ -104,6 +107,7 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
         false, // justTurned
         10, // lookbackDays
         filterState.profitability,
+        filterState.turnAround ?? false,
         filterState.revenueGrowth,
         filterState.incomeGrowth,
         filterState.revenueGrowthQuarters,
@@ -119,6 +123,7 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
         filterState.justTurned,
         filterState.lookbackDays,
         filterState.profitability,
+        filterState.turnAround ?? false,
         false, // revenueGrowth
         false, // incomeGrowth
         3, // revenueGrowthQuarters
@@ -134,6 +139,7 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
         filterState.justTurned,
         filterState.lookbackDays,
         "all", // profitability
+        false, // turnAround
         filterState.revenueGrowth,
         filterState.incomeGrowth,
         filterState.revenueGrowthQuarters,
@@ -152,4 +158,3 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
     isPending,
   };
 }
-

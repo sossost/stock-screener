@@ -107,6 +107,9 @@ function generateTableCaption(
   } else if (filterState.profitability === "unprofitable") {
     parts.push("• 적자 종목만");
   }
+  if (filterState.turnAround) {
+    parts.push("• 최근 분기 EPS가 양수로 전환된 종목만");
+  }
 
   if (filterState.revenueGrowth) {
     if (

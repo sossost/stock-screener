@@ -34,6 +34,7 @@ export async function GET(req: Request) {
     const minAvgVol = Number(searchParams.get("minAvgVol") ?? 0);
     const allowOTC = searchParams.get("allowOTC") === "true";
     const profitability = searchParams.get("profitability") ?? "all"; // 수익성 필터
+    const turnAround = searchParams.get("turnAround") === "true"; // 최근 흑자 전환
     const revenueGrowth = searchParams.get("revenueGrowth") === "true"; // 매출 성장 필터 (boolean)
     const incomeGrowth = searchParams.get("incomeGrowth") === "true"; // 수익 성장 필터 (boolean)
     const pegFilter = searchParams.get("pegFilter") === "true"; // PEG < 1 필터 (boolean)
@@ -199,6 +200,8 @@ export async function GET(req: Request) {
         -- 재무 데이터 (최근 8개 분기)
         qf.quarterly_data,
         qf.eps_q1         AS latest_eps,
+        qf.eps_prev       AS prev_eps,
+        qf.turned_profitable,
         -- 성장성 정보
         qf.revenue_growth_quarters,
         qf.income_growth_quarters,
@@ -228,6 +231,41 @@ export async function GET(req: Request) {
             ORDER BY period_end_date DESC
             LIMIT 1
           ) as eps_q1,
+          (
+            SELECT eps_diluted::numeric
+            FROM quarterly_financials
+            WHERE symbol = cand.symbol
+              AND eps_diluted IS NOT NULL
+            ORDER BY period_end_date DESC
+            OFFSET 1
+            LIMIT 1
+          ) as eps_prev,
+          CASE
+            WHEN (
+              SELECT COUNT(*)
+              FROM quarterly_financials
+              WHERE symbol = cand.symbol
+                AND eps_diluted IS NOT NULL
+            ) < 2 THEN NULL
+            WHEN (
+              SELECT eps_diluted::numeric
+              FROM quarterly_financials
+              WHERE symbol = cand.symbol
+                AND eps_diluted IS NOT NULL
+              ORDER BY period_end_date DESC
+              LIMIT 1
+            ) > 0
+             AND COALESCE((
+              SELECT eps_diluted::numeric
+              FROM quarterly_financials
+              WHERE symbol = cand.symbol
+                AND eps_diluted IS NOT NULL
+              ORDER BY period_end_date DESC
+              OFFSET 1
+              LIMIT 1
+            ), 0) <= 0 THEN TRUE
+            ELSE FALSE
+          END AS turned_profitable,
           -- 연속 매출 성장 분기 수 계산 (새로운 방법)
           (
             WITH revenue_data AS (
@@ -395,6 +433,11 @@ export async function GET(req: Request) {
             ? sql`AND qf.eps_q1 IS NOT NULL AND qf.eps_q1 < 0`
             : sql``
         }
+        ${
+          turnAround
+            ? sql`AND qf.turned_profitable IS TRUE`
+            : sql``
+        }
         -- 매출 성장성 필터 (연속 분기 수 + 평균 성장률)
         -- 연속 분기 수는 항상 체크하고, 성장률이 설정되어 있으면 추가로 평균 성장률도 체크
         ${
@@ -430,6 +473,8 @@ export async function GET(req: Request) {
       market_cap: number | null;
       quarterly_data: any[] | null;
       latest_eps: number | null;
+      prev_eps: number | null;
+      turned_profitable: boolean | null;
       revenue_growth_quarters: number | null;
       income_growth_quarters: number | null;
       revenue_avg_growth_rate: number | null;
@@ -456,6 +501,10 @@ export async function GET(req: Request) {
           : r.latest_eps !== null && r.latest_eps < 0
           ? "unprofitable"
           : "unknown",
+      turned_profitable:
+        r.turned_profitable === null || r.turned_profitable === undefined
+          ? null
+          : Boolean(r.turned_profitable),
       revenue_growth_quarters: r.revenue_growth_quarters || 0,
       income_growth_quarters: r.income_growth_quarters || 0,
       revenue_avg_growth_rate: r.revenue_avg_growth_rate,

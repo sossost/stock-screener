@@ -69,6 +69,7 @@ export function CategoryFilterDialog({
     } else if (category === "profitability") {
       return {
         profitability: filterState.profitability ?? "all",
+        turnAround: filterState.turnAround ?? false,
       };
     }
     return {};
@@ -132,6 +133,7 @@ export function CategoryFilterDialog({
     } else if (category === "profitability") {
       setTempState({
         profitability: "all",
+        turnAround: false,
       });
     }
     onReset();
@@ -327,6 +329,32 @@ export function CategoryFilterDialog({
                     </SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="bg-card rounded-lg px-4 py-3 border shadow-sm hover:bg-accent/50 transition-colors space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="turnaround-toggle"
+                    checked={tempState.turnAround ?? false}
+                    onCheckedChange={(checked) =>
+                      setTempState({
+                        ...tempState,
+                        turnAround: checked === true,
+                      })
+                    }
+                    disabled={disabled}
+                  />
+                  <label
+                    htmlFor="turnaround-toggle"
+                    className="text-sm font-semibold leading-none cursor-pointer"
+                  >
+                    최근 분기 흑자 전환
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground leading-snug max-w-[420px] pl-6">
+                  가장 최근 EPS가 양수이고 직전 분기 EPS가 0 이하인 기업만 보여줍니다.
+                  EPS 데이터가 2분기 이상 없으면 제외됩니다.
+                </p>
               </div>
             </div>
           )}

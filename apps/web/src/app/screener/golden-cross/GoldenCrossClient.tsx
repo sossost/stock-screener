@@ -136,6 +136,10 @@ export default function GoldenCrossClient({
       "unprofitable",
     ] as const).withDefault("all")
   );
+  const [turnAround, setTurnAround] = useQueryState(
+    "turnAround",
+    parseAsBoolean.withDefault(false)
+  );
 
   // 매출 성장성 필터 (토글)
   const [revenueGrowth, setRevenueGrowth] = useQueryState(
@@ -212,6 +216,7 @@ export default function GoldenCrossClient({
     justTurned,
     lookbackDays,
     profitability,
+    turnAround,
     revenueGrowth,
     revenueGrowthQuarters,
     revenueGrowthRate: revenueGrowthRate ?? null,
@@ -228,6 +233,7 @@ export default function GoldenCrossClient({
     newJustTurned: boolean,
     newLookbackDays: number,
     newProfitability: "all" | "profitable" | "unprofitable",
+    newTurnAround: boolean,
     newRevenueGrowth: boolean,
     newIncomeGrowth: boolean,
     newRevenueGrowthQuarters?: number,
@@ -244,7 +250,7 @@ export default function GoldenCrossClient({
       revenueGrowthRate ?? ""
     }-${incomeGrowth}-${incomeGrowthQuarters}-${
       incomeGrowthRate ?? ""
-    }-${pegFilter}`;
+    }-${pegFilter}-${turnAround ?? false}`;
     await fetch("/api/cache/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -257,6 +263,7 @@ export default function GoldenCrossClient({
     await setJustTurned(finalJustTurned);
     await setLookbackDays(newLookbackDays);
     await setProfitability(newProfitability);
+    await setTurnAround(newTurnAround);
     await setRevenueGrowth(newRevenueGrowth);
     await setIncomeGrowth(newIncomeGrowth);
 
@@ -290,6 +297,7 @@ export default function GoldenCrossClient({
       newState.justTurned ?? justTurned,
       newState.lookbackDays ?? lookbackDays,
       newState.profitability ?? profitability,
+      newState.turnAround ?? turnAround ?? false,
       newState.revenueGrowth ?? revenueGrowth,
       newState.incomeGrowth ?? incomeGrowth,
       newState.revenueGrowthQuarters ?? revenueGrowthQuarters,
@@ -315,6 +323,7 @@ export default function GoldenCrossClient({
         false, // justTurned
         10, // lookbackDays
         profitability,
+        turnAround ?? false,
         revenueGrowth,
         incomeGrowth,
         revenueGrowthQuarters,
@@ -330,6 +339,7 @@ export default function GoldenCrossClient({
         justTurned,
         lookbackDays,
         profitability,
+        turnAround ?? false,
         false, // revenueGrowth
         false, // incomeGrowth
         3, // revenueGrowthQuarters
@@ -345,6 +355,7 @@ export default function GoldenCrossClient({
         justTurned,
         lookbackDays,
         "all", // profitability
+        false, // turnAround
         revenueGrowth,
         incomeGrowth,
         revenueGrowthQuarters,
