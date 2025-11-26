@@ -7,7 +7,7 @@ import {
   getProfitabilityFilterSummary,
   type FilterState,
   type FilterCategory,
-} from "@/lib/filter-summary";
+} from "@/lib/filters/summary";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, DollarSign, BarChart3 } from "lucide-react";
 
@@ -68,4 +68,3 @@ export function CategoryFilterBox({
     </Button>
   );
 }
-

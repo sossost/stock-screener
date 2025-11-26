@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { filterTickers, filterTickerData } from "../filter-ticker";
+import { filterTickers, filterTickerData } from "../filters/ticker";
 
 describe("filterTickers", () => {
   const symbols = ["AAPL", "NVDA", "NVDL", "MSFT", "GOOGL", "AMZN"];
@@ -75,4 +75,3 @@ describe("filterTickerData", () => {
     });
   });
 });
-

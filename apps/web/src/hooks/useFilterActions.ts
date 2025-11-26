@@ -1,7 +1,8 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import type { FilterState, FilterCategory } from "@/lib/filter-summary";
+import type { FilterState, FilterCategory } from "@/lib/filters/summary";
 import { useFilterState } from "@/hooks/useFilterState";
+import { buildCacheTag } from "@/lib/filters/schema";
 
 /**
  * 필터 액션(변경, 적용, 초기화)을 관리하는 커스텀 훅
@@ -30,11 +31,27 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
     const finalJustTurned = newOrdered ? newJustTurned : false;
 
     // 이전 캐시 무효화 (모든 필터 포함)
-    const oldTag = `golden-cross-${filterState.ordered}-${filterState.goldenCross}-${filterState.justTurned}-${filterState.lookbackDays}-${filterState.profitability}-${filterState.revenueGrowth}-${filterState.revenueGrowthQuarters}-${
-      filterState.revenueGrowthRate ?? ""
-    }-${filterState.incomeGrowth}-${filterState.incomeGrowthQuarters}-${
-      filterState.incomeGrowthRate ?? ""
-    }-${filterState.pegFilter}-${filterState.turnAround ?? false}`;
+    const oldTag = buildCacheTag({
+      ordered: filterState.ordered ?? true,
+      goldenCross: filterState.goldenCross ?? true,
+      justTurned: filterState.justTurned ?? false,
+      lookbackDays: filterState.lookbackDays ?? 10,
+      profitability: filterState.profitability ?? "all",
+      turnAround: filterState.turnAround ?? false,
+      revenueGrowth: filterState.revenueGrowth ?? false,
+      incomeGrowth: filterState.incomeGrowth ?? false,
+      revenueGrowthQuarters: filterState.revenueGrowthQuarters ?? 3,
+      incomeGrowthQuarters: filterState.incomeGrowthQuarters ?? 3,
+      revenueGrowthRate:
+        filterState.revenueGrowthRate === undefined
+          ? null
+          : filterState.revenueGrowthRate,
+      incomeGrowthRate:
+        filterState.incomeGrowthRate === undefined
+          ? null
+          : filterState.incomeGrowthRate,
+      pegFilter: filterState.pegFilter ?? false,
+    });
     await fetch("/api/cache/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

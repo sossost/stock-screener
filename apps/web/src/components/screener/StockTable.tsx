@@ -2,7 +2,12 @@
 
 import React from "react";
 import type { ScreenerCompany } from "@/types/golden-cross";
-import type { FilterState } from "@/lib/filter-summary";
+import type { FilterState } from "@/lib/filters/summary";
+import {
+  screenerColumns,
+  defaultSort,
+  type SortKey,
+} from "@/components/screener/columns";
 import {
   Table,
   TableBody,
@@ -27,14 +32,6 @@ interface StockTableProps {
   tradeDate?: string | null;
   totalCount?: number;
 }
-
-type SortKey =
-  | "symbol"
-  | "market_cap"
-  | "last_close"
-  | "pe_ratio"
-  | "peg_ratio"
-  | "rs_score";
 
 type SortState = {
   key: SortKey;
@@ -184,8 +181,8 @@ export function StockTable({
   };
 
   const [sort, setSort] = React.useState<SortState>({
-    key: "market_cap",
-    direction: "desc",
+    key: defaultSort.key,
+    direction: defaultSort.direction,
   });
 
   const sortedData = React.useMemo(() => {
@@ -307,163 +304,160 @@ export function StockTable({
         </TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[48px] text-center">#</TableHead>
-            <TableHead
-              className="cursor-pointer"
-              onClick={() => handleSort("symbol")}
-            >
-              <SortHeader
-                label="종목"
-                active={sort.key === "symbol"}
-                direction={sort.direction}
-                tooltip={"종목 코드로 정렬합니다.\n클릭 시 오름/내림차순이 바뀝니다."}
-              />
-            </TableHead>
-            <TableHead
-              className="text-right w-[180px] cursor-pointer"
-              onClick={() => handleSort("market_cap")}
-            >
-              <SortHeader
-                label="시가총액"
-                active={sort.key === "market_cap"}
-                direction={sort.direction}
-              />
-            </TableHead>
-            <TableHead
-              className="text-right w-[120px] cursor-pointer"
-              onClick={() => handleSort("last_close")}
-            >
-              <SortHeader
-                label="종가"
-                active={sort.key === "last_close"}
-                direction={sort.direction}
-              />
-            </TableHead>
-            <TableHead
-              className="text-right w-[90px] cursor-pointer"
-              onClick={() => handleSort("rs_score")}
-            >
-              <SortHeader
-                label="RS"
-                active={sort.key === "rs_score"}
-                direction={sort.direction}
-                tooltip={`상대강도(RS): 최근 12/6/3개월 성과를 가중합(0.4/0.35/0.25)한 점수입니다.\n높을수록 최근까지 상대적으로 강한 흐름입니다.`}
-              />
-            </TableHead>
-            <TableHead
-              className="text-right w-[90px] cursor-pointer"
-              onClick={() => handleSort("pe_ratio")}
-            >
-              <SortHeader
-                label="PER"
-                active={sort.key === "pe_ratio"}
-                direction={sort.direction}
-                tooltip={
-                  "주가수익비율(PER) 기준으로 정렬합니다.\n낮은 PER은 이익 대비 주가가 낮다는 뜻입니다(업종별로 해석이 다를 수 있음)."
-                }
-              />
-            </TableHead>
-            <TableHead
-              className="text-right w-[90px] cursor-pointer"
-              onClick={() => handleSort("peg_ratio")}
-            >
-              <SortHeader
-                label="PEG"
-                active={sort.key === "peg_ratio"}
-                direction={sort.direction}
-                tooltip={
-                  "성장 대비 밸류에이션(PEG) 기준으로 정렬합니다.\n1 미만이면 성장률 대비 저평가일 가능성이 있습니다."
-                }
-              />
-            </TableHead>
-            <TableHead className="w-[160px] text-right">매출 (8Q)</TableHead>
-            <TableHead className="w-[160px] text-right">EPS (8Q)</TableHead>
-            <TableHead className="w-[80px] text-center"></TableHead>
+            {screenerColumns.map((col) => {
+              const sortable = col.sortable && col.sortKey;
+              const className = [
+                col.width ?? "",
+                col.align === "right"
+                  ? "text-right"
+                  : col.align === "center"
+                  ? "text-center"
+                  : "",
+                sortable ? "cursor-pointer select-none" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              return (
+                <TableHead
+                  key={col.key}
+                  className={className}
+                  onClick={sortable ? () => handleSort(col.sortKey!) : undefined}
+                >
+                  {sortable ? (
+                    <SortHeader
+                      label={col.label}
+                      active={sort.key === col.sortKey}
+                      direction={sort.direction}
+                      tooltip={col.tooltip}
+                    />
+                  ) : (
+                    col.label
+                  )}
+                </TableHead>
+              );
+            })}
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedData.map((c, idx) => (
             <TableRow key={`${c.symbol}-${idx}`}>
-              <TableCell className="text-center text-sm text-muted-foreground">
-                {idx + 1}
-              </TableCell>
-              {/* Symbol */}
-              <TableCell className="font-semibold">
-                <a
-                  href={`https://seekingalpha.com/symbol/${c.symbol}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  {c.symbol}
-                </a>
-              </TableCell>
+              {screenerColumns.map((col) => {
+                const alignClass =
+                  col.align === "right"
+                    ? "text-right"
+                    : col.align === "center"
+                    ? "text-center"
+                    : "";
+                const widthClass = col.width ?? "";
 
-              {/* Market Cap */}
-              <TableCell className="text-right font-medium w-[200px]">
-                {c.market_cap ? formatNumber(c.market_cap) : "-"}
-              </TableCell>
-
-              {/* Last Close */}
-              <TableCell className="text-right w-[140px]">
-                {formatPrice(c.last_close)}
-              </TableCell>
-
-              {/* RS */}
-              <TableCell className="text-right w-[90px] font-semibold">
-                {c.rs_score ?? "-"}
-              </TableCell>
-
-              {/* PER */}
-              <TableCell className="text-right w-[100px]">
-                {formatRatio(c.pe_ratio)}
-              </TableCell>
-
-              {/* PEG */}
-              <TableCell className="text-right w-[100px]">
-                {formatRatio(c.peg_ratio)}
-              </TableCell>
-
-              {/* 매출 차트 */}
-              <TableCell className="w-[160px]">
-                <QuarterlyBarChart
-                  data={prepareChartData(c.quarterly_financials, "revenue")}
-                  type="revenue"
-                  height={28}
-                  width={160}
-                />
-              </TableCell>
-
-              {/* EPS 차트 */}
-              <TableCell className="w-[160px]">
-                <QuarterlyBarChart
-                  data={prepareChartData(c.quarterly_financials, "eps")}
-                  type="eps"
-                  height={28}
-                  width={160}
-                />
-              </TableCell>
-
-              {/* 포트폴리오 버튼 */}
-              <TableCell className="w-[80px] text-center">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => handleTogglePortfolio(c.symbol)}
-                  className="cursor-pointer"
-                  aria-label={
-                    isInPortfolio(c.symbol) ? "포트폴리오에서 제거" : "포트추가"
-                  }
-                >
-                  <Star
-                    className={`h-5 w-5 ${
-                      isInPortfolio(c.symbol)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-400"
-                    }`}
-                  />
-                </Button>
-              </TableCell>
+                switch (col.key) {
+                  case "index":
+                    return (
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass} text-sm text-muted-foreground`}
+                      >
+                        {idx + 1}
+                      </TableCell>
+                    );
+                  case "symbol":
+                    return (
+                      <TableCell key={col.key} className={`${alignClass} ${widthClass} font-semibold`}>
+                        <a
+                          href={`https://seekingalpha.com/symbol/${c.symbol}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {c.symbol}
+                        </a>
+                      </TableCell>
+                    );
+                  case "market_cap":
+                    return (
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass} font-medium`}
+                      >
+                        {c.market_cap ? formatNumber(c.market_cap) : "-"}
+                      </TableCell>
+                    );
+                  case "last_close":
+                    return (
+                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                        {formatPrice(c.last_close)}
+                      </TableCell>
+                    );
+                  case "rs_score":
+                    return (
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass} font-semibold`}
+                      >
+                        {c.rs_score ?? "-"}
+                      </TableCell>
+                    );
+                  case "pe_ratio":
+                    return (
+                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                        {formatRatio(c.pe_ratio)}
+                      </TableCell>
+                    );
+                  case "peg_ratio":
+                    return (
+                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                        {formatRatio(c.peg_ratio)}
+                      </TableCell>
+                    );
+                  case "revenue":
+                    return (
+                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                        <QuarterlyBarChart
+                          data={prepareChartData(c.quarterly_financials, "revenue")}
+                          type="revenue"
+                          height={28}
+                          width={160}
+                        />
+                      </TableCell>
+                    );
+                  case "eps":
+                    return (
+                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                        <QuarterlyBarChart
+                          data={prepareChartData(c.quarterly_financials, "eps")}
+                          type="eps"
+                          height={28}
+                          width={160}
+                        />
+                      </TableCell>
+                    );
+                  case "actions":
+                    return (
+                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleTogglePortfolio(c.symbol)}
+                          className="cursor-pointer"
+                          aria-label={
+                            isInPortfolio(c.symbol) ? "포트폴리오에서 제거" : "포트추가"
+                          }
+                        >
+                          <Star
+                            className={`h-5 w-5 ${
+                              isInPortfolio(c.symbol)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-400"
+                            }`}
+                          />
+                        </Button>
+                      </TableCell>
+                    );
+                  default:
+                    return null;
+                }
+              })}
             </TableRow>
           ))}
         </TableBody>

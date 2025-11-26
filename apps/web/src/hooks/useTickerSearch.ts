@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useDeferredValue, useTransition } from "react";
-import { filterTickerData } from "@/lib/filter-ticker";
+import { filterTickerData } from "@/lib/filters/ticker";
 import type { ScreenerCompany } from "@/types/golden-cross";
 
 /**
@@ -40,4 +40,3 @@ export function useTickerSearch(data: ScreenerCompany[]) {
     isSearching: !!tickerSearchInput || !!tickerSearch,
   };
 }
-

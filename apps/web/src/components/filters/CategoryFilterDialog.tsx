@@ -20,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { FilterState, FilterCategory } from "@/lib/filter-summary";
+import type { FilterState, FilterCategory } from "@/lib/filters/summary";
+import { profitabilityOptions } from "@/lib/filters/schema";
 
 interface CategoryFilterDialogProps {
   category: FilterCategory;
@@ -309,24 +310,18 @@ export function CategoryFilterDialog({
                   disabled={disabled}
                 >
                   <SelectTrigger className="w-[80px] h-8 text-sm border-border">
-                    <SelectValue />
+                    <SelectValue placeholder="전체" />
                   </SelectTrigger>
                   <SelectContent className="min-w-[80px]">
-                    <SelectItem value="all" className="cursor-pointer text-sm">
-                      전체
-                    </SelectItem>
-                    <SelectItem
-                      value="profitable"
-                      className="cursor-pointer text-sm"
-                    >
-                      흑자
-                    </SelectItem>
-                    <SelectItem
-                      value="unprofitable"
-                      className="cursor-pointer text-sm"
-                    >
-                      적자
-                    </SelectItem>
+                    {profitabilityOptions.map((opt) => (
+                      <SelectItem
+                        key={opt.value}
+                        value={opt.value}
+                        className="cursor-pointer text-sm"
+                      >
+                        {opt.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
