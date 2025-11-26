@@ -35,6 +35,7 @@ describe("GET /api/screener/golden-cross", () => {
           trade_date: "2024-01-27",
           last_close: 150.0,
           market_cap: 2800000000000,
+          sector: "Technology",
           quarterly_data: [],
           latest_eps: 1.5,
           revenue_growth_quarters: 3,
@@ -58,6 +59,7 @@ describe("GET /api/screener/golden-cross", () => {
     expect(data.data[0].symbol).toBe("AAPL");
     expect(data.data[0].revenue_avg_growth_rate).toBe(25.5);
     expect(data.data[0].income_avg_growth_rate).toBe(30.0);
+    expect(data.data[0].sector).toBe("Technology");
   });
 
   it("revenueGrowthRate 파라미터 검증", async () => {
@@ -82,6 +84,7 @@ describe("GET /api/screener/golden-cross", () => {
           trade_date: "2024-01-27",
           last_close: 42.0,
           market_cap: 1000000000,
+          sector: "Industrials",
           quarterly_data: [],
           latest_eps: 0.5,
           prev_eps: -0.2,

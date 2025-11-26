@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { PortfolioTable } from "@/components/portfolio/PortfolioTable";
 import type { ScreenerCompany } from "@/types/golden-cross";
 import { StateMessage } from "@/components/common/StateMessage";
+import { StockTable } from "@/components/screener/StockTable";
+import { portfolioFilterState } from "@/components/portfolio/PortfolioTableClient";
 
 export function PortfolioClient() {
-  const { symbols, isLoading, togglePortfolio } = usePortfolio(true);
+  const { symbols, isLoading } = usePortfolio(true);
   const [portfolioData, setPortfolioData] = useState<ScreenerCompany[]>([]);
   const [tradeDate, setTradeDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,11 +61,11 @@ export function PortfolioClient() {
         ) : symbols.length === 0 ? (
           <StateMessage title="포트폴리오가 비어 있습니다" description="종목을 추가해 포트폴리오를 구성해 보세요." />
         ) : (
-          <PortfolioTable
-            symbols={symbols}
-            data={portfolioData}
-            tradeDate={tradeDate}
-            onTogglePortfolio={togglePortfolio}
+          <StockTable
+            data={portfolioData.filter((item) => symbols.includes(item.symbol))}
+            filterState={portfolioFilterState}
+            tradeDate={tradeDate ?? undefined}
+            totalCount={portfolioData.length}
           />
         )}
       </CardContent>
