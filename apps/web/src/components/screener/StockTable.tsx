@@ -24,6 +24,7 @@ import { usePortfolio } from "@/hooks/usePortfolio";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { formatSector } from "@/utils/sector";
 
 interface StockTableProps {
   data: ScreenerCompany[];
@@ -31,6 +32,8 @@ interface StockTableProps {
   tickerSearch?: string;
   tradeDate?: string | null;
   totalCount?: number;
+  /** 포트폴리오 토글 후 부모에게 알리는 콜백 (상태 동기화용) */
+  onSymbolToggle?: (symbol: string) => void;
 }
 
 type SortState = {
@@ -163,6 +166,7 @@ export function StockTable({
   tickerSearch,
   tradeDate,
   totalCount,
+  onSymbolToggle,
 }: StockTableProps) {
   // 포트폴리오는 마운트 시 한 번만 로드하여 포트폴리오 상태 표시
   const { isInPortfolio, togglePortfolio, refresh } = usePortfolio(false);
@@ -177,7 +181,10 @@ export function StockTable({
 
   // 포트폴리오 버튼 클릭 핸들러
   const handleTogglePortfolio = async (symbol: string) => {
-    await togglePortfolio(symbol);
+    const success = await togglePortfolio(symbol);
+    if (success && onSymbolToggle) {
+      onSymbolToggle(symbol);
+    }
   };
 
   const [sort, setSort] = React.useState<SortState>({
@@ -192,6 +199,15 @@ export function StockTable({
         typeof value === "number" ? value : parseFloat(String(value));
       return isNaN(num) || !isFinite(num) ? null : num;
     };
+    const normalizeString = (value: string | null | undefined) => {
+      if (value === null || value === undefined) return null;
+      const trimmed = String(value).trim();
+      return trimmed === "" ? null : trimmed;
+    };
+    const toSectorKey = (value: string | null | undefined) => {
+      const { display } = formatSector(value);
+      return display === "-" ? null : display;
+    };
 
     const arr = [...data];
     arr.sort((a, b) => {
@@ -201,8 +217,12 @@ export function StockTable({
 
       switch (sort.key) {
         case "symbol":
-          aVal = a.symbol;
-          bVal = b.symbol;
+          aVal = normalizeString(a.symbol);
+          bVal = normalizeString(b.symbol);
+          break;
+        case "sector":
+          aVal = toSectorKey(a.sector);
+          bVal = toSectorKey(b.sector);
           break;
         case "market_cap":
           aVal = toNum(a.market_cap);
@@ -228,8 +248,13 @@ export function StockTable({
           break;
       }
 
-      if (typeof aVal === "string" && typeof bVal === "string") {
-        return aVal.localeCompare(bVal) * dir;
+      const aStr = typeof aVal === "string" ? aVal : null;
+      const bStr = typeof bVal === "string" ? bVal : null;
+
+      if (aStr !== null || bStr !== null) {
+        if (aStr === null) return 1;
+        if (bStr === null) return -1;
+        return aStr.localeCompare(bStr, undefined, { sensitivity: "base" }) * dir;
       }
 
       const aNum = typeof aVal === "number" ? aVal : null;
@@ -387,6 +412,22 @@ export function StockTable({
                     return (
                       <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
                         {formatPrice(c.last_close)}
+                      </TableCell>
+                    );
+                  case "sector":
+                    return (
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass}`}
+                        title={
+                          c.sector && formatSector(c.sector).display !== c.sector
+                            ? c.sector
+                            : undefined
+                        }
+                      >
+                        <span className="block w-full truncate text-right">
+                          {formatSector(c.sector).display}
+                        </span>
                       </TableCell>
                     );
                   case "rs_score":

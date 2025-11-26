@@ -10,6 +10,7 @@ export interface QuarterlyFinancial {
 export interface GoldenCrossCompany {
   symbol: string;
   market_cap: string | null;
+  sector: string | null;
   last_close: string;
   rs_score: number | null;
   quarterly_financials: QuarterlyFinancial[];
@@ -31,6 +32,7 @@ export interface GoldenCrossCompany {
 export interface ScreenerCompany {
   symbol: string;
   market_cap: string | null;
+  sector: string | null;
   last_close: string;
   rs_score: number | null;
   quarterly_financials: QuarterlyFinancial[];

@@ -2,6 +2,7 @@ import type { ScreenerCompany } from "@/types/golden-cross";
 
 export type SortKey =
   | "symbol"
+  | "sector"
   | "market_cap"
   | "last_close"
   | "pe_ratio"
@@ -12,6 +13,7 @@ export type ScreenerColumn = {
   key:
     | "index"
     | "symbol"
+    | "sector"
     | "market_cap"
     | "last_close"
     | "rs_score"
@@ -42,9 +44,21 @@ export const screenerColumns: ScreenerColumn[] = [
     skeletonWidth: "w-16",
   },
   {
+    key: "sector",
+    label: "섹터",
+    width: "w-[100px]",
+    align: "right",
+    sortable: true,
+    sortKey: "sector",
+    tooltip:
+      "섹터명으로 정렬합니다. 값이 없는 종목은 항상 뒤에 표시됩니다.",
+    type: "text",
+    skeletonWidth: "w-20",
+  },
+  {
     key: "market_cap",
     label: "시가총액",
-    width: "w-[180px]",
+    width: "w-[150px]",
     align: "right",
     sortable: true,
     sortKey: "market_cap",

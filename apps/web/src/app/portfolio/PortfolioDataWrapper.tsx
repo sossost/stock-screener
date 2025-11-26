@@ -34,7 +34,8 @@ async function fetchPortfolioData() {
   // 포트폴리오 심볼들에 대한 재무 데이터 조회
   const portfolioData = await db.execute(sql`
     WITH last_d AS (
-      SELECT MAX(date)::date AS d FROM daily_prices
+      SELECT MAX(date)::date AS d
+      FROM daily_prices
     ),
     latest_prices AS (
       SELECT DISTINCT ON (symbol)
@@ -52,6 +53,7 @@ async function fetchPortfolioData() {
       lp.close AS last_close,
       lp.rs_score,
       s.market_cap,
+      s.sector,
       qf.quarterly_data,
       qf.latest_eps,
       qf.revenue_growth_quarters,
@@ -232,6 +234,7 @@ async function fetchPortfolioData() {
     trade_date: string;
     last_close: number;
     market_cap: number | null;
+    sector: string | null;
     rs_score: number | null;
     quarterly_data: any[] | null;
     latest_eps: number | null;
@@ -249,6 +252,7 @@ async function fetchPortfolioData() {
   const data: ScreenerCompany[] = results.map((r) => ({
     symbol: r.symbol,
     market_cap: r.market_cap?.toString() || null,
+    sector: r.sector ?? null,
     last_close: r.last_close.toString(),
     rs_score:
       r.rs_score === null || r.rs_score === undefined

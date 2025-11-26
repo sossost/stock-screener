@@ -32,7 +32,8 @@ export async function GET(req: Request) {
     const minMcap = Number(searchParams.get("minMcap") ?? 0);
     const minPrice = Number(searchParams.get("minPrice") ?? 0);
     const minAvgVol = Number(searchParams.get("minAvgVol") ?? 0);
-    const allowOTC = searchParams.get("allowOTC") === "true";
+    // OTC 기본 포함(쿼리 파라미터로만 제외) — 기본값이 false라 과도하게 거르던 문제 완화
+    const allowOTC = searchParams.get("allowOTC") !== "false";
     const profitability = searchParams.get("profitability") ?? "all"; // 수익성 필터
     const turnAround = searchParams.get("turnAround") === "true"; // 최근 흑자 전환
     const revenueGrowth = searchParams.get("revenueGrowth") === "true"; // 매출 성장 필터 (boolean)
@@ -101,20 +102,47 @@ export async function GET(req: Request) {
       );
     }
 
+    const requireMA = ordered || goldenCross || justTurned;
+
     const rows = await db.execute(sql`
-      WITH last_d AS (
-        -- daily_ma와 daily_prices에 공통으로 존재하는 최신일 (NULL 방지: 둘 중 하나라도 NULL이면 전체가 비니 COALESCE로 안전장치)
-        SELECT COALESCE(
-          LEAST(
-            (SELECT MAX(date)::date FROM daily_ma),
-            (SELECT MAX(date)::date FROM daily_prices)
-          ),
-          (SELECT MAX(date)::date FROM daily_ma),
-          (SELECT MAX(date)::date FROM daily_prices)
-        ) AS d
+      WITH price_dates AS (
+        SELECT dp.date::date AS d, COUNT(*) AS cnt
+        FROM daily_prices dp
+        GROUP BY dp.date::date
       ),
-      -- 1) 최신일 후보 추출 (Golden Cross 필터에 따라 정배열 조건 적용)
+      ma_dates AS (
+        SELECT dm.date::date AS d, COUNT(*) AS cnt
+        FROM daily_ma dm
+        JOIN daily_prices dp
+          ON dp.symbol = dm.symbol
+         AND dp.date::date = dm.date::date
+        GROUP BY dm.date::date
+      ),
+      max_counts AS (
+        SELECT
+          (SELECT MAX(cnt) FROM price_dates) AS price_max_cnt,
+          (SELECT MAX(cnt) FROM ma_dates) AS ma_max_cnt
+      ),
+      last_d AS (
+        ${
+          requireMA
+            ? sql`
+          -- MA가 필요한 경우: daily_ma의 최신 날짜 (데이터가 적어도 최신일을 사용)
+          SELECT MAX(date)::date AS d
+          FROM daily_ma
+        `
+            : sql`
+          -- MA 없이도 되는 경우: daily_prices의 최신 날짜
+          SELECT MAX(date)::date AS d
+          FROM daily_prices
+        `
+        }
+      ),
+      -- 1) 최신일 후보 추출 (필요 시 MA 조건 적용)
       cur AS (
+        ${
+          requireMA
+            ? sql`
         SELECT
           dm.symbol,
           dm.date::date AS d,
@@ -135,12 +163,28 @@ export async function GET(req: Request) {
           }
           ${goldenCross ? sql`AND dm.ma50 > dm.ma200` : sql``}
           -- 정상적인 주식만 필터링 (워런트, 우선주, ETF 등 제외)
-          AND dm.symbol ~ '^[A-Z]{1,5}$'
+          AND dm.symbol ~ '^[A-Z]{1,6}$'
           AND dm.symbol NOT LIKE '%W'
           AND dm.symbol NOT LIKE '%X'
-          AND dm.symbol NOT LIKE '%.%'
           AND dm.symbol NOT LIKE '%U'
           AND dm.symbol NOT LIKE '%WS'
+        `
+            : sql`
+        SELECT
+          dp.symbol,
+          dp.date::date AS d,
+          NULL::numeric AS ma20,
+          NULL::numeric AS ma50,
+          NULL::numeric AS ma100,
+          NULL::numeric AS ma200,
+          NULL::numeric AS vol_ma30,
+          dp.adj_close::numeric AS close,
+          dp.rs_score
+        FROM daily_prices dp
+        JOIN last_d ld
+          ON dp.date::date = ld.d
+        `
+        }
       ),
       -- 2) 필수 컷(시총/가격/거래소/거래량) 먼저 가볍게 적용해서 "후보" 축소
       candidates AS (
@@ -197,6 +241,7 @@ export async function GET(req: Request) {
         cand.close        AS last_close,
         cand.rs_score     AS rs_score,
         s.market_cap,
+        s.sector,
         -- 재무 데이터 (최근 8개 분기)
         qf.quarterly_data,
         qf.eps_q1         AS latest_eps,
@@ -481,6 +526,7 @@ export async function GET(req: Request) {
       income_avg_growth_rate: number | null;
       pe_ratio: number | string | null;
       peg_ratio: number | string | null;
+      sector: string | null;
     };
 
     const results = rows.rows as QueryResult[];
@@ -489,6 +535,7 @@ export async function GET(req: Request) {
     const data = results.map((r) => ({
       symbol: r.symbol,
       market_cap: r.market_cap?.toString() || null,
+      sector: r.sector ?? null,
       last_close: r.last_close.toString(),
       rs_score:
         r.rs_score === null || r.rs_score === undefined

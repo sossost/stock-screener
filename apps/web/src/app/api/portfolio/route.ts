@@ -41,13 +41,15 @@ export async function GET(request: NextRequest) {
       // 포트폴리오 심볼들에 대한 재무 데이터 조회 (최적화된 쿼리)
       const portfolioData = await db.execute(sql`
         WITH last_d AS (
-          SELECT MAX(date)::date AS d FROM daily_prices
+          SELECT MAX(date)::date AS d
+          FROM daily_prices
         ),
         latest_prices AS (
           SELECT DISTINCT ON (symbol)
             symbol,
             adj_close::numeric AS close,
-            date::date AS trade_date
+            date::date AS trade_date,
+            rs_score
           FROM daily_prices
           WHERE symbol = ANY(ARRAY[${sql.join(
             symbols.map((s) => sql`${s}`),
@@ -59,7 +61,9 @@ export async function GET(request: NextRequest) {
           lp.symbol,
           lp.trade_date,
           lp.close AS last_close,
+          lp.rs_score,
           s.market_cap,
+          s.sector,
           qf.quarterly_data,
           qf.latest_eps,
           qf.revenue_growth_quarters,
@@ -252,6 +256,7 @@ export async function GET(request: NextRequest) {
       const data: ScreenerCompany[] = portfolioData.rows.map((r: any) => ({
         symbol: r.symbol,
         market_cap: r.market_cap?.toString() || null,
+        sector: r.sector ?? null,
         last_close: r.last_close?.toString() || "0",
         quarterly_financials: r.quarterly_data || [],
         profitability_status: (

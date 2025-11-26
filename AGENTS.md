@@ -12,6 +12,7 @@
 - 루트: `yarn dev|lint|build|start|test|test:all`, `yarn dev:mobile`(Expo).
 - `apps/web`: `yarn dev`, `yarn lint`, `yarn build`, `yarn start`, 테스트 `yarn test*`.
 - ETL/DB: `yarn db:push`, `yarn etl:daily-prices`, `yarn etl:daily-ma`, `yarn etl:rs`/`rs-backfill`(12M/6M/3M 가중), `yarn etl:quarterly-financials`, `yarn etl:symbols`, `yarn etl:ratios`, `yarn etl:cleanup-invalid-symbols`.
+- ETL 스케줄(GHA): 일일 주가 22:30 UTC(=KST 07:30), MA/RS 23:30 UTC(=KST 08:30) 실행. 최신 일자 미충분 시 로그 확인 후 재실행.
 - 모바일: `yarn dev:mobile`, `yarn workspace mobile ios/android`.
 
 ## 스타일/네이밍

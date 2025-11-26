@@ -1,8 +1,8 @@
 "use client";
 
-import { usePortfolio } from "@/hooks/usePortfolio";
-import { PortfolioTable } from "./PortfolioTable";
 import type { ScreenerCompany } from "@/types/golden-cross";
+import { StockTable } from "@/components/screener/StockTable";
+import type { FilterState } from "@/lib/filters/summary";
 
 interface PortfolioTableClientProps {
   symbols: string[];
@@ -10,20 +10,37 @@ interface PortfolioTableClientProps {
   tradeDate: string | null;
 }
 
+// 포트폴리오에서는 필터를 사용하지 않으므로 모든 필터를 꺼둔 기본 상태로 렌더링한다.
+export const portfolioFilterState: FilterState = {
+  ordered: false,
+  goldenCross: false,
+  justTurned: false,
+  lookbackDays: 10,
+  profitability: "all",
+  turnAround: false,
+  revenueGrowth: false,
+  incomeGrowth: false,
+  revenueGrowthQuarters: 3,
+  incomeGrowthQuarters: 3,
+  revenueGrowthRate: null,
+  incomeGrowthRate: null,
+  pegFilter: false,
+};
+
 export function PortfolioTableClient({
   symbols,
   data,
   tradeDate,
 }: PortfolioTableClientProps) {
-  const { togglePortfolio } = usePortfolio(false);
+  // 포트폴리오에 저장된 심볼만 렌더링
+  const portfolioData = data.filter((item) => symbols.includes(item.symbol));
 
   return (
-    <PortfolioTable
-      symbols={symbols}
-      data={data}
-      tradeDate={tradeDate}
-      onTogglePortfolio={togglePortfolio}
+    <StockTable
+      data={portfolioData}
+      filterState={portfolioFilterState}
+      tradeDate={tradeDate ?? undefined}
+      totalCount={portfolioData.length}
     />
   );
 }
-
