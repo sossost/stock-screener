@@ -9,7 +9,7 @@ import { StockTable } from "@/components/screener/StockTable";
 import { portfolioFilterState } from "@/components/portfolio/PortfolioTableClient";
 
 export function PortfolioClient() {
-  const { symbols, isLoading } = usePortfolio(true);
+  const { symbols, isLoading, refresh } = usePortfolio(true);
   const [portfolioData, setPortfolioData] = useState<ScreenerCompany[]>([]);
   const [tradeDate, setTradeDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +48,12 @@ export function PortfolioClient() {
     }
   }, [symbols, isLoading, fetchPortfolioData]);
 
+  // StockTable에서 포트폴리오 토글 시 상태 동기화
+  const handleSymbolToggle = useCallback(async () => {
+    await refresh();
+    // symbols가 변경되면 useEffect에서 fetchPortfolioData가 자동 호출됨
+  }, [refresh]);
+
   return (
     <Card className="p-4 pt-0">
       <CardHeader className="pt-6">
@@ -66,6 +72,7 @@ export function PortfolioClient() {
             filterState={portfolioFilterState}
             tradeDate={tradeDate ?? undefined}
             totalCount={portfolioData.length}
+            onSymbolToggle={handleSymbolToggle}
           />
         )}
       </CardContent>

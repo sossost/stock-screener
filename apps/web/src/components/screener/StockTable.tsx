@@ -32,6 +32,8 @@ interface StockTableProps {
   tickerSearch?: string;
   tradeDate?: string | null;
   totalCount?: number;
+  /** 포트폴리오 토글 후 부모에게 알리는 콜백 (상태 동기화용) */
+  onSymbolToggle?: (symbol: string) => void;
 }
 
 type SortState = {
@@ -164,6 +166,7 @@ export function StockTable({
   tickerSearch,
   tradeDate,
   totalCount,
+  onSymbolToggle,
 }: StockTableProps) {
   // 포트폴리오는 마운트 시 한 번만 로드하여 포트폴리오 상태 표시
   const { isInPortfolio, togglePortfolio, refresh } = usePortfolio(false);
@@ -178,7 +181,10 @@ export function StockTable({
 
   // 포트폴리오 버튼 클릭 핸들러
   const handleTogglePortfolio = async (symbol: string) => {
-    await togglePortfolio(symbol);
+    const success = await togglePortfolio(symbol);
+    if (success && onSymbolToggle) {
+      onSymbolToggle(symbol);
+    }
   };
 
   const [sort, setSort] = React.useState<SortState>({
@@ -246,7 +252,6 @@ export function StockTable({
       const bStr = typeof bVal === "string" ? bVal : null;
 
       if (aStr !== null || bStr !== null) {
-        if (aStr === null && bStr === null) return 0;
         if (aStr === null) return 1;
         if (bStr === null) return -1;
         return aStr.localeCompare(bStr, undefined, { sensitivity: "base" }) * dir;
