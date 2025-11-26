@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getProfitabilityFilterSummary } from "../filter-summary";
+import { getProfitabilityFilterSummary } from "../filters/summary";
 
 describe("getProfitabilityFilterSummary", () => {
   it("최근 흑자 전환 필터 요약을 추가한다", () => {

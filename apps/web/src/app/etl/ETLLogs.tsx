@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_BASE_URL } from "@/lib/constants";
+import { API_BASE_URL } from "@/lib/config/constants";
 import { LogEntry } from "@/types/etl";
+import { StateMessage } from "@/components/common/StateMessage";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface LogsResponse {
   success: boolean;
@@ -92,6 +95,7 @@ function getJobColor(job: string) {
 export function ETLLogs() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState("all");
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [limit, setLimit] = useState(50);
@@ -102,6 +106,10 @@ export function ETLLogs() {
       const response = await getETLLogs(selectedJob, selectedLevel, limit);
       if (response?.success) {
         setLogs(response.data.logs);
+        setError(null);
+      } else {
+        setLogs([]);
+        setError("로그를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
       }
       setLoading(false);
     };
@@ -110,12 +118,11 @@ export function ETLLogs() {
   }, [selectedJob, selectedLevel, limit]);
 
   if (loading) {
-    return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-gray-600">로그를 불러오는 중...</p>
-      </div>
-    );
+    return <StateMessage title="로그를 불러오는 중입니다" />;
+  }
+
+  if (error) {
+    return <StateMessage variant="error" title="로그를 불러오지 못했습니다" description={error} />;
   }
 
   return (
@@ -126,55 +133,61 @@ export function ETLLogs() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             작업 타입
           </label>
-          <select
-            value={selectedJob}
-            onChange={(e) => setSelectedJob(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-          >
-            <option value="all">전체</option>
-            <option value="symbols">심볼</option>
-            <option value="daily-prices">일일 주가</option>
-            <option value="daily-ma">이동평균</option>
-            <option value="ratios">재무 비율</option>
-          </select>
+          <Select value={selectedJob} onValueChange={setSelectedJob}>
+            <SelectTrigger className="w-[160px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              <SelectItem value="symbols">심볼</SelectItem>
+              <SelectItem value="daily-prices">일일 주가</SelectItem>
+              <SelectItem value="daily-ma">이동평균</SelectItem>
+              <SelectItem value="ratios">재무 비율</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             로그 레벨
           </label>
-          <select
-            value={selectedLevel}
-            onChange={(e) => setSelectedLevel(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-          >
-            <option value="all">전체</option>
-            <option value="info">정보</option>
-            <option value="warn">경고</option>
-            <option value="error">에러</option>
-          </select>
+          <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              <SelectItem value="info">정보</SelectItem>
+              <SelectItem value="warn">경고</SelectItem>
+              <SelectItem value="error">에러</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             표시 개수
           </label>
-          <select
-            value={limit}
-            onChange={(e) => setLimit(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+          <Select
+            value={String(limit)}
+            onValueChange={(v) => setLimit(parseInt(v, 10))}
           >
-            <option value={25}>25개</option>
-            <option value={50}>50개</option>
-            <option value={100}>100개</option>
-          </select>
+            <SelectTrigger className="w-[120px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="25">25개</SelectItem>
+              <SelectItem value="50">50개</SelectItem>
+              <SelectItem value="100">100개</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* 로그 목록 */}
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {logs.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">로그가 없습니다.</div>
+          <StateMessage title="로그가 없습니다" description="필터를 변경하거나 나중에 다시 확인해 주세요." />
         ) : (
           logs.map((log, index) => (
             <div
@@ -218,20 +231,24 @@ export function ETLLogs() {
 
       {/* 새로고침 버튼 */}
       <div className="text-center">
-        <button
+        <Button
+          variant="outline"
           onClick={() => {
             setLoading(true);
             getETLLogs(selectedJob, selectedLevel, limit).then((response) => {
               if (response?.success) {
                 setLogs(response.data.logs);
+                setError(null);
+              } else {
+                setLogs([]);
+                setError("로그를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
               }
               setLoading(false);
             });
           }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
         >
           새로고침
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_BASE_URL } from "@/lib/constants";
+import { API_BASE_URL } from "@/lib/config/constants";
 import { ETLStatus as ETLStatusType } from "@/types/etl";
+import { StateMessage } from "@/components/common/StateMessage";
 
 export function ETLStatus() {
   const [status, setStatus] = useState<ETLStatusType | null>(null);
@@ -36,29 +37,26 @@ export function ETLStatus() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-gray-600">상태를 불러오는 중...</p>
-      </div>
-    );
+    return <StateMessage title="ETL 상태를 불러오는 중입니다" />;
   }
 
   if (error) {
     return (
-      <div className="text-center py-8 text-red-500">
-        <p>ETL 상태를 불러오지 못했습니다.</p>
-        <p className="text-sm mt-2">에러: {error}</p>
-      </div>
+      <StateMessage
+        variant="error"
+        title="ETL 상태를 불러오지 못했습니다"
+        description={error}
+      />
     );
   }
 
   if (!status?.success) {
     return (
-      <div className="text-center py-8 text-red-500">
-        ETL 상태를 불러오지 못했습니다.
-        <p className="text-sm mt-2">Status: {JSON.stringify(status)}</p>
-      </div>
+      <StateMessage
+        variant="error"
+        title="ETL 상태를 불러오지 못했습니다"
+        description="응답이 비정상입니다. GitHub Actions에서 최신 실행 상태를 확인해 주세요."
+      />
     );
   }
 

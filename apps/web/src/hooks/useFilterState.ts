@@ -4,6 +4,7 @@ import {
   parseAsInteger,
   parseAsStringLiteral,
 } from "nuqs";
+import { filterDefaults, profitabilityValues } from "@/lib/filters/schema";
 
 /**
  * 필터 상태 관리 커스텀 훅
@@ -13,51 +14,49 @@ export function useFilterState() {
   // 이평선 필터
   const [ordered, setOrdered] = useQueryState(
     "ordered",
-    parseAsBoolean.withDefault(true)
+    parseAsBoolean.withDefault(filterDefaults.ordered)
   );
   const [goldenCross, setGoldenCross] = useQueryState(
     "goldenCross",
-    parseAsBoolean.withDefault(true)
+    parseAsBoolean.withDefault(filterDefaults.goldenCross)
   );
   const [justTurned, setJustTurned] = useQueryState(
     "justTurned",
-    parseAsBoolean.withDefault(false)
+    parseAsBoolean.withDefault(filterDefaults.justTurned)
   );
   const [lookbackDays, setLookbackDays] = useQueryState(
     "lookbackDays",
-    parseAsInteger.withDefault(10)
+    parseAsInteger.withDefault(filterDefaults.lookbackDays)
   );
 
   // 수익성 필터
   const [profitability, setProfitability] = useQueryState(
     "profitability",
-    parseAsStringLiteral([
-      "all",
-      "profitable",
-      "unprofitable",
-    ] as const).withDefault("all")
+    parseAsStringLiteral(
+      profitabilityValues as Array<"all" | "profitable" | "unprofitable">
+    ).withDefault(filterDefaults.profitability)
   );
   const [turnAround, setTurnAround] = useQueryState(
     "turnAround",
-    parseAsBoolean.withDefault(false)
+    parseAsBoolean.withDefault(filterDefaults.turnAround)
   );
 
   // 성장성 필터
   const [revenueGrowth, setRevenueGrowth] = useQueryState(
     "revenueGrowth",
-    parseAsBoolean.withDefault(false)
+    parseAsBoolean.withDefault(filterDefaults.revenueGrowth)
   );
   const [incomeGrowth, setIncomeGrowth] = useQueryState(
     "incomeGrowth",
-    parseAsBoolean.withDefault(false)
+    parseAsBoolean.withDefault(filterDefaults.incomeGrowth)
   );
   const [revenueGrowthQuarters, setRevenueGrowthQuarters] = useQueryState(
     "revenueGrowthQuarters",
-    parseAsInteger.withDefault(3)
+    parseAsInteger.withDefault(filterDefaults.revenueGrowthQuarters)
   );
   const [incomeGrowthQuarters, setIncomeGrowthQuarters] = useQueryState(
     "incomeGrowthQuarters",
-    parseAsInteger.withDefault(3)
+    parseAsInteger.withDefault(filterDefaults.incomeGrowthQuarters)
   );
   const [revenueGrowthRate, setRevenueGrowthRate] = useQueryState(
     "revenueGrowthRate",

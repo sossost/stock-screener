@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_BASE_URL } from "@/lib/constants";
+import { API_BASE_URL } from "@/lib/config/constants";
 import { MetricsData } from "@/types/etl";
 
 async function getETLMetrics(

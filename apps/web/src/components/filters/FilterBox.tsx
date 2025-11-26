@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { getFilterSummary, type FilterState } from "@/lib/filter-summary";
+import { getFilterSummary, type FilterState } from "@/lib/filters/summary";
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
 
@@ -33,4 +33,3 @@ export function FilterBox({ filterState, onClick, disabled }: FilterBoxProps) {
     </Button>
   );
 }
-

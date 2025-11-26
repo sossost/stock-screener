@@ -5,11 +5,13 @@ import { usePortfolio } from "@/hooks/usePortfolio";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PortfolioTable } from "@/components/portfolio/PortfolioTable";
 import type { ScreenerCompany } from "@/types/golden-cross";
+import { StateMessage } from "@/components/common/StateMessage";
 
 export function PortfolioClient() {
   const { symbols, isLoading, togglePortfolio } = usePortfolio(true);
   const [portfolioData, setPortfolioData] = useState<ScreenerCompany[]>([]);
   const [tradeDate, setTradeDate] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // 포트폴리오 심볼이 변경되면 최신 재무 데이터 조회 (캐싱 적용)
   const fetchPortfolioData = useCallback(async () => {
@@ -25,15 +27,17 @@ export function PortfolioClient() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch portfolio data");
+        throw new Error(`포트폴리오 데이터를 가져오지 못했습니다. (status ${response.status})`);
       }
 
       const result = await response.json();
       setPortfolioData(result.data || []);
       setTradeDate(result.trade_date || null);
+      setError(null);
     } catch (error) {
       console.error("Failed to fetch portfolio data:", error);
       setPortfolioData([]);
+      setError("포트폴리오 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   }, [symbols]);
 
@@ -49,12 +53,20 @@ export function PortfolioClient() {
         <h2 className="text-2xl font-bold text-slate-900">내 포트폴리오</h2>
       </CardHeader>
       <CardContent>
-        <PortfolioTable
-          symbols={symbols}
-          data={portfolioData}
-          tradeDate={tradeDate}
-          onTogglePortfolio={togglePortfolio}
-        />
+        {isLoading ? (
+          <StateMessage title="포트폴리오를 불러오는 중입니다" />
+        ) : error ? (
+          <StateMessage variant="error" title="불러오기 실패" description={error} />
+        ) : symbols.length === 0 ? (
+          <StateMessage title="포트폴리오가 비어 있습니다" description="종목을 추가해 포트폴리오를 구성해 보세요." />
+        ) : (
+          <PortfolioTable
+            symbols={symbols}
+            data={portfolioData}
+            tradeDate={tradeDate}
+            onTogglePortfolio={togglePortfolio}
+          />
+        )}
       </CardContent>
     </Card>
   );

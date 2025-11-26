@@ -7,16 +7,18 @@ import { useFilterActions } from "@/hooks/useFilterActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryFilterBox } from "@/components/filters/CategoryFilterBox";
 import { CategoryFilterDialog } from "@/components/filters/CategoryFilterDialog";
-import type { FilterState, FilterCategory } from "@/lib/filter-summary";
+import type { FilterState, FilterCategory } from "@/lib/filters/summary";
 import type { ScreenerClientProps } from "@/types/golden-cross";
 import { StockTable } from "@/components/screener/StockTable";
 import { TableSkeleton } from "./TableSkeleton";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { StateMessage } from "@/components/common/StateMessage";
 
 export default function ScreenerClient({
   data,
   tradeDate,
+  error,
 }: ScreenerClientProps) {
   // 필터 상태 관리 훅
   const filterState = useFilterState();
@@ -68,6 +70,25 @@ export default function ScreenerClient({
     incomeGrowthRate: incomeGrowthRate ?? null,
     pegFilter,
   };
+
+  if (error) {
+    return (
+      <Card className="px-4 pb-4">
+        <CardHeader className="pt-4 px-4">
+          <CardTitle className="text-xl font-bold"></CardTitle>
+        </CardHeader>
+        <CardContent className="px-4">
+          <StateMessage
+            variant="error"
+            title="데이터를 불러오지 못했습니다"
+            description={error}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const noData = !isPending && !isSearching && filteredData.length === 0;
 
   return (
     <Card className="px-4 pb-4">
@@ -130,14 +151,12 @@ export default function ScreenerClient({
       </CardHeader>
       <CardContent className="px-4">
         {isPending && !isSearching ? (
-          // 서버 필터 변경 중일 때만 테이블 스켈레톤 표시 (클라이언트 검색 중에는 제외)
-          <div>
-            <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
-              <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
-              <div className="h-4 w-40 bg-gray-200 animate-pulse rounded" />
-            </div>
-            <TableSkeleton />
-          </div>
+          <TableSkeleton />
+        ) : noData ? (
+          <StateMessage
+            title="표시할 데이터가 없습니다"
+            description="필터 조건을 완화하거나 다른 티커를 검색해 보세요."
+          />
         ) : (
           <StockTable
             data={filteredData}

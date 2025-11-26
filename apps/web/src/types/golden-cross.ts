@@ -50,6 +50,7 @@ export interface ScreenerCompany {
 export interface ScreenerClientProps {
   data: ScreenerCompany[];
   tradeDate: string | null;
+  error?: string | null;
 }
 
 export interface GoldenCrossResponse {

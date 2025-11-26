@@ -1,5 +1,5 @@
 import React from "react";
-import { DataWrapper } from "@/app/screener/main/DataWrapper";
+import { DataWrapper } from "@/app/(screener)/DataWrapper";
 import { Navigation } from "@/components/navigation";
 
 type SearchParams = {
