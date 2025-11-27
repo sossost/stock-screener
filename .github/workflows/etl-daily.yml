@@ -17,6 +17,7 @@ on:
           - all
           - daily-prices
           - daily-ma
+          - daily-ratios
 
 jobs:
   etl-daily-prices:
@@ -123,21 +124,61 @@ jobs:
             *.log
             logs/
 
+  etl-daily-ratios:
+    runs-on: ubuntu-latest
+    name: Daily Ratios ETL (TTM)
+    needs: etl-daily-ma
+    if: always() && (needs.etl-daily-ma.result == 'success' || needs.etl-daily-ma.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'daily-ratios' || github.event.inputs.job_type == 'all')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run Daily Ratios ETL
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+          DATA_API: ${{ secrets.DATA_API }}
+          PGSSLMODE: no-verify
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        run: |
+          echo "🚀 Starting Daily Ratios ETL (FMP TTM API)..."
+          yarn etl:daily-ratios
+          echo "✅ Daily Ratios ETL completed!"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-ratios-logs
+          path: |
+            *.log
+            logs/
+
   notify-completion:
     if: always()
     runs-on: ubuntu-latest
     name: Notify Completion
-    needs: [etl-daily-prices, etl-daily-ma]
+    needs: [etl-daily-prices, etl-daily-ma, etl-daily-ratios]
 
     steps:
       - name: Notify Success
-        if: needs.etl-daily-prices.result == 'success' && needs.etl-daily-ma.result == 'success'
+        if: needs.etl-daily-prices.result == 'success' && needs.etl-daily-ma.result == 'success' && needs.etl-daily-ratios.result == 'success'
         run: |
           echo "✅ Daily ETL Pipeline completed successfully!"
-          echo "📊 Daily prices and moving averages updated"
+          echo "📊 Daily prices, moving averages, and valuation ratios updated"
 
       - name: Notify Failure
-        if: needs.etl-daily-prices.result == 'failure' || needs.etl-daily-ma.result == 'failure'
+        if: needs.etl-daily-prices.result == 'failure' || needs.etl-daily-ma.result == 'failure' || needs.etl-daily-ratios.result == 'failure'
         run: |
           echo "❌ Daily ETL Pipeline failed!"
           echo "🔍 Check the logs for details"

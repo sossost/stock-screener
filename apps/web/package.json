@@ -24,6 +24,7 @@
     "etl:backfill-daily-ma": "tsx src/etl/jobs/build-daily-ma.ts backfill",
     "etl:rs": "tsx src/etl/jobs/build-rs.ts",
     "etl:rs-backfill": "tsx src/etl/jobs/build-rs.ts backfill",
+    "etl:daily-ratios": "tsx src/etl/jobs/calculate-daily-ratios.ts",
     "etl:cleanup-invalid-symbols": "tsx src/etl/jobs/cleanup-invalid-symbols.ts",
     "etl:quarterly-financials": "tsx src/etl/jobs/load-quarterly-financials.ts"
   },

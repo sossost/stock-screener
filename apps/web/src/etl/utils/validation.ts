@@ -16,7 +16,7 @@ export function validateEnvironmentVariables(): ValidationResult {
   const warnings: string[] = [];
 
   // 필수 환경 변수 확인
-  const requiredEnvVars = ["DATABASE_URL"];
+  const requiredEnvVars = ["DATABASE_URL", "FMP_API_KEY", "DATA_API"];
 
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
@@ -30,6 +30,15 @@ export function validateEnvironmentVariables(): ValidationResult {
       new URL(process.env.DATABASE_URL);
     } catch {
       errors.push("DATABASE_URL 형식이 올바르지 않습니다");
+    }
+  }
+
+  // DATA_API 형식 검증
+  if (process.env.DATA_API) {
+    try {
+      new URL(process.env.DATA_API);
+    } catch {
+      errors.push("DATA_API 형식이 올바르지 않습니다");
     }
   }
 

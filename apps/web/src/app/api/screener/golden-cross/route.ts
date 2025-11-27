@@ -453,15 +453,25 @@ export async function GET(req: Request) {
           LIMIT 8
         ) recent_quarters
       ) qf ON true
-      -- 최신 분기의 PER 및 PEG 데이터 JOIN
+      -- 해당 거래일의 밸류에이션 지표 (daily_ratios에서 가져오고, 없으면 quarterly_ratios 폴백)
       LEFT JOIN LATERAL (
         SELECT 
-          pe_ratio::numeric as pe_ratio,
-          peg_ratio::numeric as peg_ratio
-        FROM quarterly_ratios
-        WHERE symbol = cand.symbol
-        ORDER BY period_end_date DESC
-        LIMIT 1
+          COALESCE(dr.pe_ratio, qr.pe_ratio)::numeric as pe_ratio,
+          COALESCE(dr.peg_ratio, qr.peg_ratio)::numeric as peg_ratio
+        FROM (SELECT 1) dummy
+        LEFT JOIN LATERAL (
+          SELECT pe_ratio, peg_ratio
+          FROM daily_ratios
+          WHERE symbol = cand.symbol AND date = cand.d
+          LIMIT 1
+        ) dr ON true
+        LEFT JOIN LATERAL (
+          SELECT pe_ratio, peg_ratio
+          FROM quarterly_ratios
+          WHERE symbol = cand.symbol
+          ORDER BY period_end_date DESC
+          LIMIT 1
+        ) qr ON true
       ) qr ON true
       WHERE 1=1
         -- justTurned: 최근 lookbackDays일 이내에 정배열이 아닌 날이 하나라도 있어야 함 (정배열 필터가 활성화된 경우만)
