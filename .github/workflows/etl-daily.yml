@@ -2,10 +2,9 @@ name: Daily ETL Pipeline
 
 on:
   schedule:
-    # 미국장 마감(ET 16:00 ≈ UTC 21:00) 이후 1.5~2.5시간 버퍼
-    # 가격: 22:30 UTC, MA/RS: 23:30 UTC (FMP 지연/정정 고려)
-    - cron: "30 22 * * *" # Daily Prices ETL
-    - cron: "30 23 * * *" # MA + RS ETL
+    # 미국장 마감(ET 16:00 ≈ UTC 21:00) 이후 2시간 버퍼
+    # 모든 ETL 순차 실행: prices → MA/RS → ratios (needs로 순서 제어)
+    - cron: "30 23 * * *"
   workflow_dispatch: # 수동 실행 가능
     inputs:
       job_type:
