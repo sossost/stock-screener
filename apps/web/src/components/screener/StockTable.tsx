@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { formatSector } from "@/utils/sector";
+import Link from "next/link";
 
 interface StockTableProps {
   data: ScreenerCompany[];
@@ -195,8 +196,7 @@ export function StockTable({
   const sortedData = React.useMemo(() => {
     const toNum = (value: string | number | null | undefined) => {
       if (value === null || value === undefined) return null;
-      const num =
-        typeof value === "number" ? value : parseFloat(String(value));
+      const num = typeof value === "number" ? value : parseFloat(String(value));
       return isNaN(num) || !isFinite(num) ? null : num;
     };
     const normalizeString = (value: string | null | undefined) => {
@@ -254,7 +254,9 @@ export function StockTable({
       if (aStr !== null || bStr !== null) {
         if (aStr === null) return 1;
         if (bStr === null) return -1;
-        return aStr.localeCompare(bStr, undefined, { sensitivity: "base" }) * dir;
+        return (
+          aStr.localeCompare(bStr, undefined, { sensitivity: "base" }) * dir
+        );
       }
 
       const aNum = typeof aVal === "number" ? aVal : null;
@@ -347,7 +349,9 @@ export function StockTable({
                 <TableHead
                   key={col.key}
                   className={className}
-                  onClick={sortable ? () => handleSort(col.sortKey!) : undefined}
+                  onClick={
+                    sortable ? () => handleSort(col.sortKey!) : undefined
+                  }
                 >
                   {sortable ? (
                     <SortHeader
@@ -388,15 +392,16 @@ export function StockTable({
                     );
                   case "symbol":
                     return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass} font-semibold`}>
-                        <a
-                          href={`https://seekingalpha.com/symbol/${c.symbol}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass} font-semibold`}
+                      >
+                        <Link
+                          href={`/stock/${c.symbol}`}
                           className="text-blue-600 hover:underline"
                         >
                           {c.symbol}
-                        </a>
+                        </Link>
                       </TableCell>
                     );
                   case "market_cap":
@@ -410,7 +415,10 @@ export function StockTable({
                     );
                   case "last_close":
                     return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass}`}
+                      >
                         {formatPrice(c.last_close)}
                       </TableCell>
                     );
@@ -420,7 +428,8 @@ export function StockTable({
                         key={col.key}
                         className={`${alignClass} ${widthClass}`}
                         title={
-                          c.sector && formatSector(c.sector).display !== c.sector
+                          c.sector &&
+                          formatSector(c.sector).display !== c.sector
                             ? c.sector
                             : undefined
                         }
@@ -441,21 +450,33 @@ export function StockTable({
                     );
                   case "pe_ratio":
                     return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass}`}
+                      >
                         {formatRatio(c.pe_ratio)}
                       </TableCell>
                     );
                   case "peg_ratio":
                     return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass}`}
+                      >
                         {formatRatio(c.peg_ratio)}
                       </TableCell>
                     );
                   case "revenue":
                     return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass}`}
+                      >
                         <QuarterlyBarChart
-                          data={prepareChartData(c.quarterly_financials, "revenue")}
+                          data={prepareChartData(
+                            c.quarterly_financials,
+                            "revenue"
+                          )}
                           type="revenue"
                           height={28}
                           width={160}
@@ -464,7 +485,10 @@ export function StockTable({
                     );
                   case "eps":
                     return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass}`}
+                      >
                         <QuarterlyBarChart
                           data={prepareChartData(c.quarterly_financials, "eps")}
                           type="eps"
@@ -475,14 +499,19 @@ export function StockTable({
                     );
                   case "actions":
                     return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                      <TableCell
+                        key={col.key}
+                        className={`${alignClass} ${widthClass}`}
+                      >
                         <Button
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => handleTogglePortfolio(c.symbol)}
                           className="cursor-pointer"
                           aria-label={
-                            isInPortfolio(c.symbol) ? "포트폴리오에서 제거" : "포트추가"
+                            isInPortfolio(c.symbol)
+                              ? "포트폴리오에서 제거"
+                              : "포트폴리오에 추가"
                           }
                         >
                           <Star
