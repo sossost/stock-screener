@@ -511,7 +511,7 @@ export function StockTable({
                           aria-label={
                             isInPortfolio(c.symbol)
                               ? "포트폴리오에서 제거"
-                              : "포트추가"
+                              : "포트폴리오에 추가"
                           }
                         >
                           <Star
