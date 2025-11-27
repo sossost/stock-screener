@@ -23,6 +23,7 @@
 ## 테스트
 - 스택: Vitest + Testing Library + JSDOM (`apps/web/vitest.setup.ts`).
 - 위치: 단위 `src/lib/__tests__/`, API `src/app/api/**/__tests__/`, 컴포넌트 `src/components/**/__tests__/`.
+- **피쳐 개발 시 테스트 코드 작성 필수** (새 로직/API/컴포넌트에 대해).
 - 커버리지 목표: 로직 90% / API 80% / 컴포넌트 70%+.
 
 ## 커밋/PR

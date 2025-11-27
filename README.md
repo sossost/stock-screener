@@ -14,6 +14,15 @@
   - 포트폴리오 페이지에서 저장된 종목의 재무 데이터 확인
   - 서버 사이드 렌더링으로 빠른 로딩
 
+### 📊 종목 상세 페이지
+
+- **종목 상세 정보**: 스크리너에서 티커 클릭 시 상세 페이지로 이동
+  - 기본 정보: 회사명, 섹터, 산업, 거래소
+  - 기술적 지표: 현재가, RS Score, 정배열/골든크로스 상태
+  - 밸류에이션: P/E, PEG, P/S, P/B, EV/EBITDA (매일 업데이트)
+  - 분기 재무: 수익성, 재무 건전성, 배당 (분기별 업데이트)
+  - 포트폴리오 추가/제거, 외부 링크 (Yahoo Finance, Seeking Alpha)
+
 ### 📈 주식 스크리너 (메인)
 
 - **통합 스크리너**: 모든 필터를 한 페이지에서 사용 가능
@@ -179,9 +188,10 @@ yarn test:all
 ### 데이터 업데이트
 
 - 데이터는 매일 업데이트 (수동: `yarn etl:daily-prices`)
-- GitHub Actions 스케줄: 일일 주가 22:30 UTC(= KST 07:30), MA/RS 23:30 UTC(= KST 08:30) 실행
+- GitHub Actions 스케줄: 23:30 UTC(= KST 08:30) 단일 스케줄로 prices → MA/RS → ratios 순차 실행
 - 분기별 재무 데이터는 `yarn etl:quarterly-financials` 실행
-- RS 점수는 가격 데이터 기반으로 `yarn etl:rs`(최신일) 또는 `yarn etl:rs-backfill`(최근 1년) 실행 후 테이블에서 정렬/확인
+- RS 점수는 가격 데이터 기반으로 `yarn etl:rs`(최신일) 또는 `yarn etl:rs-backfill`(최근 1년) 실행
+- 일일 밸류에이션(PER/PEG 등)은 `yarn etl:daily-ratios` 실행 (FMP TTM API 사용)
 
 ## 🔧 유용한 명령어들
 
@@ -196,6 +206,7 @@ yarn etl:daily-ma          # 이동평균선 계산
 yarn etl:cleanup-invalid-symbols  # 비정상 종목 정리
 yarn etl:rs                 # RS(12M/6M/3M 가중) 계산
 yarn etl:rs-backfill        # RS 최근 1년치 백필
+yarn etl:daily-ratios       # 일일 밸류에이션 (PER/PEG 등)
 # 모바일(Expo) 개발
 yarn dev:mobile             # Expo dev 서버
 yarn workspace mobile ios   # iOS (Xcode 필요)
