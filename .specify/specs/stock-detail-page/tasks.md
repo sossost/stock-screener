@@ -113,13 +113,13 @@
 ### User Story 5 - 밸류에이션 지표 표시 (Priority: P2)
 
 **Goal**: P/E, PEG, P/S, P/B, EV/EBITDA 표시  
-**Independent Test**: quarterlyRatios 데이터 조회 및 포맷 정확성
+**Independent Test**: dailyRatios/quarterlyRatios 데이터 조회 및 포맷 정확성
 
 #### Implementation
 
-- [ ] T060 [US5] API에 quarterlyRatios 데이터 추가: `apps/web/src/app/api/stock/[symbol]/route.ts`
-- [ ] T061 [US5] 밸류에이션 섹션 컴포넌트: `apps/web/src/components/stock-detail/ValuationSection.tsx` (신규)
-- [ ] T062 [US5] 타입 확장 (ratio 필드 추가): `apps/web/src/types/stock-detail.ts`
+- [x] T060 [US5] API에 dailyRatios/quarterlyRatios 데이터 추가: `apps/web/src/lib/stock-detail.ts`
+- [x] T061 [US5] 밸류에이션 카드 컴포넌트: `apps/web/src/components/stock-detail/FundamentalsSection.tsx` (ValuationCard)
+- [x] T062 [US5] 타입 확장 (ratio 필드, valuationDate, quarterlyPeriodEndDate 추가): `apps/web/src/types/stock-detail.ts`
 
 ---
 
@@ -129,18 +129,19 @@
 
 #### Implementation
 
-- [ ] T070 [US6] 수익성 섹션 컴포넌트: `apps/web/src/components/stock-detail/ProfitabilitySection.tsx` (신규)
-- [ ] T071 [US6] 재무 건전성 섹션: `apps/web/src/components/stock-detail/FinancialHealthSection.tsx` (신규)
+- [x] T070 [US6] 분기 재무 카드 컴포넌트 (수익성/레버리지/배당): `apps/web/src/components/stock-detail/FundamentalsSection.tsx` (QuarterlyFinancialsCard)
+- [x] T071 [US6] 레이아웃 통합 (PriceCard, ValuationCard, QuarterlyFinancialsCard): `apps/web/src/app/stock/[symbol]/StockDetailClient.tsx`
 
 ---
 
 ### Phase 2 마무리
 
-- [ ] T080 `yarn test` 실행 및 결과 확인
-- [ ] T081 null 값 처리 확인 ("-" 표시)
-- [ ] T082 음수 P/E 등 엣지케이스 확인
+- [x] T080 `yarn test` 실행 및 결과 확인
+- [x] T081 null 값 처리 확인 ("-" 표시)
+- [x] T082 음수 P/E 등 엣지케이스 확인
+- [x] T083 테스트 작성: `apps/web/src/lib/__tests__/stock-detail.test.ts` (신규)
 
-**Phase 2 완료 조건**: 밸류에이션/수익성/재무 건전성 지표가 정상 표시됨
+**Phase 2 완료 조건**: 밸류에이션/수익성/재무 건전성 지표가 정상 표시됨 ✅
 
 ---
 

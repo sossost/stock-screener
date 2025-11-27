@@ -37,15 +37,52 @@ export interface StockMAStatus {
   goldenCross: boolean;
 }
 
+export interface StockValuation {
+  peRatio: string | null;
+  pegRatio: string | null;
+  fwdPegRatio: string | null;
+  psRatio: string | null;
+  pbRatio: string | null;
+  evEbitda: string | null;
+}
+
+export interface StockProfitability {
+  grossMargin: string | null;
+  opMargin: string | null;
+  netMargin: string | null;
+}
+
+export interface StockLeverage {
+  debtEquity: string | null;
+  debtAssets: string | null;
+  intCoverage: string | null;
+}
+
+export interface StockDividend {
+  divYield: string | null;
+  payoutRatio: string | null;
+}
+
+export interface StockRatios {
+  valuation: StockValuation;
+  /** 밸류에이션 기준일 (가격 날짜, 데일리 업데이트) */
+  valuationDate: string | null;
+  profitability: StockProfitability;
+  leverage: StockLeverage;
+  dividend: StockDividend;
+  /** 분기 재무 기준일 (분기 말일, 분기별 업데이트) */
+  quarterlyPeriodEndDate: string | null;
+}
+
 export interface StockDetail {
   basic: StockBasicInfo;
   price: StockPriceInfo;
   ma: StockMAInfo;
   maStatus: StockMAStatus;
+  ratios: StockRatios | null;
 }
 
 export interface StockDetailResponse {
   data: StockDetail | null;
   error?: string;
 }
-
