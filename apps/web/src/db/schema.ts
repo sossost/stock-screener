@@ -174,6 +174,36 @@ export const dailyMa = pgTable(
   })
 );
 
+export const dailyRatios = pgTable(
+  "daily_ratios",
+  {
+    symbol: text("symbol")
+      .notNull()
+      .references(() => symbols.symbol, { onDelete: "cascade" }),
+    date: text("date").notNull(), // 'YYYY-MM-DD'
+
+    // Valuation (종가 기준 매일 계산)
+    peRatio: numeric("pe_ratio"), // 현재가 / EPS(TTM)
+    psRatio: numeric("ps_ratio"), // 시가총액 / 연간매출(TTM)
+    pbRatio: numeric("pb_ratio"), // 시가총액 / 자기자본
+    pegRatio: numeric("peg_ratio"), // P/E / EPS 성장률
+    evEbitda: numeric("ev_ebitda"), // EV / EBITDA(TTM)
+
+    // 계산에 사용된 값 (디버깅/검증용)
+    marketCap: numeric("market_cap"), // 해당일 시가총액
+    epsTtm: numeric("eps_ttm"), // 최근 4분기 EPS 합계
+    revenueTtm: numeric("revenue_ttm"), // 최근 4분기 매출 합계
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    uq: unique("uq_daily_ratios_symbol_date").on(t.symbol, t.date),
+    idx_sym_date: index("idx_daily_ratios_symbol_date").on(t.symbol, t.date),
+  })
+);
+
 export const portfolio = pgTable(
   "portfolio",
   {
