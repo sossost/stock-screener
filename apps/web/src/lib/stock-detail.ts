@@ -8,6 +8,7 @@ import {
 } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import type { StockDetail, StockRatios } from "@/types/stock-detail";
+import { calculateMAStatus } from "./ma-status";
 
 /**
  * 종목 상세 정보 조회
@@ -79,16 +80,7 @@ export async function getStockDetail(
   const ma100 = maData?.ma100 ? parseFloat(maData.ma100) : null;
   const ma200 = maData?.ma200 ? parseFloat(maData.ma200) : null;
 
-  const ordered =
-    ma20 !== null &&
-    ma50 !== null &&
-    ma100 !== null &&
-    ma200 !== null &&
-    ma20 > ma50 &&
-    ma50 > ma100 &&
-    ma100 > ma200;
-
-  const goldenCross = ma50 !== null && ma200 !== null && ma50 > ma200;
+  const maStatus = calculateMAStatus(ma20, ma50, ma100, ma200);
 
   // 7. ratios 매핑 (daily_ratios 우선, quarterly_ratios 폴백)
   const hasValuationData = dailyRatiosData || quarterlyRatiosData;
@@ -160,10 +152,7 @@ export async function getStockDetail(
       ma200: maData?.ma200 ?? null,
       volMa30: maData?.volMa30 ?? null,
     },
-    maStatus: {
-      ordered,
-      goldenCross,
-    },
+    maStatus,
     ratios,
   };
 }

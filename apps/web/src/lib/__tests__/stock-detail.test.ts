@@ -1,28 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 
-// Mock DB client
-vi.mock("@/db/client", () => ({
-  db: {
-    select: vi.fn(),
-  },
-}));
-
-// Mock schema
-vi.mock("@/db/schema", () => ({
-  symbols: { symbol: "symbol" },
-  dailyPrices: { symbol: "symbol", date: "date" },
-  dailyMa: { symbol: "symbol", date: "date" },
-  dailyRatios: { symbol: "symbol", date: "date" },
-  quarterlyRatios: { symbol: "symbol", periodEndDate: "periodEndDate" },
-}));
-
-// Mock drizzle-orm
-vi.mock("drizzle-orm", () => ({
-  eq: vi.fn((a, b) => ({ eq: [a, b] })),
-  desc: vi.fn((a) => ({ desc: a })),
-  and: vi.fn((...args) => ({ and: args })),
-}));
-
+/**
+ * stock-detail ratios 매핑 로직 테스트
+ * - dailyRatios vs quarterlyRatios 우선순위
+ * - 날짜 분리 (valuationDate vs quarterlyPeriodEndDate)
+ */
 describe("stock-detail ratios 매핑 로직", () => {
   describe("ratios 우선순위", () => {
     it("dailyRatios가 있으면 밸류에이션에 daily 값 사용", () => {
@@ -47,9 +29,12 @@ describe("stock-detail ratios 매핑 로직", () => {
       };
 
       // 밸류에이션은 daily 우선
-      const peRatio = dailyRatiosData?.peRatio ?? quarterlyRatiosData?.peRatio ?? null;
-      const pegRatio = dailyRatiosData?.pegRatio ?? quarterlyRatiosData?.pegRatio ?? null;
-      const psRatio = dailyRatiosData?.psRatio ?? quarterlyRatiosData?.psRatio ?? null;
+      const peRatio =
+        dailyRatiosData?.peRatio ?? quarterlyRatiosData?.peRatio ?? null;
+      const pegRatio =
+        dailyRatiosData?.pegRatio ?? quarterlyRatiosData?.pegRatio ?? null;
+      const psRatio =
+        dailyRatiosData?.psRatio ?? quarterlyRatiosData?.psRatio ?? null;
 
       expect(peRatio).toBe("15.5");
       expect(pegRatio).toBe("1.2");
@@ -72,8 +57,10 @@ describe("stock-detail ratios 매핑 로직", () => {
         periodEndDate: "2025-09-30",
       };
 
-      const peRatio = dailyRatiosData?.peRatio ?? quarterlyRatiosData?.peRatio ?? null;
-      const pegRatio = dailyRatiosData?.pegRatio ?? quarterlyRatiosData?.pegRatio ?? null;
+      const peRatio =
+        dailyRatiosData?.peRatio ?? quarterlyRatiosData?.peRatio ?? null;
+      const pegRatio =
+        dailyRatiosData?.pegRatio ?? quarterlyRatiosData?.pegRatio ?? null;
 
       expect(peRatio).toBe("14.0");
       expect(pegRatio).toBe("1.0");
@@ -101,67 +88,4 @@ describe("stock-detail ratios 매핑 로직", () => {
       expect(quarterlyPeriodEndDate).toBe("2025-09-30");
     });
   });
-
-  describe("MA 상태 계산", () => {
-    it("정배열: ma20 > ma50 > ma100 > ma200", () => {
-      const ma20 = 150;
-      const ma50 = 140;
-      const ma100 = 130;
-      const ma200 = 120;
-
-      const ordered =
-        ma20 !== null &&
-        ma50 !== null &&
-        ma100 !== null &&
-        ma200 !== null &&
-        ma20 > ma50 &&
-        ma50 > ma100 &&
-        ma100 > ma200;
-
-      expect(ordered).toBe(true);
-    });
-
-    it("정배열 아님: 순서가 맞지 않으면 false", () => {
-      const ma20 = 130; // ma50보다 낮음
-      const ma50 = 140;
-      const ma100 = 130;
-      const ma200 = 120;
-
-      const ordered =
-        ma20 !== null &&
-        ma50 !== null &&
-        ma100 !== null &&
-        ma200 !== null &&
-        ma20 > ma50 &&
-        ma50 > ma100 &&
-        ma100 > ma200;
-
-      expect(ordered).toBe(false);
-    });
-
-    it("골든크로스: ma50 > ma200", () => {
-      const ma50 = 140;
-      const ma200 = 120;
-
-      const goldenCross = ma50 !== null && ma200 !== null && ma50 > ma200;
-      expect(goldenCross).toBe(true);
-    });
-
-    it("골든크로스 아님: ma50 < ma200", () => {
-      const ma50 = 100;
-      const ma200 = 120;
-
-      const goldenCross = ma50 !== null && ma200 !== null && ma50 > ma200;
-      expect(goldenCross).toBe(false);
-    });
-
-    it("MA 값이 null이면 false", () => {
-      const ma50 = null;
-      const ma200 = 120;
-
-      const goldenCross = ma50 !== null && ma200 !== null && ma50 > ma200;
-      expect(goldenCross).toBe(false);
-    });
-  });
 });
-
