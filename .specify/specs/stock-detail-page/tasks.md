@@ -169,40 +169,59 @@
 
 ---
 
-## Phase 4: 주가 차트 & 동종업계 비교
+## Phase 4: 주가 차트 & 기술적 지표
 
 ### User Story 8 - 주가 히스토리 차트 (Priority: P4)
 
-**Goal**: 일봉 주가 차트 + 이동평균선 오버레이  
+**Goal**: 캔들스틱 차트 + 이동평균선 + RSI/MACD 보조지표  
 **Independent Test**: dailyPrices 히스토리 조회, 차트 렌더링, 기간 필터
+
+#### Setup
+
+- [x] T110 [US8] `lightweight-charts` 라이브러리 설치: `yarn workspace web add lightweight-charts`
+- [x] T111 [US8] 기술적 지표 계산 유틸 생성: `apps/web/src/lib/technical-indicators.ts` (RSI, MACD, EMA, SMA 계산)
+
+#### Tests
+
+- [x] T112 [P] [US8] 기술적 지표 계산 테스트: `apps/web/src/lib/__tests__/technical-indicators.test.ts`
 
 #### Implementation
 
-- [ ] T110 [US8] 차트 라이브러리 선정 및 설치 (Lightweight Charts 또는 Recharts)
-- [ ] T111 [US8] 주가 차트 API (기간별 필터): `apps/web/src/app/api/stock/[symbol]/prices/route.ts` (신규)
-- [ ] T112 [US8] 주가 차트 컴포넌트: `apps/web/src/components/stock-detail/PriceChart.tsx` (신규)
-- [ ] T113 [US8] 이평선 오버레이 토글 기능
-- [ ] T114 [US8] 기간 선택 UI (1M/3M/6M/1Y)
+- [x] T113 [US8] 주가 차트 API (기간별 필터): `apps/web/src/app/api/stock/[symbol]/prices/route.ts`
+- [x] T114 [US8] 캔들스틱 차트: `TechnicalChart.tsx` 내 구현
+- [x] T115 [US8] 이동평균선 오버레이: SMA 20/50/100/200 (색상: 초록/주황/분홍/하늘) - 클라이언트 계산
+- [x] T116 [US8] 거래량 바 차트: 하단 볼륨 히스토그램
+- [x] T117 [US8] RSI 패널: 14일 RSI, 70/30 기준선 (배경 흰색, 글자색 통일)
+- [x] T118 [US8] MACD 패널: MACD(12,26,9), Signal Line, 히스토그램
+- [x] T119 [US8] 기간: 1Y 고정 (데이터 부족으로 기간 선택 제외)
+- [x] T120 [US8] 차트 통합 컴포넌트: `apps/web/src/components/stock-detail/TechnicalChart.tsx`
+- [x] T121 [US8] 호버 시 OHLC, 변동, 거래량, MA 값 표시 (왼쪽 상단 정보 패널)
+- [x] T122 [US8] RSI/MACD 현재값 레이블에 표시
 
 ---
 
-### User Story 9 - 동종업계 비교 (Priority: P4)
+### User Story 9 - 동종업계 비교 (Priority: P5 - 추후 고도화)
 
-**Goal**: 같은 섹터 종목과 주요 지표 비교
+**Goal**: 같은 섹터 종목과 주요 지표 비교  
+**Status**: 추후 고도화로 연기
 
-#### Implementation
+#### Implementation (추후)
 
-- [ ] T120 [US9] 동종업계 비교 API: `apps/web/src/app/api/stock/[symbol]/peers/route.ts` (신규)
-- [ ] T121 [US9] 비교 테이블 컴포넌트: `apps/web/src/components/stock-detail/PeerComparison.tsx` (신규)
+- [ ] T130 [US9] 동종업계 비교 API: `apps/web/src/app/api/stock/[symbol]/peers/route.ts`
+- [ ] T131 [US9] 비교 테이블 컴포넌트: `apps/web/src/components/stock-detail/PeerComparison.tsx`
 
 ---
 
 ### Phase 4 마무리
 
-- [ ] T130 주가 차트 성능 확인 (대량 데이터)
-- [ ] T131 동종업계 비교 정확성 확인
+- [x] T140 주가 차트 성능 확인 (대량 데이터 - 1년치)
+- [ ] T141 RSI/MACD 계산 정확성 확인 (외부 사이트와 비교) - 추후 검증
+- [ ] T142 모바일 반응형 차트 확인 - 추후 검증
+- [x] T144 `yarn test` 전체 실행 (94 tests passed)
+- [x] T145 `yarn lint` 통과
+- [x] T146 `yarn build` 성공
 
-**Phase 4 완료 조건**: 주가 차트 + 이평선, 동종업계 비교 테이블 정상 동작
+**Phase 4 완료 조건**: 캔들스틱 차트 + RSI/MACD 보조지표 정상 동작 ✅
 
 ---
 

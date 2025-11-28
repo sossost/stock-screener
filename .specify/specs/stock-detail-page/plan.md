@@ -27,7 +27,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - ✅ 기존 Next.js/TypeScript/Drizzle 스택 유지
 - ✅ 기존 usePortfolio 훅, formatNumber/formatRatio 유틸 재사용
 - ✅ 기존 QuarterlyBarChart 컴포넌트 재사용 가능
-- ⚠️ 주가 차트(Phase 4)는 라이브러리 선정 필요
+- ✅ 주가 차트(Phase 4): Lightweight Charts 사용, RSI/MACD 클라이언트 계산
 
 ## Project Structure
 
@@ -51,16 +51,20 @@ apps/web/src/app/stock/[symbol]/
 └── not-found.tsx               # 404 페이지
 
 apps/web/src/app/api/stock/[symbol]/
-└── route.ts                    # 종목 상세 API
+├── route.ts                    # 종목 상세 API
+└── prices/route.ts             # Phase 4: 주가 차트 API
 
 apps/web/src/components/stock-detail/
-├── StockHeader.tsx             # 헤더 (티커, 회사명, 섹터, 포트폴리오 버튼)
+├── StockHeader.tsx             # 헤더 (티커, 회사명, 섹터, 포트폴리오 버튼, 밸류에이션)
 ├── PriceCard.tsx               # 가격 정보 카드
 ├── MAStatusBadge.tsx           # 정배열/골든크로스 뱃지
-├── ValuationSection.tsx        # Phase 2: 밸류에이션 지표
-├── ProfitabilitySection.tsx    # Phase 2: 수익성 지표
+├── FundamentalsSection.tsx     # Phase 2: 밸류에이션/수익성 지표
 ├── QuarterlyCharts.tsx         # Phase 3: 분기별 차트
-└── PriceChart.tsx              # Phase 4: 주가 차트
+└── TechnicalChart.tsx          # Phase 4: 캔들스틱 + MA + RSI + MACD 차트
+
+apps/web/src/lib/
+├── technical-indicators.ts     # Phase 4: RSI/MACD/SMA 계산 유틸
+└── __tests__/technical-indicators.test.ts  # 기술적 지표 테스트
 
 apps/web/src/types/stock-detail.ts  # 상세 페이지 타입 정의
 
@@ -92,8 +96,11 @@ apps/web/src/components/screener/StockTable.tsx  # 티커 링크 변경
 
 ### 5) 차트 라이브러리 (Phase 3-4)
 
-- **Decision**: Phase 3은 기존 Recharts 활용, Phase 4 주가 차트는 Lightweight Charts 검토
-- **Rationale**: Recharts는 이미 사용 중, Lightweight Charts는 금융 차트에 최적화
+- **Decision**: Phase 3은 기존 Recharts 활용, Phase 4는 Lightweight Charts 사용
+- **Rationale**: 
+  - Recharts: 분기별 바 차트에 적합, 이미 사용 중
+  - Lightweight Charts: TradingView 오픈소스, 캔들스틱/금융 차트에 최적화, 가볍고 성능 우수
+  - RSI/MACD: DB 저장 불필요, 클라이언트에서 dailyPrices 데이터로 실시간 계산
 
 ### 6) 반응형 레이아웃
 
@@ -128,12 +135,18 @@ apps/web/src/components/screener/StockTable.tsx  # 티커 링크 변경
 3. **순이익/EPS 차트**: 별도 차트 또는 탭 전환
 4. **현금흐름 차트**: 영업현금흐름, 잉여현금흐름
 
-### Phase 4: 주가 차트 & 동종업계 비교
+### Phase 4: 주가 차트 & 기술적 지표
 
-1. **주가 차트**: dailyPrices 히스토리 조회, 캔들스틱/라인 차트
-2. **이평선 오버레이**: MA20/50/100/200 토글
-3. **기간 선택**: 1M/3M/6M/1Y 필터
-4. **동종업계 비교**: 같은 섹터 상위 N개 종목 비교 테이블
+**레퍼런스**: 캔들스틱 + 이평선 + 보조지표
+
+1. **차트 라이브러리 설치**: Lightweight Charts (TradingView 오픈소스)
+2. **주가 차트 API**: dailyPrices + dailyMa 히스토리 조회 (기간별)
+3. **캔들스틱 차트**: OHLC 캔들 + 거래량 바
+4. **이동평균선 오버레이**: SMA 20/50/100/200 (색상 구분)
+5. **RSI 지표**: 14일 RSI 계산, 하단 패널 표시 (70/30 기준선)
+6. **MACD 지표**: 12/26/9 MACD 계산, 하단 히스토그램 표시
+7. **기간 선택**: 1M/3M/6M/1Y 필터 UI
+8. **동종업계 비교**: 같은 섹터 상위 N개 종목 비교 테이블
 
 ## Risk Assessment
 
@@ -150,6 +163,7 @@ apps/web/src/components/screener/StockTable.tsx  # 티커 링크 변경
 - 기존 `usePortfolio` 훅, `formatNumber`, `formatRatio`, `formatSector` 유틸
 - 기존 `QuarterlyBarChart` 컴포넌트 (Phase 3 확장)
 - Recharts 라이브러리 (이미 설치됨)
+- **Phase 4 추가**: `lightweight-charts` 라이브러리 (캔들스틱 차트)
 
 ## Testing Strategy
 

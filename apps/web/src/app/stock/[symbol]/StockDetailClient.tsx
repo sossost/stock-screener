@@ -3,11 +3,10 @@
 import type { StockDetail } from "@/types/stock-detail";
 import {
   StockHeader,
-  PriceCard,
-  ValuationCard,
   QuarterlyFinancialsCard,
   QuarterlyCharts,
 } from "@/components/stock-detail";
+import { TechnicalChart } from "@/components/stock-detail/TechnicalChart";
 
 interface StockDetailClientProps {
   data: StockDetail;
@@ -18,24 +17,20 @@ export function StockDetailClient({ data }: StockDetailClientProps) {
 
   return (
     <div className="space-y-4">
-      {/* 헤더: 정성적 정보 */}
-      <StockHeader basic={data.basic} />
-
-      {/* 기술적 지표 */}
-      <PriceCard
+      {/* 헤더: 네비게이션 + 기업/가격/밸류에이션 정보 */}
+      <StockHeader
+        basic={data.basic}
         price={data.price}
         maStatus={data.maStatus}
-        marketCap={data.basic.marketCap}
+        ratios={data.ratios}
       />
 
-      {/* 펀더멘탈: 밸류에이션(1열) + 분기재무(3열) */}
+      {/* 주가 차트 */}
+      <TechnicalChart symbol={data.basic.symbol} />
+
+      {/* 분기 재무 (수익성/레버리지/배당) */}
       {!isEtf && data.ratios && (
-        <div className="grid gap-4 lg:grid-cols-4">
-          <ValuationCard ratios={data.ratios} />
-          <div className="lg:col-span-3">
-            <QuarterlyFinancialsCard ratios={data.ratios} />
-          </div>
-        </div>
+        <QuarterlyFinancialsCard ratios={data.ratios} />
       )}
 
       {/* 분기별 실적 차트 */}
@@ -43,9 +38,8 @@ export function StockDetailClient({ data }: StockDetailClientProps) {
 
       {/* ETF/펀드 메시지 */}
       {isEtf && (
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <h2 className="font-semibold">펀더멘탈</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <div className="rounded-lg border bg-white p-4 shadow-sm">
+          <p className="text-sm text-muted-foreground">
             ETF/펀드는 개별 재무 지표가 제공되지 않습니다.
           </p>
         </div>
