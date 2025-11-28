@@ -1,6 +1,6 @@
 // src/etl/jobs/load-nasdaq-symbols.ts
 import "dotenv/config";
-import { db } from "@/db/client";
+import { db, pool } from "@/db/client";
 import { symbols } from "@/db/schema";
 import {
   validateEnvironmentVariables,
@@ -140,12 +140,14 @@ async function main() {
 // 스크립트가 직접 실행될 때만 함수 호출
 if (require.main === module) {
   main()
-    .then(() => {
+    .then(async () => {
       console.log("✅ NASDAQ symbols ETL completed successfully!");
+      await pool.end();
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(async (error) => {
       console.error("❌ NASDAQ symbols ETL failed:", error);
+      await pool.end();
       process.exit(1);
     });
 }

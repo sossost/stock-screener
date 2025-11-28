@@ -2,7 +2,7 @@
 // FMP TTM API를 사용하여 실시간 밸류에이션 지표를 가져옵니다.
 import "dotenv/config";
 import pLimit from "p-limit";
-import { db } from "@/db/client";
+import { db, pool } from "@/db/client";
 import { eq } from "drizzle-orm";
 import { fetchJson, sleep, toStrNum } from "../utils";
 import { dailyRatios, symbols } from "@/db/schema";
@@ -162,12 +162,14 @@ async function main() {
 // 스크립트가 직접 실행될 때만 함수 호출
 if (require.main === module) {
   main()
-    .then(() => {
+    .then(async () => {
       console.log("✅ Daily Ratios ETL completed successfully!");
+      await pool.end();
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(async (error) => {
       console.error("❌ Daily Ratios ETL failed:", error);
+      await pool.end();
       process.exit(1);
     });
 }
