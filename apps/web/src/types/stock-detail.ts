@@ -74,12 +74,25 @@ export interface StockRatios {
   quarterlyPeriodEndDate: string | null;
 }
 
+/** 분기별 재무 데이터 (차트용) */
+export interface QuarterlyFinancial {
+  quarter: string; // "Q3 2024"
+  date: string; // "2024-09-30"
+  revenue: number | null;
+  netIncome: number | null;
+  eps: number | null;
+  operatingCashFlow: number | null;
+  freeCashFlow: number | null;
+}
+
 export interface StockDetail {
   basic: StockBasicInfo;
   price: StockPriceInfo;
   ma: StockMAInfo;
   maStatus: StockMAStatus;
   ratios: StockRatios | null;
+  /** 최근 8분기 재무 데이터 (차트용) */
+  quarterlyFinancials: QuarterlyFinancial[];
 }
 
 export interface StockDetailResponse {

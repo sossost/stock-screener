@@ -6,3 +6,4 @@ export {
   ValuationCard,
   QuarterlyFinancialsCard,
 } from "./FundamentalsSection";
+export { QuarterlyCharts } from "./QuarterlyCharts";
