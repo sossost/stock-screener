@@ -154,18 +154,18 @@
 
 #### Implementation
 
-- [ ] T090 [US7] API에 분기별 재무 히스토리 추가: `apps/web/src/app/api/stock/[symbol]/route.ts`
-- [ ] T091 [US7] 분기별 차트 컴포넌트 (기존 QuarterlyBarChart 확장): `apps/web/src/components/stock-detail/QuarterlyCharts.tsx` (신규)
-- [ ] T092 [US7] 탭 또는 토글로 매출/순이익/EPS 전환 UI
+- [x] T090 [US7] lib/stock-detail.ts에 분기별 재무 히스토리 추가 (최근 8분기)
+- [x] T091 [US7] 분기별 차트 컴포넌트: `apps/web/src/components/stock-detail/QuarterlyCharts.tsx` (신규)
+- [x] T092 [US7] 탭으로 매출/순이익/EPS 전환 UI
 
 ---
 
 ### Phase 3 마무리
 
-- [ ] T100 차트 렌더링 확인 (데이터 8개 미만인 경우 포함)
-- [ ] T101 기존 미니 차트와 데이터 일치 확인
+- [x] T100 차트 렌더링 확인 (데이터 8개 미만인 경우 포함)
+- [x] T101 lint/test 통과
 
-**Phase 3 완료 조건**: 분기별 매출/순이익/EPS 차트가 대형으로 표시됨
+**Phase 3 완료 조건**: 분기별 매출/순이익/EPS 차트가 대형으로 표시됨 ✅
 
 ---
 

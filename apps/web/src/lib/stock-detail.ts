@@ -5,10 +5,24 @@ import {
   dailyMa,
   dailyRatios,
   quarterlyRatios,
+  quarterlyFinancials,
 } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
-import type { StockDetail, StockRatios } from "@/types/stock-detail";
+import type {
+  StockDetail,
+  StockRatios,
+  QuarterlyFinancial,
+} from "@/types/stock-detail";
 import { calculateMAStatus } from "./ma-status";
+
+/**
+ * 문자열을 숫자로 파싱, NaN이면 null 반환
+ */
+export function parseNumericOrNull(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? null : parsed;
+}
 
 /**
  * 종목 상세 정보 조회
@@ -74,7 +88,36 @@ export async function getStockDetail(
     .orderBy(desc(quarterlyRatios.periodEndDate))
     .limit(1);
 
-  // 6. 이평선 상태 계산
+  // 6. 분기별 재무 데이터 조회 (최근 8분기, 차트용)
+  const financialsData = await db
+    .select({
+      asOfQ: quarterlyFinancials.asOfQ,
+      periodEndDate: quarterlyFinancials.periodEndDate,
+      revenue: quarterlyFinancials.revenue,
+      netIncome: quarterlyFinancials.netIncome,
+      epsDiluted: quarterlyFinancials.epsDiluted,
+      operatingCashFlow: quarterlyFinancials.operatingCashFlow,
+      freeCashFlow: quarterlyFinancials.freeCashFlow,
+    })
+    .from(quarterlyFinancials)
+    .where(eq(quarterlyFinancials.symbol, upperSymbol))
+    .orderBy(desc(quarterlyFinancials.periodEndDate))
+    .limit(8);
+
+  // 분기별 데이터 매핑 (오래된 순으로 정렬)
+  const quarterlyFinancialsResult: QuarterlyFinancial[] = financialsData
+    .reverse()
+    .map((f) => ({
+      quarter: f.asOfQ ?? "",
+      date: f.periodEndDate ?? "",
+      revenue: parseNumericOrNull(f.revenue),
+      netIncome: parseNumericOrNull(f.netIncome),
+      eps: parseNumericOrNull(f.epsDiluted),
+      operatingCashFlow: parseNumericOrNull(f.operatingCashFlow),
+      freeCashFlow: parseNumericOrNull(f.freeCashFlow),
+    }));
+
+  // 7. 이평선 상태 계산
   const ma20 = maData?.ma20 ? parseFloat(maData.ma20) : null;
   const ma50 = maData?.ma50 ? parseFloat(maData.ma50) : null;
   const ma100 = maData?.ma100 ? parseFloat(maData.ma100) : null;
@@ -82,7 +125,7 @@ export async function getStockDetail(
 
   const maStatus = calculateMAStatus(ma20, ma50, ma100, ma200);
 
-  // 7. ratios 매핑 (daily_ratios 우선, quarterly_ratios 폴백)
+  // 8. ratios 매핑 (daily_ratios 우선, quarterly_ratios 폴백)
   const hasValuationData = dailyRatiosData || quarterlyRatiosData;
   const ratios: StockRatios | null = hasValuationData
     ? {
@@ -154,5 +197,6 @@ export async function getStockDetail(
     },
     maStatus,
     ratios,
+    quarterlyFinancials: quarterlyFinancialsResult,
   };
 }

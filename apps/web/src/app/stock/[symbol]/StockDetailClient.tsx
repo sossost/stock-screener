@@ -6,6 +6,7 @@ import {
   PriceCard,
   ValuationCard,
   QuarterlyFinancialsCard,
+  QuarterlyCharts,
 } from "@/components/stock-detail";
 
 interface StockDetailClientProps {
@@ -27,7 +28,7 @@ export function StockDetailClient({ data }: StockDetailClientProps) {
         marketCap={data.basic.marketCap}
       />
 
-      {/* 펀더멘탈: 밸류에이션(1열) + 분기재무(3열) - PriceCard와 동일한 4열 그리드 */}
+      {/* 펀더멘탈: 밸류에이션(1열) + 분기재무(3열) */}
       {!isEtf && data.ratios && (
         <div className="grid gap-4 lg:grid-cols-4">
           <ValuationCard ratios={data.ratios} />
@@ -36,6 +37,9 @@ export function StockDetailClient({ data }: StockDetailClientProps) {
           </div>
         </div>
       )}
+
+      {/* 분기별 실적 차트 */}
+      {!isEtf && <QuarterlyCharts data={data.quarterlyFinancials} />}
 
       {/* ETF/펀드 메시지 */}
       {isEtf && (

@@ -29,7 +29,11 @@
 ## 커밋/PR
 - 커밋: `type: summary` (예: `feat: 티커 검색 필터 추가 (#8)`), 작업은 항상 별도 브랜치(`git checkout -b feature/<name>`).
 - PR: 변경/이유/테스트 명령/연관 이슈/스키마·ETL 영향 명시.
-- 리뷰 전 `yarn test` (런타임/설정 변경 시 `yarn build`도). 실패/스킵은 남김없이 공유.
+- **커밋 전 필수 체크 (생략 불가)**:
+  1. `yarn lint` 통과
+  2. `yarn test` 통과
+  3. `yarn build` 통과
+  4. **사용자 승인 후 커밋** (승인 없이 커밋 금지)
 - Git 원칙: 승인 없이 `git add/commit/branch/reset` 등 실행 금지. 반드시 먼저 확인/승인.
 
 ## 문서
