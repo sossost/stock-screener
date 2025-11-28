@@ -1,6 +1,6 @@
 // src/etl/jobs/build-daily-ma.ts
 import "dotenv/config";
-import { db } from "@/db/client";
+import { db, pool } from "@/db/client";
 import { sql } from "drizzle-orm";
 import { dailyMa } from "@/db/schema";
 import { sleep } from "../utils";
@@ -267,12 +267,14 @@ async function processDate(targetDate: string) {
 // 스크립트가 직접 실행될 때만 함수 호출
 if (require.main === module) {
   main()
-    .then(() => {
+    .then(async () => {
       console.log("✅ Daily MA ETL completed successfully!");
+      await pool.end();
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(async (error) => {
       console.error("❌ Daily MA ETL failed:", error);
+      await pool.end();
       process.exit(1);
     });
 }

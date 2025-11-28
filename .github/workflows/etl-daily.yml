@@ -22,6 +22,7 @@ jobs:
   etl-daily-prices:
     if: github.event_name == 'schedule' || github.event.inputs.job_type == 'daily-prices' || github.event.inputs.job_type == 'all'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     name: Daily Prices ETL
 
     steps:
@@ -50,12 +51,13 @@ jobs:
           echo "✅ Daily Prices ETL completed!"
 
       - name: Validate latest price date is fresh (UTC)
+        timeout-minutes: 2
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PGSSLMODE: no-verify
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         run: |
-          node -e "const { Client } = require('pg'); (async() => { const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }); await client.connect(); const res = await client.query('select max(date)::date as d from daily_prices'); const latest = res.rows[0]?.d; if (!latest) { console.error('❌ No price data found'); process.exit(1); } const today = new Date().toISOString().slice(0,10); const diff = (Date.parse(today) - Date.parse(latest)) / (1000*60*60*24); console.log('Latest price date:', latest); if (diff > 1) { console.error('❌ Latest price date is stale (>' + diff + ' days old). Failing to rerun later.'); process.exit(1); } })().catch(err => { console.error(err); process.exit(1); });"
+          node -e "const { Client } = require('pg'); (async() => { const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 30000, statement_timeout: 30000 }); await client.connect(); const res = await client.query('select max(date)::date as d from daily_prices'); await client.end(); const latest = res.rows[0]?.d; if (!latest) { console.error('❌ No price data found'); process.exit(1); } const today = new Date().toISOString().slice(0,10); const diff = (Date.parse(today) - Date.parse(latest)) / (1000*60*60*24); console.log('Latest price date:', latest); if (diff > 1) { console.error('❌ Latest price date is stale (>' + diff + ' days old). Failing to rerun later.'); process.exit(1); } })().catch(err => { console.error(err); process.exit(1); });"
 
       - name: Upload logs
         if: always()
@@ -68,6 +70,7 @@ jobs:
 
   etl-daily-ma:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     name: Daily MA ETL
     needs: etl-daily-prices
     if: always() && (needs.etl-daily-prices.result == 'success' || needs.etl-daily-prices.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'daily-ma' || github.event.inputs.job_type == 'all')
@@ -86,12 +89,13 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Validate price date before MA/RS
+        timeout-minutes: 2
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PGSSLMODE: no-verify
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         run: |
-          node -e "const { Client } = require('pg'); (async() => { const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }); await client.connect(); const res = await client.query('select max(date)::date as d from daily_prices'); const latest = res.rows[0]?.d; if (!latest) { console.error('❌ No price data found'); process.exit(1); } const today = new Date().toISOString().slice(0,10); const diff = (Date.parse(today) - Date.parse(latest)) / (1000*60*60*24); console.log('Latest price date:', latest); if (diff > 1) { console.error('❌ Latest price date is stale (>' + diff + ' days old). Failing MA/RS.'); process.exit(1); } })().catch(err => { console.error(err); process.exit(1); });"
+          node -e "const { Client } = require('pg'); (async() => { const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 30000, statement_timeout: 30000 }); await client.connect(); const res = await client.query('select max(date)::date as d from daily_prices'); await client.end(); const latest = res.rows[0]?.d; if (!latest) { console.error('❌ No price data found'); process.exit(1); } const today = new Date().toISOString().slice(0,10); const diff = (Date.parse(today) - Date.parse(latest)) / (1000*60*60*24); console.log('Latest price date:', latest); if (diff > 1) { console.error('❌ Latest price date is stale (>' + diff + ' days old). Failing MA/RS.'); process.exit(1); } })().catch(err => { console.error(err); process.exit(1); });"
 
       - name: Run Daily MA ETL
         env:
@@ -125,6 +129,7 @@ jobs:
 
   etl-daily-ratios:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     name: Daily Ratios ETL (TTM)
     needs: etl-daily-ma
     if: always() && (needs.etl-daily-ma.result == 'success' || needs.etl-daily-ma.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'daily-ratios' || github.event.inputs.job_type == 'all')

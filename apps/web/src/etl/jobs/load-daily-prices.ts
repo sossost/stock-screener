@@ -1,7 +1,7 @@
 // src/etl/jobs/load-daily-prices.ts
 import "dotenv/config";
 import pLimit from "p-limit";
-import { db } from "@/db/client";
+import { db, pool } from "@/db/client";
 import { eq } from "drizzle-orm";
 import { fetchJson, sleep, toStrNum } from "../utils";
 import { dailyPrices, symbols } from "@/db/schema";
@@ -189,12 +189,14 @@ async function main() {
 // 스크립트가 직접 실행될 때만 함수 호출
 if (require.main === module) {
   main()
-    .then(() => {
+    .then(async () => {
       console.log("✅ Daily Prices ETL completed successfully!");
+      await pool.end(); // 연결 정리
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(async (error) => {
       console.error("❌ Daily Prices ETL failed:", error);
+      await pool.end(); // 연결 정리
       process.exit(1);
     });
 }
