@@ -295,8 +295,8 @@ export function TechnicalChart({ symbol }: TechnicalChartProps) {
     addMASeries(100, MA_COLORS.ma100);
     addMASeries(200, MA_COLORS.ma200);
 
-    // 크로스헤어 이벤트 구독 (호버 데이터 업데이트)
-    mainChart.subscribeCrosshairMove((param) => {
+    // 크로스헤어 이벤트 핸들러 (안정적인 참조로 분리 - unsubscribe 가능하게)
+    const crosshairHandler = (param: { time?: unknown; point?: unknown }) => {
       if (!param.time || !param.point) {
         setHoverData(null);
         return;
@@ -323,7 +323,9 @@ export function TechnicalChart({ symbol }: TechnicalChartProps) {
           ...allIndicatorData[dateStr],
         });
       }
-    });
+    };
+
+    mainChart.subscribeCrosshairMove(crosshairHandler);
 
     // RSI 차트 - 30, 70만 표시
     const rsiChart = createChart(rsiContainerRef.current, {
@@ -488,9 +490,11 @@ export function TechnicalChart({ symbol }: TechnicalChartProps) {
     window.addEventListener("resize", handleResize);
     handleResize();
 
-    // Cleanup: 이벤트 리스너 및 차트 제거
+    // Cleanup: 이벤트 리스너 해제 및 차트 제거
     return () => {
       window.removeEventListener("resize", handleResize);
+      // 크로스헤어 핸들러 명시적 해제 (chart.remove()는 자동 해제 안 함)
+      mainChart.unsubscribeCrosshairMove(crosshairHandler);
       // 차트 제거 (메모리 누수 방지)
       mainChart.remove();
       rsiChart.remove();
