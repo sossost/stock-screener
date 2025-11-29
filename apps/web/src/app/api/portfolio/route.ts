@@ -6,7 +6,7 @@ import { sql } from "drizzle-orm";
 import { getOrCreateSessionId, createSessionCookie } from "@/lib/session";
 import { handleApiError } from "@/lib/errors";
 import type { AddPortfolioRequest, PortfolioResponse } from "@/types/portfolio";
-import type { ScreenerCompany } from "@/types/golden-cross";
+import type { ScreenerCompany } from "@/types/screener";
 
 // 캐싱 설정: 60초 동안 캐시
 export const revalidate = 60;

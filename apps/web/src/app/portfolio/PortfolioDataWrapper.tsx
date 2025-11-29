@@ -5,7 +5,7 @@ import { portfolio } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { PortfolioTableClient } from "@/components/portfolio/PortfolioTableClient";
-import type { ScreenerCompany } from "@/types/golden-cross";
+import type { ScreenerCompany } from "@/types/screener";
 
 async function fetchPortfolioData() {
   const cookieStore = await cookies();

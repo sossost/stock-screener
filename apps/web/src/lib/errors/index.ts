@@ -110,4 +110,12 @@ export function logError(error: unknown, context?: string): void {
     details: errorInfo.details,
     statusCode: errorInfo.statusCode,
   });
+
+  // 원본 에러 스택 출력 (development 환경)
+  if (process.env.NODE_ENV === "development" && error instanceof Error) {
+    console.error(`[${context || "Unknown"}] Stack:`, error.stack);
+    if (error.cause) {
+      console.error(`[${context || "Unknown"}] Cause:`, error.cause);
+    }
+  }
 }

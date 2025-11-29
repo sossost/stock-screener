@@ -1,6 +1,6 @@
 "use client";
 
-import type { ScreenerCompany } from "@/types/golden-cross";
+import type { ScreenerCompany } from "@/types/screener";
 import { StockTable } from "@/components/screener/StockTable";
 import type { FilterState } from "@/lib/filters/summary";
 

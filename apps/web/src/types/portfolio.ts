@@ -2,7 +2,7 @@
  * 포트폴리오 관련 타입 정의
  */
 
-import type { ScreenerCompany } from "@/types/golden-cross";
+import type { ScreenerCompany } from "@/types/screener";
 
 /**
  * 포트폴리오에 추가된 종목 항목

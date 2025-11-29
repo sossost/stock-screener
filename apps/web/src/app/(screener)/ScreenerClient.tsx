@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryFilterBox } from "@/components/filters/CategoryFilterBox";
 import { CategoryFilterDialog } from "@/components/filters/CategoryFilterDialog";
 import type { FilterState, FilterCategory } from "@/lib/filters/summary";
-import type { ScreenerClientProps } from "@/types/golden-cross";
+import type { ScreenerClientProps } from "@/types/screener";
 import { StockTable } from "@/components/screener/StockTable";
 import { TableSkeleton } from "./TableSkeleton";
 import { Input } from "@/components/ui/input";
