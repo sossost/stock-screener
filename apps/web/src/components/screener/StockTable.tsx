@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { ScreenerCompany } from "@/types/golden-cross";
+import type { ScreenerCompany } from "@/types/screener";
 import type { FilterState } from "@/lib/filters/summary";
 import {
   screenerColumns,

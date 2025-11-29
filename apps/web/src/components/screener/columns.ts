@@ -1,4 +1,4 @@
-import type { ScreenerCompany } from "@/types/golden-cross";
+import type { ScreenerCompany } from "@/types/screener";
 
 export type SortKey =
   | "symbol"

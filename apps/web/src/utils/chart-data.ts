@@ -1,4 +1,4 @@
-import type { QuarterlyFinancial } from "@/types/golden-cross";
+import type { QuarterlyFinancial } from "@/types/screener";
 import { formatQuarter } from "@/utils/format";
 
 /**

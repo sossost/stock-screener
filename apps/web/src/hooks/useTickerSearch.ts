@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useDeferredValue, useTransition } from "react";
 import { filterTickerData } from "@/lib/filters/ticker";
-import type { ScreenerCompany } from "@/types/golden-cross";
+import type { ScreenerCompany } from "@/types/screener";
 
 /**
  * 티커 검색 로직을 관리하는 커스텀 훅

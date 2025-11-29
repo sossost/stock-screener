@@ -18,7 +18,7 @@ vi.mock("@/lib/errors", () => ({
   logError: vi.fn(),
 }));
 
-describe("GET /api/screener/golden-cross", () => {
+describe("GET /api/screener/stocks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // 환경변수 설정
@@ -46,9 +46,9 @@ describe("GET /api/screener/golden-cross", () => {
       ],
     };
 
-    vi.mocked(db.execute).mockResolvedValue(mockRows as any);
+    vi.mocked(db.execute).mockResolvedValue(mockRows as unknown as never);
 
-    const url = "http://localhost:3000/api/screener/golden-cross";
+    const url = "http://localhost:3000/api/screener/stocks";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -65,10 +65,10 @@ describe("GET /api/screener/golden-cross", () => {
   it("revenueGrowthRate 파라미터 검증", async () => {
     const { db } = await import("@/db/client");
     const mockRows = { rows: [] };
-    vi.mocked(db.execute).mockResolvedValue(mockRows as any);
+    vi.mocked(db.execute).mockResolvedValue(mockRows as unknown as never);
 
     const url =
-      "http://localhost:3000/api/screener/golden-cross?revenueGrowth=true&revenueGrowthRate=30";
+      "http://localhost:3000/api/screener/stocks?revenueGrowth=true&revenueGrowthRate=30";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -98,10 +98,9 @@ describe("GET /api/screener/golden-cross", () => {
         },
       ],
     };
-    vi.mocked(db.execute).mockResolvedValue(mockRows as any);
+    vi.mocked(db.execute).mockResolvedValue(mockRows as unknown as never);
 
-    const url =
-      "http://localhost:3000/api/screener/golden-cross?turnAround=true";
+    const url = "http://localhost:3000/api/screener/stocks?turnAround=true";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -113,10 +112,10 @@ describe("GET /api/screener/golden-cross", () => {
   it("incomeGrowthRate 파라미터 검증", async () => {
     const { db } = await import("@/db/client");
     const mockRows = { rows: [] };
-    vi.mocked(db.execute).mockResolvedValue(mockRows as any);
+    vi.mocked(db.execute).mockResolvedValue(mockRows as unknown as never);
 
     const url =
-      "http://localhost:3000/api/screener/golden-cross?incomeGrowth=true&incomeGrowthRate=40";
+      "http://localhost:3000/api/screener/stocks?incomeGrowth=true&incomeGrowthRate=40";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -125,7 +124,7 @@ describe("GET /api/screener/golden-cross", () => {
 
   it("잘못된 revenueGrowthRate 범위 검증", async () => {
     const url =
-      "http://localhost:3000/api/screener/golden-cross?revenueGrowthRate=2000";
+      "http://localhost:3000/api/screener/stocks?revenueGrowthRate=2000";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -136,7 +135,7 @@ describe("GET /api/screener/golden-cross", () => {
 
   it("잘못된 incomeGrowthRate 범위 검증", async () => {
     const url =
-      "http://localhost:3000/api/screener/golden-cross?incomeGrowthRate=-10";
+      "http://localhost:3000/api/screener/stocks?incomeGrowthRate=-10";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -148,7 +147,7 @@ describe("GET /api/screener/golden-cross", () => {
   it("환경변수 누락 시 에러 처리", async () => {
     delete process.env.DATABASE_URL;
 
-    const url = "http://localhost:3000/api/screener/golden-cross";
+    const url = "http://localhost:3000/api/screener/stocks";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -158,10 +157,10 @@ describe("GET /api/screener/golden-cross", () => {
   it("복합 필터 파라미터 처리", async () => {
     const { db } = await import("@/db/client");
     const mockRows = { rows: [] };
-    vi.mocked(db.execute).mockResolvedValue(mockRows as any);
+    vi.mocked(db.execute).mockResolvedValue(mockRows as unknown as never);
 
     const url =
-      "http://localhost:3000/api/screener/golden-cross?revenueGrowth=true&revenueGrowthRate=30&incomeGrowth=true&incomeGrowthRate=40&revenueGrowthQuarters=4&incomeGrowthQuarters=5";
+      "http://localhost:3000/api/screener/stocks?revenueGrowth=true&revenueGrowthRate=30&incomeGrowth=true&incomeGrowthRate=40&revenueGrowthQuarters=4&incomeGrowthQuarters=5";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -171,11 +170,11 @@ describe("GET /api/screener/golden-cross", () => {
   it("revenueGrowthRate가 null일 때 연속 분기 수 필터 적용", async () => {
     const { db } = await import("@/db/client");
     const mockRows = { rows: [] };
-    vi.mocked(db.execute).mockResolvedValue(mockRows as any);
+    vi.mocked(db.execute).mockResolvedValue(mockRows as unknown as never);
 
     // revenueGrowthRate 파라미터 없이 revenueGrowth만 true
     const url =
-      "http://localhost:3000/api/screener/golden-cross?revenueGrowth=true&revenueGrowthQuarters=3";
+      "http://localhost:3000/api/screener/stocks?revenueGrowth=true&revenueGrowthQuarters=3";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -184,7 +183,7 @@ describe("GET /api/screener/golden-cross", () => {
 
   it("유효하지 않은 revenueGrowthRate 값 처리 (NaN)", async () => {
     const url =
-      "http://localhost:3000/api/screener/golden-cross?revenueGrowthRate=abc";
+      "http://localhost:3000/api/screener/stocks?revenueGrowthRate=abc";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -195,7 +194,7 @@ describe("GET /api/screener/golden-cross", () => {
 
   it("유효하지 않은 incomeGrowthRate 값 처리 (NaN)", async () => {
     const url =
-      "http://localhost:3000/api/screener/golden-cross?incomeGrowthRate=xyz";
+      "http://localhost:3000/api/screener/stocks?incomeGrowthRate=xyz";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -206,7 +205,7 @@ describe("GET /api/screener/golden-cross", () => {
 
   it("Infinity 값 처리", async () => {
     const url =
-      "http://localhost:3000/api/screener/golden-cross?revenueGrowthRate=Infinity";
+      "http://localhost:3000/api/screener/stocks?revenueGrowthRate=Infinity";
     const request = new Request(url);
 
     const response = await GET(request);
@@ -215,3 +214,4 @@ describe("GET /api/screener/golden-cross", () => {
     expect(data.error).toContain("revenueGrowthRate must be a valid number");
   });
 });
+

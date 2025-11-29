@@ -17,11 +17,11 @@ async function fetchScreenerData(searchParams: SearchParams) {
 
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/screener/golden-cross?${params.toString()}`,
+      `${API_BASE_URL}/api/screener/stocks?${params.toString()}`,
       {
         next: {
           revalidate: CACHE_DURATION.ONE_DAY, // 24시간 캐싱
-          tags: [CACHE_TAGS.GOLDEN_CROSS, cacheTag],
+          tags: [CACHE_TAGS.SCREENER, cacheTag],
         },
       }
     );

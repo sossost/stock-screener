@@ -35,7 +35,7 @@ export const CACHE_DURATION = {
  */
 export const CACHE_TTL = {
   // 일일 주가 데이터 기반 스크리너 (종가 기준, 하루 1회 갱신)
-  GOLDEN_CROSS: TIME.ONE_DAY,
+  SCREENER: TIME.ONE_DAY,
   // 분기별 재무 데이터 기반 스크리너 (분기 1회 갱신)
   RULE_OF_40: TIME.ONE_DAY,
   TURNED_PROFITABLE: TIME.ONE_DAY,
@@ -45,7 +45,7 @@ export const CACHE_TTL = {
  * 캐시 태그 정의
  */
 export const CACHE_TAGS = {
-  GOLDEN_CROSS: "golden-cross",
+  SCREENER: "screener",
   DAILY_DATA: "daily-data",
   QUARTERLY_DATA: "quarterly-data",
   RULE_OF_40: "rule-of-40",

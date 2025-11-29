@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import type { ScreenerCompany } from "@/types/golden-cross";
+import type { ScreenerCompany } from "@/types/screener";
 import { StateMessage } from "@/components/common/StateMessage";
 import { StockTable } from "@/components/screener/StockTable";
 import { portfolioFilterState } from "@/components/portfolio/PortfolioTableClient";
