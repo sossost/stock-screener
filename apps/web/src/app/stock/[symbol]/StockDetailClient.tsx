@@ -30,7 +30,7 @@ export function StockDetailClient({ data }: StockDetailClientProps) {
 
       {/* 분기 재무 (수익성/레버리지/배당) */}
       {!isEtf && data.ratios && (
-        <QuarterlyFinancialsCard ratios={data.ratios} />
+            <QuarterlyFinancialsCard ratios={data.ratios} />
       )}
 
       {/* 분기별 실적 차트 */}

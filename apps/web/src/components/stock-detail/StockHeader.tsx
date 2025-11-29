@@ -2,7 +2,8 @@
 
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { Button } from "@/components/ui/button";
-import { Star, ArrowLeft, ExternalLink } from "lucide-react";
+import { Star, ArrowLeft, ExternalLink, TrendingUp } from "lucide-react";
+import TradeForm from "@/components/trades/TradeForm";
 import { formatSector, formatIndustry } from "@/utils/sector";
 import { formatNumber, formatPrice } from "@/utils/format";
 import type {
@@ -62,6 +63,7 @@ export function StockHeader({
 }: StockHeaderProps) {
   const { isInPortfolio, togglePortfolio, refresh } = usePortfolio(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [showTradeForm, setShowTradeForm] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -105,6 +107,15 @@ export function StockHeader({
           뒤로가기
         </Link>
         <div className="flex items-center gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setShowTradeForm(true)}
+            className="h-8 gap-1 text-xs bg-blue-500 hover:bg-blue-600"
+          >
+            <TrendingUp className="h-3.5 w-3.5" />
+            매매 시작
+          </Button>
           <Button
             variant={inPortfolio ? "default" : "outline"}
             size="sm"
@@ -241,6 +252,19 @@ export function StockHeader({
           )}
         </div>
       </div>
+
+      {/* 매매 시작 모달 */}
+      {showTradeForm && (
+        <TradeForm
+          defaultSymbol={basic.symbol}
+          onClose={() => setShowTradeForm(false)}
+          onCreated={() => {
+            setShowTradeForm(false);
+            // 매매일지 페이지로 이동하거나 알림 표시
+            window.location.href = "/trades";
+          }}
+        />
+      )}
     </div>
   );
 }
