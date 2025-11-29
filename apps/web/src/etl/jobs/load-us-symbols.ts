@@ -1,4 +1,5 @@
-// src/etl/jobs/load-nasdaq-symbols.ts
+// src/etl/jobs/load-us-symbols.ts
+// NASDAQ, NYSE, AMEX 거래소 심볼 로드
 import "dotenv/config";
 import { db, pool } from "@/db/client";
 import { symbols } from "@/db/schema";
@@ -31,8 +32,11 @@ type SymbolRow = {
   isActivelyTrading?: boolean;
 };
 
+// 지원 거래소 목록
+const SUPPORTED_EXCHANGES = ["NASDAQ", "NYSE", "AMEX"];
+
 async function main() {
-  console.log("🚀 Starting NASDAQ symbols ETL...");
+  console.log("🚀 Starting US symbols ETL (NASDAQ, NYSE, AMEX)...");
 
   // 환경 변수 검증
   const envValidation = validateEnvironmentVariables();
@@ -45,19 +49,29 @@ async function main() {
     console.warn("⚠️ Environment warnings:", envValidation.warnings);
   }
 
-  // API 호출 (재시도 로직 적용)
-  const list = await retryApiCall(
-    () =>
-      fetchJson<SymbolRow[]>(
-        `${API}/company-screener?exchange=NASDAQ&limit=10000&apikey=${KEY}`
-      ),
-    DEFAULT_RETRY_OPTIONS
+  // 각 거래소별로 API 병렬 호출
+  console.log(`📡 Fetching symbols from ${SUPPORTED_EXCHANGES.join(", ")}...`);
+  
+  const results = await Promise.all(
+    SUPPORTED_EXCHANGES.map(async (exchange) => {
+      const list = await retryApiCall(
+        () =>
+          fetchJson<SymbolRow[]>(
+            `${API}/company-screener?exchange=${exchange}&limit=10000&apikey=${KEY}`
+          ),
+        DEFAULT_RETRY_OPTIONS
+      );
+      console.log(`  → ${list.length} symbols from ${exchange}`);
+      return list;
+    })
   );
 
-  console.log(`📊 Fetched ${list.length} symbols from API`);
+  const allSymbols = results.flat();
 
-  const nasdaq = list
-    .filter((r) => r.exchange === "NASDAQ" || r.exchangeShortName === "NASDAQ")
+  console.log(`📊 Fetched ${allSymbols.length} total symbols from API`);
+
+  const validSymbols = allSymbols
+    .filter((r) => SUPPORTED_EXCHANGES.includes(r.exchangeShortName || ""))
     .filter((r) => {
       // 정상적인 주식만 필터링 (워런트, 우선주, ETF 등 제외)
       const symbol = r.symbol;
@@ -74,10 +88,10 @@ async function main() {
       ); // 펀드 제외
     });
 
-  console.log(`📈 Filtered to ${nasdaq.length} valid NASDAQ symbols`);
+  console.log(`📈 Filtered to ${validSymbols.length} valid US symbols`);
 
   // 데이터 검증
-  const validationResult = validateBatchData(nasdaq, validateSymbolData);
+  const validationResult = validateBatchData(validSymbols, validateSymbolData);
   if (!validationResult.isValid) {
     console.error("❌ Data validation failed:", validationResult.errors);
     process.exit(1);
@@ -91,11 +105,11 @@ async function main() {
   const batchSize = 100;
   let processedCount = 0;
 
-  for (let i = 0; i < nasdaq.length; i += batchSize) {
-    const batch = nasdaq.slice(i, i + batchSize);
+  for (let i = 0; i < validSymbols.length; i += batchSize) {
+    const batch = validSymbols.slice(i, i + batchSize);
     console.log(
       `📊 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-        nasdaq.length / batchSize
+        validSymbols.length / batchSize
       )} (${batch.length} symbols)`
     );
 
@@ -134,22 +148,22 @@ async function main() {
     }
   }
 
-  console.log(`✅ Successfully processed ${processedCount} NASDAQ symbols`);
+  console.log(`✅ Successfully processed ${processedCount} US symbols`);
 }
 
 // 스크립트가 직접 실행될 때만 함수 호출
 if (require.main === module) {
   main()
     .then(async () => {
-      console.log("✅ NASDAQ symbols ETL completed successfully!");
+      console.log("✅ US symbols ETL completed successfully!");
       await pool.end();
       process.exit(0);
     })
     .catch(async (error) => {
-      console.error("❌ NASDAQ symbols ETL failed:", error);
+      console.error("❌ US symbols ETL failed:", error);
       await pool.end();
       process.exit(1);
     });
 }
 
-export { main as loadNasdaqSymbols };
+export { main as loadUSSymbols };
