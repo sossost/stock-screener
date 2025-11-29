@@ -16,7 +16,7 @@
     "feature:checklist": "bash ../../.specify/scripts/feature-checklist.sh",
     "db:gen": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "etl:symbols": "tsx src/etl/jobs/load-nasdaq-symbols.ts",
+    "etl:symbols": "tsx src/etl/jobs/load-us-symbols.ts",
     "etl:ratios": "tsx src/etl/jobs/load-ratios.ts",
     "etl:daily-prices": "tsx src/etl/jobs/load-daily-prices.ts",
     "etl:backfill-daily-prices": "tsx src/etl/jobs/load-daily-prices.ts backfill",
