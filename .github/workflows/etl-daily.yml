@@ -96,7 +96,7 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         run: |
           echo "🚀 Starting Daily MA ETL..."
-          yarn etl:daily-ma
+          DATA_API=${{ secrets.DATA_API }} yarn etl:daily-ma
           echo "✅ Daily MA ETL completed!"
 
       - name: Run RS ETL
@@ -107,7 +107,7 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         run: |
           echo "📊 Computing RS (12/6/3M weighted)..."
-          yarn etl:rs
+          DATA_API=${{ secrets.DATA_API }} yarn etl:rs
           echo "✅ RS ETL completed!"
 
       - name: Upload logs

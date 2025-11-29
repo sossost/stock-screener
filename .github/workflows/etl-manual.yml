@@ -129,9 +129,9 @@ jobs:
           echo "🚀 Starting Daily MA ETL (Manual)..."
           if [ "${{ github.event.inputs.backfill }}" == "true" ]; then
             echo "📊 Running in backfill mode..."
-            yarn etl:backfill-daily-ma
+            DATA_API=${{ secrets.DATA_API }} yarn etl:backfill-daily-ma
           else
-            yarn etl:daily-ma
+            DATA_API=${{ secrets.DATA_API }} yarn etl:daily-ma
           fi
           echo "✅ Daily MA ETL completed!"
 
@@ -144,7 +144,7 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         run: |
           echo "📊 Computing RS (12/6/3M weighted)..."
-          yarn etl:rs
+          DATA_API=${{ secrets.DATA_API }} yarn etl:rs
           echo "✅ RS ETL completed!"
 
       - name: Upload logs
