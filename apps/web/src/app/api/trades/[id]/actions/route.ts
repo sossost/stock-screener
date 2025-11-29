@@ -1,0 +1,176 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db/client";
+import { trades, tradeActions } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+import { canSellQuantity } from "@/lib/trades/calculations";
+import { CreateActionRequest } from "@/lib/trades/types";
+
+const DEFAULT_USER_ID = "0";
+
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
+/**
+ * GET /api/trades/[id]/actions - 매매 내역 조회
+ */
+export async function GET(request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const tradeId = parseInt(id, 10);
+
+    if (isNaN(tradeId)) {
+      return NextResponse.json(
+        { error: "유효하지 않은 ID입니다" },
+        { status: 400 }
+      );
+    }
+
+    // 매매 소유권 확인
+    const [trade] = await db
+      .select()
+      .from(trades)
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID)));
+
+    if (!trade) {
+      return NextResponse.json(
+        { error: "매매를 찾을 수 없습니다" },
+        { status: 404 }
+      );
+    }
+
+    // 액션 조회
+    const actions = await db
+      .select()
+      .from(tradeActions)
+      .where(eq(tradeActions.tradeId, tradeId))
+      .orderBy(tradeActions.actionDate);
+
+    return NextResponse.json(actions);
+  } catch (error) {
+    console.error("[Actions API] GET error:", error);
+    return NextResponse.json({ error: "매매 내역 조회 실패" }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/trades/[id]/actions - 매수/매도 추가
+ */
+export async function POST(request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const tradeId = parseInt(id, 10);
+
+    if (isNaN(tradeId)) {
+      return NextResponse.json(
+        { error: "유효하지 않은 ID입니다" },
+        { status: 400 }
+      );
+    }
+
+    const body: CreateActionRequest = await request.json();
+
+    // 입력 검증
+    if (!body.actionType || !["BUY", "SELL"].includes(body.actionType)) {
+      return NextResponse.json(
+        { error: "actionType은 BUY 또는 SELL이어야 합니다" },
+        { status: 400 }
+      );
+    }
+
+    if (!body.price || body.price <= 0) {
+      return NextResponse.json(
+        { error: "가격은 0보다 커야 합니다" },
+        { status: 400 }
+      );
+    }
+
+    if (!body.quantity || body.quantity <= 0) {
+      return NextResponse.json(
+        { error: "수량은 0보다 커야 합니다" },
+        { status: 400 }
+      );
+    }
+
+    // 매매 존재 및 상태 확인
+    const [trade] = await db
+      .select()
+      .from(trades)
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID)));
+
+    if (!trade) {
+      return NextResponse.json(
+        { error: "매매를 찾을 수 없습니다" },
+        { status: 404 }
+      );
+    }
+
+    if (trade.status === "CLOSED") {
+      return NextResponse.json(
+        { error: "종료된 매매에는 내역을 추가할 수 없습니다" },
+        { status: 400 }
+      );
+    }
+
+    // 매도 시 보유 수량 확인
+    if (body.actionType === "SELL") {
+      const existingActions = await db
+        .select()
+        .from(tradeActions)
+        .where(eq(tradeActions.tradeId, tradeId));
+
+      if (!canSellQuantity(existingActions, body.quantity)) {
+        return NextResponse.json(
+          { error: "보유 수량을 초과하여 매도할 수 없습니다" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 첫 매수인지 확인 (startDate 업데이트용)
+    const existingActionsCount = await db
+      .select()
+      .from(tradeActions)
+      .where(eq(tradeActions.tradeId, tradeId));
+
+    const isFirstAction =
+      existingActionsCount.length === 0 && body.actionType === "BUY";
+
+    // 액션 생성
+    const actionDate = body.actionDate ? new Date(body.actionDate) : new Date();
+
+    const [newAction] = await db
+      .insert(tradeActions)
+      .values({
+        tradeId,
+        actionType: body.actionType,
+        actionDate,
+        price: body.price.toString(),
+        quantity: body.quantity,
+        note: body.note || null,
+      })
+      .returning();
+
+    // 첫 매수면 startDate 업데이트
+    if (isFirstAction) {
+      await db
+        .update(trades)
+        .set({
+          startDate: actionDate,
+          updatedAt: new Date(),
+        })
+        .where(eq(trades.id, tradeId));
+    } else {
+      // updatedAt만 업데이트
+      await db
+        .update(trades)
+        .set({ updatedAt: new Date() })
+        .where(eq(trades.id, tradeId));
+    }
+
+    return NextResponse.json(newAction, { status: 201 });
+  } catch (error) {
+    console.error("[Actions API] POST error:", error);
+    return NextResponse.json({ error: "매매 내역 추가 실패" }, { status: 500 });
+  }
+}

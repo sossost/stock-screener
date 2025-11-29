@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface NavigationProps {
@@ -19,7 +19,13 @@ export function Navigation({ showPortfolioButton = true }: NavigationProps) {
             </h1>
           </Link>
 
-          <div className="w-[140px] flex justify-end">
+          <div className="flex items-center gap-2">
+            <Link href="/trades">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <BookOpen className="h-4 w-4" />
+                매매일지
+              </Button>
+            </Link>
             <Link
               href="/portfolio"
               className={
@@ -27,7 +33,8 @@ export function Navigation({ showPortfolioButton = true }: NavigationProps) {
               }
             >
               <Button variant="outline" size="sm" className="gap-2">
-                <Star className="h-4 w-4" />내 포트폴리오
+                <Star className="h-4 w-4" />
+                관심종목
               </Button>
             </Link>
           </div>

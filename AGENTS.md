@@ -23,6 +23,40 @@
 - ESLint: `next/core-web-vitals` + `next/typescript`; PR 전 `npx eslint . --max-warnings=0`.
 - `any` 지양, Tailwind + shadcn 패턴, 컴포넌트별 스타일/로직은 최대한 응집.
 
+## 컴포넌트 설계 원칙
+
+### DRY (Don't Repeat Yourself)
+
+- **반복되는 UI 패턴은 즉시 공용 컴포넌트로 추출**
+- 2회 이상 사용되면 컴포넌트화 검토, 3회면 필수 추출
+
+### 공용 UI 컴포넌트 (`src/components/ui/`)
+
+| 컴포넌트     | 용도                    | 예시                        |
+| ------------ | ----------------------- | --------------------------- |
+| `Button`     | 모든 버튼 (shadcn 기반) | 액션, 제출, 링크 버튼       |
+| `PageHeader` | 페이지 헤더             | 뒤로가기 + 타이틀 + 액션    |
+| `FilterTabs` | 필터/탭 그룹            | 상태 필터, 카테고리 탭      |
+| `EmptyState` | 빈 상태                 | 데이터 없음, 검색 결과 없음 |
+| `ErrorState` | 에러 상태               | API 실패, 404               |
+
+### 페이지 구조 패턴 (Next.js App Router)
+
+```
+/app/feature/
+  ├── page.tsx           # 서버 컴포넌트 (metadata, Suspense)
+  ├── FeatureClient.tsx  # 클라이언트 컴포넌트 ("use client")
+  └── [id]/
+      ├── page.tsx
+      └── DetailClient.tsx
+```
+
+### 스켈레톤 작성 원칙
+
+- 실제 렌더링과 **동일한 높이/레이아웃** 유지 (레이아웃 시프트 방지)
+- `animate-pulse` 클래스 사용
+- 실제 요소의 Tailwind 높이 클래스 참조 (text-lg → h-7 등)
+
 ## 테스트
 
 - 스택: Vitest + Testing Library + JSDOM (`apps/web/vitest.setup.ts`).

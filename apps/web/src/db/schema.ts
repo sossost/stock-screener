@@ -8,6 +8,7 @@ import {
   boolean,
   serial,
   integer,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const symbols = pgTable("symbols", {
@@ -217,5 +218,114 @@ export const portfolio = pgTable(
   (t) => ({
     uq: unique("uq_portfolio_session_symbol").on(t.sessionId, t.symbol),
     idx_session: index("idx_portfolio_session").on(t.sessionId),
+  })
+);
+
+// ==================== 매매일지 (Trading Journal) ====================
+
+/**
+ * 전략 태그 (미리 정의된 값)
+ */
+export const STRATEGY_TAGS = [
+  "눌림목",
+  "돌파",
+  "역추세",
+  "실적발표",
+  "뇌동매매",
+  "기타",
+] as const;
+
+/**
+ * 실수 태그 (미리 정의된 값)
+ */
+export const MISTAKE_TAGS = [
+  "원칙준수",
+  "추격매수",
+  "손절지연",
+  "조급한익절",
+  "포지션과다",
+  "뇌동매매",
+  "기타",
+] as const;
+
+/**
+ * 매매 건 (에피소드)
+ * - 한 종목을 사고 팔아서 완전히 끝날 때까지의 "하나의 에피소드"
+ */
+export const trades = pgTable(
+  "trades",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull().default("0"), // 0 = 관리자(나)
+
+    symbol: text("symbol")
+      .notNull()
+      .references(() => symbols.symbol, { onDelete: "cascade" }),
+    status: text("status").notNull().default("OPEN"), // OPEN | CLOSED
+
+    // [Plan] 진입 시 작성
+    strategy: text("strategy"), // 매매 기법
+    planEntryPrice: numeric("plan_entry_price"), // 계획 진입가
+    planStopLoss: numeric("plan_stop_loss"), // 최초 손절가 (R 계산용)
+    planTargetPrice: numeric("plan_target_price"), // 1차 목표가 (하위호환)
+    planTargets: jsonb("plan_targets").$type<{ price: number; weight: number }[]>(), // n차 목표가 [{price, weight}]
+    entryReason: text("entry_reason"), // 진입 근거 (일기)
+    commissionRate: numeric("commission_rate").default("0.07"), // 수수료율 (%, 기본 0.07%)
+
+    // [Result] 청산 후 업데이트
+    finalPnl: numeric("final_pnl"), // 최종 손익금 ($)
+    finalRoi: numeric("final_roi"), // 최종 수익률 (소수점)
+    finalRMultiple: numeric("final_r_multiple"), // R-Multiple
+
+    // [Review] 복기
+    mistakeType: text("mistake_type"), // 실수 태그
+    reviewNote: text("review_note"), // 배운 점
+
+    // Timestamps
+    startDate: timestamp("start_date", { withTimezone: true }), // 첫 진입일
+    endDate: timestamp("end_date", { withTimezone: true }), // 완전 청산일
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    idx_user_status: index("idx_trades_user_status").on(t.userId, t.status),
+    idx_user_symbol: index("idx_trades_user_symbol").on(t.userId, t.symbol),
+    idx_start_date: index("idx_trades_start_date").on(t.startDate),
+  })
+);
+
+/**
+ * 매수/매도 내역
+ * - 분할 매수/매도 지원
+ */
+export const tradeActions = pgTable(
+  "trade_actions",
+  {
+    id: serial("id").primaryKey(),
+    tradeId: integer("trade_id")
+      .notNull()
+      .references(() => trades.id, { onDelete: "cascade" }),
+
+    actionType: text("action_type").notNull(), // BUY | SELL
+    actionDate: timestamp("action_date", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+
+    price: numeric("price").notNull(), // 체결 가격
+    quantity: integer("quantity").notNull(), // 수량
+
+    note: text("note"), // 비고 (예: "2R 익절", "손절")
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    idx_trade_id: index("idx_trade_actions_trade_id").on(t.tradeId),
+    idx_action_date: index("idx_trade_actions_date").on(t.actionDate),
   })
 );
