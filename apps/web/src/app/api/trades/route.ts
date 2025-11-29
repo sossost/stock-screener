@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { trades, tradeActions, symbols, dailyPrices } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
-import { calculateTradeMetrics } from "@/lib/trades/calculations";
+import {
+  calculateTradeMetrics,
+  calculateHoldingDays,
+} from "@/lib/trades/calculations";
 import {
   CreateTradeRequest,
   TradeListFilter,
@@ -73,6 +76,12 @@ export async function GET(request: NextRequest) {
           commissionRate
         );
 
+        // CLOSED 거래용 보유 기간 계산
+        const holdingDays =
+          trade.status === "CLOSED"
+            ? calculateHoldingDays(trade.startDate, trade.endDate)
+            : undefined;
+
         return {
           ...trade,
           companyName,
@@ -82,6 +91,10 @@ export async function GET(request: NextRequest) {
             currentQuantity: calculated.currentQuantity,
             realizedPnl: calculated.realizedPnl,
             realizedRoi: calculated.realizedRoi,
+            totalBuyQuantity: calculated.totalBuyQuantity,
+            avgExitPrice: calculated.avgExitPrice,
+            totalCommission: calculated.totalCommission,
+            holdingDays,
           },
         };
       })

@@ -5,6 +5,8 @@ import {
   calculateTradeStats,
   canSellQuantity,
   isFullySold,
+  calculateHoldingDays,
+  calculateUnrealizedPnl,
 } from "../trades/calculations";
 import { TradeAction, Trade } from "../trades/types";
 
@@ -338,6 +340,100 @@ describe("isFullySold", () => {
 
   it("빈 액션이면 false", () => {
     expect(isFullySold([])).toBe(false);
+  });
+});
+
+describe("calculateHoldingDays", () => {
+  it("정상적인 보유 기간 계산", () => {
+    const result = calculateHoldingDays("2025-01-01", "2025-01-15");
+    expect(result).toBe(14);
+  });
+
+  it("같은 날짜면 0일", () => {
+    const result = calculateHoldingDays("2025-01-01", "2025-01-01");
+    expect(result).toBe(0);
+  });
+
+  it("Date 객체도 처리", () => {
+    const start = new Date("2025-01-01");
+    const end = new Date("2025-01-10");
+    const result = calculateHoldingDays(start, end);
+    expect(result).toBe(9);
+  });
+
+  it("startDate가 null이면 undefined", () => {
+    const result = calculateHoldingDays(null, "2025-01-15");
+    expect(result).toBeUndefined();
+  });
+
+  it("endDate가 null이면 undefined", () => {
+    const result = calculateHoldingDays("2025-01-01", null);
+    expect(result).toBeUndefined();
+  });
+
+  it("둘 다 undefined면 undefined", () => {
+    const result = calculateHoldingDays(undefined, undefined);
+    expect(result).toBeUndefined();
+  });
+
+  it("유효하지 않은 날짜면 undefined", () => {
+    const result = calculateHoldingDays("invalid", "2025-01-15");
+    expect(result).toBeUndefined();
+  });
+});
+
+describe("calculateUnrealizedPnl", () => {
+  it("수익인 경우 양수 손익", () => {
+    const result = calculateUnrealizedPnl(100, 10, 120);
+    
+    // (120 - 100) * 10 = 200
+    expect(result.unrealizedPnl).toBe(200);
+    // 200 / (100 * 10) = 0.2 (20%)
+    expect(result.unrealizedRoi).toBeCloseTo(0.2);
+  });
+
+  it("손실인 경우 음수 손익", () => {
+    const result = calculateUnrealizedPnl(100, 10, 80);
+    
+    // (80 - 100) * 10 = -200
+    expect(result.unrealizedPnl).toBe(-200);
+    // -200 / (100 * 10) = -0.2 (-20%)
+    expect(result.unrealizedRoi).toBeCloseTo(-0.2);
+  });
+
+  it("현재가가 평단가와 같으면 0", () => {
+    const result = calculateUnrealizedPnl(100, 10, 100);
+    
+    expect(result.unrealizedPnl).toBe(0);
+    expect(result.unrealizedRoi).toBe(0);
+  });
+
+  it("수량이 0이면 0 반환", () => {
+    const result = calculateUnrealizedPnl(100, 0, 120);
+    
+    expect(result.unrealizedPnl).toBe(0);
+    expect(result.unrealizedRoi).toBe(0);
+  });
+
+  it("평단가가 0이면 0 반환", () => {
+    const result = calculateUnrealizedPnl(0, 10, 120);
+    
+    expect(result.unrealizedPnl).toBe(0);
+    expect(result.unrealizedRoi).toBe(0);
+  });
+
+  it("현재가가 0이면 0 반환", () => {
+    const result = calculateUnrealizedPnl(100, 10, 0);
+    
+    expect(result.unrealizedPnl).toBe(0);
+    expect(result.unrealizedRoi).toBe(0);
+  });
+
+  it("음수 값이면 0 반환", () => {
+    const result = calculateUnrealizedPnl(100, -5, 120);
+    
+    expect(result.unrealizedPnl).toBe(0);
+    expect(result.unrealizedRoi).toBe(0);
   });
 });
 

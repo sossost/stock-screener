@@ -74,6 +74,10 @@ export function calculateTradeMetrics(
     }
   }
 
+  // 평균 청산가 (매도 가중평균)
+  const avgExitPrice =
+    totalSellQuantity > 0 ? totalSellAmount / totalSellQuantity : 0;
+
   return {
     avgEntryPrice,
     currentQuantity,
@@ -85,6 +89,7 @@ export function calculateTradeMetrics(
     realizedPnl,
     realizedRoi,
     rMultiple,
+    avgExitPrice,
   };
 }
 
@@ -199,5 +204,50 @@ export function canSellQuantity(
 export function isFullySold(actions: TradeAction[]): boolean {
   const metrics = calculateTradeMetrics(actions);
   return metrics.currentQuantity === 0 && metrics.totalBuyQuantity > 0;
+}
+
+/**
+ * 보유 기간 계산 (일수)
+ * @param startDate 시작일
+ * @param endDate 종료일
+ * @returns 보유 기간 (일수), 날짜가 없으면 undefined
+ */
+export function calculateHoldingDays(
+  startDate: Date | string | null | undefined,
+  endDate: Date | string | null | undefined
+): number | undefined {
+  if (!startDate || !endDate) return undefined;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return undefined;
+
+  const diffTime = end.getTime() - start.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return Math.max(0, diffDays);
+}
+
+/**
+ * 미실현 손익 계산
+ * @param avgEntryPrice 평균 진입가
+ * @param currentQuantity 현재 보유 수량
+ * @param currentPrice 현재가
+ * @returns 미실현 손익 및 수익률
+ */
+export function calculateUnrealizedPnl(
+  avgEntryPrice: number,
+  currentQuantity: number,
+  currentPrice: number
+): { unrealizedPnl: number; unrealizedRoi: number } {
+  if (currentQuantity <= 0 || avgEntryPrice <= 0 || currentPrice <= 0) {
+    return { unrealizedPnl: 0, unrealizedRoi: 0 };
+  }
+
+  const unrealizedPnl = (currentPrice - avgEntryPrice) * currentQuantity;
+  const unrealizedRoi = unrealizedPnl / (avgEntryPrice * currentQuantity);
+
+  return { unrealizedPnl, unrealizedRoi };
 }
 

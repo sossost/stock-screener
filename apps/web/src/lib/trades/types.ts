@@ -49,6 +49,8 @@ export interface TradeCalculated {
   realizedRoi: number;
   /** R-Multiple (손절가 기준) */
   rMultiple: number | null;
+  /** 평균 청산가 (CLOSED 거래용) */
+  avgExitPrice: number;
 }
 
 /**
@@ -72,8 +74,17 @@ export interface TradeListItem extends Trade {
   currentPrice: number | null;
   calculated: Pick<
     TradeCalculated,
-    "avgEntryPrice" | "currentQuantity" | "realizedPnl" | "realizedRoi"
-  >;
+    | "avgEntryPrice"
+    | "currentQuantity"
+    | "realizedPnl"
+    | "realizedRoi"
+    | "totalBuyQuantity"
+    | "avgExitPrice"
+    | "totalCommission"
+  > & {
+    /** 보유 기간 (일수, CLOSED 거래용) */
+    holdingDays?: number;
+  };
 }
 
 // ==================== API Request/Response Types ====================
@@ -167,5 +178,7 @@ export interface TradeStats {
   maxLoss: number;
   /** 실수 유형별 통계 */
   mistakeStats: Record<string, number>;
+  /** 진행중 매매 수 */
+  openTrades?: number;
 }
 

@@ -5,19 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { ErrorState } from "@/components/ui/error-state";
-
-interface TradeStats {
-  totalTrades: number;
-  winningTrades: number;
-  losingTrades: number;
-  winRate: number;
-  totalPnl: number;
-  avgRMultiple: number | null;
-  maxProfit: number;
-  maxLoss: number;
-  mistakeStats: Record<string, number>;
-  openTrades: number;
-}
+import { TradeStats } from "@/lib/trades/types";
+import { formatPnl, formatPercent, formatRatio } from "@/utils/format";
 
 // 스켈레톤 컴포넌트
 function StatsSkeleton() {
@@ -98,14 +87,7 @@ export default function StatsClient() {
     fetchStats();
   }, []);
 
-  const formatCurrency = (value: number) => {
-    const absValue = Math.abs(value);
-    const sign = value >= 0 ? "+" : "-";
-    if (absValue >= 1000) {
-      return `${sign}$${(absValue / 1000).toFixed(1)}K`;
-    }
-    return `${sign}$${absValue.toFixed(0)}`;
-  };
+  // formatPnl 사용
 
   if (loading) {
     return <StatsSkeleton />;
@@ -151,7 +133,7 @@ export default function StatsClient() {
                 stats.winRate >= 50 ? "text-green-600" : "text-red-600"
               }`}
             >
-              {stats.winRate.toFixed(1)}%
+              {formatPercent(stats.winRate, 1)}
             </p>
             <p className="text-xs text-gray-400 mt-1">
               {stats.winningTrades}승 {stats.losingTrades}패
@@ -165,7 +147,7 @@ export default function StatsClient() {
                 stats.totalPnl >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
-              {formatCurrency(stats.totalPnl)}
+              {formatPnl(stats.totalPnl)}
             </p>
           </div>
 
@@ -179,7 +161,7 @@ export default function StatsClient() {
               }`}
             >
               {stats.avgRMultiple != null
-                ? `${stats.avgRMultiple.toFixed(2)}R`
+                ? `${formatRatio(stats.avgRMultiple)}R`
                 : "-"}
             </p>
           </div>
@@ -192,13 +174,13 @@ export default function StatsClient() {
             <div>
               <p className="text-sm text-gray-500 mb-1">최대 이익</p>
               <p className="text-xl font-bold text-green-600">
-                {formatCurrency(stats.maxProfit)}
+                {formatPnl(stats.maxProfit)}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">최대 손실</p>
               <p className="text-xl font-bold text-red-600">
-                {formatCurrency(stats.maxLoss)}
+                {formatPnl(stats.maxLoss)}
               </p>
             </div>
           </div>
@@ -232,7 +214,7 @@ export default function StatsClient() {
                         {tag}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {count}건 ({percentage.toFixed(0)}%)
+                        {count}건 ({formatPercent(percentage, 0)})
                       </span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">

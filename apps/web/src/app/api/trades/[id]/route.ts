@@ -65,10 +65,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
       ? parseFloat(latestPrice[0].close)
       : null;
 
-    // 계산값
+    // 계산값 (수수료율 적용)
+    const commissionRate = tradeResult.trade.commissionRate
+      ? parseFloat(tradeResult.trade.commissionRate)
+      : undefined;
     const calculated = calculateTradeMetrics(
       actions,
-      tradeResult.trade.planStopLoss
+      tradeResult.trade.planStopLoss,
+      commissionRate
     );
 
     const result: TradeWithDetails = {

@@ -1,4 +1,5 @@
-import { Suspense } from "react";
+import { TradeStatus } from "@/lib/trades/types";
+import { getTradesList } from "@/lib/trades/queries";
 import TradesClient from "./TradesClient";
 
 export const metadata = {
@@ -6,17 +7,14 @@ export const metadata = {
   description: "매매 기록 및 복기",
 };
 
-export default function TradesPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-        </div>
-      }
-    >
-      <TradesClient />
-    </Suspense>
-  );
+interface PageProps {
+  searchParams: Promise<{ status?: string }>;
 }
 
+export default async function TradesPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const status = (params.status === "CLOSED" ? "CLOSED" : "OPEN") as TradeStatus;
+  const trades = await getTradesList(status);
+
+  return <TradesClient initialTrades={trades} initialStatus={status} />;
+}
