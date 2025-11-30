@@ -482,38 +482,38 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
 
   // justTurned 필터가 필요할 때만 prev_ma와 prev_status CTE 포함
   if (needPrevStatus) {
-    return sql`
-      WITH last_d AS (
-        ${buildLastDateCTE(requireMA)}
-      ),
-      cur AS (
-        ${buildCurrentDataCTE(params, requireMA)}
-      ),
-      candidates AS (
-        ${buildCandidatesCTE(params)}
-      ),
-      prev_ma AS (
-        ${buildPrevMACTE()}
-      ),
-      prev_status AS (
-        ${buildPrevStatusCTE(maxRn)}
-      )
-      SELECT
-        cand.symbol,
-        cand.d AS trade_date,
-        cand.close AS last_close,
-        cand.rs_score AS rs_score,
-        s.market_cap,
-        s.sector,
-        qf.quarterly_data,
-        qf.eps_q1 AS latest_eps,
-        qf.eps_prev AS prev_eps,
-        qf.turned_profitable,
-        qf.revenue_growth_quarters,
-        qf.income_growth_quarters,
-        qf.revenue_avg_growth_rate,
-        qf.income_avg_growth_rate,
-        qr.pe_ratio,
+  return sql`
+    WITH last_d AS (
+      ${buildLastDateCTE(requireMA)}
+    ),
+    cur AS (
+      ${buildCurrentDataCTE(params, requireMA)}
+    ),
+    candidates AS (
+      ${buildCandidatesCTE(params)}
+    ),
+    prev_ma AS (
+      ${buildPrevMACTE()}
+    ),
+    prev_status AS (
+      ${buildPrevStatusCTE(maxRn)}
+    )
+    SELECT
+      cand.symbol,
+      cand.d AS trade_date,
+      cand.close AS last_close,
+      cand.rs_score AS rs_score,
+      s.market_cap,
+      s.sector,
+      qf.quarterly_data,
+      qf.eps_q1 AS latest_eps,
+      qf.eps_prev AS prev_eps,
+      qf.turned_profitable,
+      qf.revenue_growth_quarters,
+      qf.income_growth_quarters,
+      qf.revenue_avg_growth_rate,
+      qf.income_avg_growth_rate,
+      qr.pe_ratio,
         qr.peg_ratio,
         CASE 
           WHEN cand.ma20 IS NOT NULL AND cand.ma50 IS NOT NULL AND cand.ma100 IS NOT NULL AND cand.ma200 IS NOT NULL

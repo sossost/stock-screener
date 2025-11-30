@@ -482,7 +482,7 @@ const StockTableRow = React.memo(function StockTableRow({
 
   return (
     <TableRow style={{ display: "table-row", width: "100%" }}>
-      {screenerColumns.map((col) => {
+              {screenerColumns.map((col) => {
                 const alignClass =
                   col.align === "right"
                     ? "text-right"
@@ -637,6 +637,6 @@ const StockTableRow = React.memo(function StockTableRow({
                     return null;
                 }
               })}
-    </TableRow>
+            </TableRow>
   );
 });

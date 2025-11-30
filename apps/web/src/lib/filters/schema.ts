@@ -132,7 +132,7 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
     params.set("justTurned", "true");
   }
   if (filters.justTurned === true && filters.lookbackDays !== filterDefaults.lookbackDays) {
-    params.set("lookbackDays", String(filters.lookbackDays));
+  params.set("lookbackDays", String(filters.lookbackDays));
   }
   
   params.set("profitability", filters.profitability);
@@ -147,13 +147,13 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
     params.set("incomeGrowth", "true");
   }
   if (filters.revenueGrowth === true && filters.revenueGrowthQuarters !== filterDefaults.revenueGrowthQuarters) {
-    params.set(
-      "revenueGrowthQuarters",
-      String(filters.revenueGrowthQuarters)
-    );
+  params.set(
+    "revenueGrowthQuarters",
+    String(filters.revenueGrowthQuarters)
+  );
   }
   if (filters.incomeGrowth === true && filters.incomeGrowthQuarters !== filterDefaults.incomeGrowthQuarters) {
-    params.set("incomeGrowthQuarters", String(filters.incomeGrowthQuarters));
+  params.set("incomeGrowthQuarters", String(filters.incomeGrowthQuarters));
   }
   if (filters.pegFilter === true) {
     params.set("pegFilter", "true");

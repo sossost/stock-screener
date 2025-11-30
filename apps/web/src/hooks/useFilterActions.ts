@@ -1,9 +1,13 @@
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useTransition, useRef, useCallback, useEffect } from "react";
 import type { FilterState, FilterCategory } from "@/lib/filters/summary";
 import { useFilterState } from "@/hooks/useFilterState";
 import { buildCacheTag } from "@/lib/filters/schema";
 import { FILTER_DEFAULTS } from "@/lib/filters/constants";
+import {
+  saveDefaultFilters,
+  clearDefaultFilters,
+} from "@/utils/filter-storage";
 
 /**
  * 필터 액션(변경, 적용, 초기화)을 관리하는 커스텀 훅
@@ -24,6 +28,30 @@ export function useFilterActions(
 ) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // debounce로 localStorage에 필터 저장 (500ms)
+  const debouncedSaveFilters = useCallback((filters: FilterState) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      try {
+        saveDefaultFilters(filters);
+      } catch (error) {
+        console.error("필터 저장 실패:", error);
+      }
+    }, 500);
+  }, []);
+
+  // cleanup: 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 필터 변경 시 캐시 무효화 후 리패치
   const handleFilterChange = async (
@@ -140,6 +168,29 @@ export function useFilterActions(
       await setBooleanFilter(newMa50Above, filterState.setMa50Above);
       await setBooleanFilter(newMa100Above, filterState.setMa100Above);
       await setBooleanFilter(newMa200Above, filterState.setMa200Above);
+
+      // localStorage에 필터 저장 (debounce 적용)
+      debouncedSaveFilters({
+        ordered: newOrdered,
+        goldenCross: newGoldenCross,
+        justTurned: finalJustTurned,
+        lookbackDays: newLookbackDays,
+        profitability: newProfitability,
+        turnAround: newTurnAround,
+        revenueGrowth: newRevenueGrowth,
+        incomeGrowth: newIncomeGrowth,
+        revenueGrowthQuarters:
+          newRevenueGrowthQuarters ?? FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
+        incomeGrowthQuarters:
+          newIncomeGrowthQuarters ?? FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
+        revenueGrowthRate: newRevenueGrowthRate ?? null,
+        incomeGrowthRate: newIncomeGrowthRate ?? null,
+        pegFilter: newPegFilter ?? false,
+        ma20Above: newMa20Above ?? false,
+        ma50Above: newMa50Above ?? false,
+        ma100Above: newMa100Above ?? false,
+        ma200Above: newMa200Above ?? false,
+      });
 
       // 서버 컴포넌트 리패치 (transition으로 감싸서 로딩 표시)
       startTransition(() => {
@@ -272,6 +323,9 @@ export function useFilterActions(
 
   // 필터 초기화 (카테고리별)
   const handleFilterReset = (category: FilterCategory) => {
+    // 필터 초기화 시 localStorage도 초기화
+    clearDefaultFilters();
+
     if (category === "ma") {
       // 이평선 필터 초기화: URL 파라미터에서 제거
       handleFilterChange(
