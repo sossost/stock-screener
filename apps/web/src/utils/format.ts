@@ -125,10 +125,10 @@ export function formatQuarter(dateString: string): string {
     const quarter = Math.ceil(month / 3);
     return `Q${quarter} ${year}`;
   }
-
+  
   const year = parseInt(parts[0], 10);
   const month = parseInt(parts[1], 10);
-
+  
   if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
     const date = new Date(dateString);
     const fallbackYear = date.getFullYear();
@@ -136,7 +136,7 @@ export function formatQuarter(dateString: string): string {
     const quarter = Math.ceil(fallbackMonth / 3);
     return `Q${quarter} ${fallbackYear}`;
   }
-
+  
   const quarter = Math.ceil(month / 3);
   return `Q${quarter} ${year}`;
 }
@@ -154,11 +154,11 @@ export function formatRatio(value: number | null): string {
  */
 export function formatPrice(value: string | number | null): string {
   if (value === null || value === undefined) return "-";
-
+  
   const num = typeof value === "string" ? parseFloat(value) : value;
-
+  
   if (isNaN(num) || !Number.isFinite(num)) return "-";
-
+  
   return "$" + formatWithCommas(num, 2);
 }
 

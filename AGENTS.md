@@ -22,7 +22,7 @@
 - TypeScript strict, 컴포넌트/훅 PascalCase + `useX`.
 - ESLint: `next/core-web-vitals` + `next/typescript`; PR 전 `npx eslint . --max-warnings=0`.
 - `any` 지양, Tailwind + shadcn 패턴, 컴포넌트별 스타일/로직은 최대한 응집.
-- **UI 스타일 가이드**: `docs/UI_STYLE_GUIDE.md` 필독 (폰트 굵기, 색상, 테이블 스타일)
+- **UI 스타일**: `docs/FRONTEND_PRACTICES.md` 참고 (프론트엔드 품질 원칙)
 
 ## 컴포넌트 설계 원칙
 
@@ -81,7 +81,9 @@
 "코드 완료" ≠ "피쳐 완료". 아래 모두 완료해야 피쳐 완료:
 
 1. **셀프 리뷰**: 작성한 코드를 "PR 리뷰어 관점"으로 검토
-2. **UI 스타일 검토**: `docs/UI_STYLE_GUIDE.md` 기준으로 체크
+   - **필수**: `docs/CODE_REVIEW_CHECKLIST.md` 체크리스트 전체 검증
+   - 컴포넌트 설계 원칙, 타입 안전성, 에러 핸들링, UI/UX 안전성 확인
+2. **UI 스타일 검토**: `docs/FRONTEND_PRACTICES.md` 기준으로 체크
 3. **문서 업데이트**: README, spec, plan, tasks 동시 업데이트
 4. **린트/테스트/빌드**: `yarn lint && yarn test && yarn build` 통과
 5. **관련 단어 통일**: 코드/주석/문서에서 용어 일관성 확인
@@ -99,7 +101,8 @@
 
 ## 문서
 
-- 가이드: `docs/FEATURE_DEVELOPMENT_WORKFLOW.md`, `docs/TESTING.md`, `docs/REFACTORING_REVIEW.md`, `docs/UI_STYLE_GUIDE.md`
+- 가이드: `docs/FEATURE_DEVELOPMENT_WORKFLOW.md`, `docs/TESTING.md`, `docs/REFACTORING_REVIEW.md`, `docs/FRONTEND_PRACTICES.md`
+- **품질 보증**: `docs/CODE_REVIEW_CHECKLIST.md` (코드 리뷰 필수), `docs/FEATURE_DEVELOPMENT_WORKFLOW.md` (3단계 검증 프로세스 포함)
 - 스펙/플랜/태스크: `.specify/specs/<feature>/` (통합 템플릿은 필요 시 별도 관리)
 
 ## 보안/설정

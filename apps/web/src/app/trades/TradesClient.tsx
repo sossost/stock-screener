@@ -4,14 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TradeListItem, TradeStatus } from "@/lib/trades/types";
-import OpenTradesTable from "@/components/trades/OpenTradesTable";
-import ClosedTradesTable from "@/components/trades/ClosedTradesTable";
+import OpenTradesTable from "@/components/trades/tables/OpenTradesTable";
+import ClosedTradesTable from "@/components/trades/tables/ClosedTradesTable";
 import PortfolioSummary from "@/components/trades/PortfolioSummary";
-import TradeForm from "@/components/trades/TradeForm";
+import TradeForm from "@/components/trades/forms/TradeForm";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { FilterTabs } from "@/components/ui/filter-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
+import { exportTradesToCsv } from "@/utils/export";
 
 const FILTER_TABS = [
   { value: "OPEN" as const, label: "진행중" },
@@ -26,11 +27,13 @@ const EMPTY_MESSAGES: Record<TradeStatus, string> = {
 interface TradesClientProps {
   initialTrades: TradeListItem[];
   initialStatus: TradeStatus;
+  initialCashBalance: number;
 }
 
 export default function TradesClient({
   initialTrades,
   initialStatus,
+  initialCashBalance,
 }: TradesClientProps) {
   const router = useRouter();
   const [showNewTradeForm, setShowNewTradeForm] = useState(false);
@@ -53,12 +56,19 @@ export default function TradesClient({
         backLabel="← 스크리너"
         actions={
           <>
-            <Link
-              href="/trades/stats"
-              className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100"
-            >
-              📊 통계
-            </Link>
+            {initialTrades.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => exportTradesToCsv(initialTrades, initialStatus)}
+                title="CSV 내보내기"
+              >
+                📥 내보내기
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/trades/stats">📊 통계</Link>
+            </Button>
             <Button onClick={() => setShowNewTradeForm(true)}>+ 새 매매</Button>
           </>
         }
@@ -88,6 +98,7 @@ export default function TradesClient({
                 <PortfolioSummary
                   trades={initialTrades}
                   onTotalAssetsChange={setTotalAssets}
+                  initialCashBalance={initialCashBalance}
                 />
                 <OpenTradesTable
                   trades={initialTrades}

@@ -156,6 +156,17 @@ export interface TradeListFilter {
 
 // ==================== Statistics Types ====================
 
+/** 전략별 통계 */
+export interface StrategyStats {
+  strategy: string;
+  trades: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  totalPnl: number;
+  avgR: number | null;
+}
+
 /**
  * 매매 통계
  */
@@ -180,5 +191,20 @@ export interface TradeStats {
   mistakeStats: Record<string, number>;
   /** 진행중 매매 수 */
   openTrades?: number;
+  // Phase 3: 추가 통계
+  /** Profit Factor (총 이익 / 총 손실) */
+  profitFactor?: number | null;
+  /** 평균 보유 기간 (일) */
+  avgHoldingDays?: number | null;
+  /** 최대 연승 */
+  maxWinStreak?: number;
+  /** 최대 연패 */
+  maxLoseStreak?: number;
+  /** 평균 승 금액 */
+  avgWinAmount?: number;
+  /** 평균 패 금액 */
+  avgLossAmount?: number;
+  /** 전략별 통계 */
+  strategyStats?: StrategyStats[];
 }
 

@@ -3,7 +3,7 @@
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { Button } from "@/components/ui/button";
 import { Star, ArrowLeft, ExternalLink, TrendingUp } from "lucide-react";
-import TradeForm from "@/components/trades/TradeForm";
+import TradeForm from "@/components/trades/forms/TradeForm";
 import { formatSector, formatIndustry } from "@/utils/sector";
 import { formatNumber, formatPrice } from "@/utils/format";
 import type {

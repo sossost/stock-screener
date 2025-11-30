@@ -114,6 +114,17 @@ export function calculateFinalResults(
   };
 }
 
+/** 전략별 통계 */
+export interface StrategyStats {
+  strategy: string;
+  trades: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  totalPnl: number;
+  avgR: number | null;
+}
+
 /**
  * 여러 매매의 통계 계산
  */
@@ -131,28 +142,83 @@ export function calculateTradeStats(trades: (Trade & { actions: TradeAction[] })
       maxProfit: 0,
       maxLoss: 0,
       mistakeStats: {},
+      // 추가 통계
+      profitFactor: null,
+      avgHoldingDays: null,
+      maxWinStreak: 0,
+      maxLoseStreak: 0,
+      avgWinAmount: 0,
+      avgLossAmount: 0,
+      strategyStats: [],
     };
   }
 
   let winningTrades = 0;
   let losingTrades = 0;
   let totalPnl = 0;
+  let totalProfit = 0;
+  let totalLoss = 0;
   let maxProfit = 0;
   let maxLoss = 0;
   const rMultiples: number[] = [];
   const mistakeStats: Record<string, number> = {};
 
-  for (const trade of closedTrades) {
-    const pnl = trade.finalPnl ? parseFloat(trade.finalPnl) : 0;
+  // 보유 기간
+  const holdingDays: number[] = [];
 
+  // 연속 승/패 계산용
+  let currentStreak = 0;
+  let maxWinStreak = 0;
+  let maxLoseStreak = 0;
+  let lastResult: "win" | "loss" | null = null;
+
+  // 전략별 통계
+  const strategyMap = new Map<string, {
+    trades: number;
+    wins: number;
+    losses: number;
+    totalPnl: number;
+    rValues: number[];
+  }>();
+
+  // 날짜순 정렬
+  const sortedTrades = [...closedTrades].sort((a, b) => {
+    const dateA = a.endDate ? new Date(a.endDate).getTime() : 0;
+    const dateB = b.endDate ? new Date(b.endDate).getTime() : 0;
+    return dateA - dateB;
+  });
+
+  for (const trade of sortedTrades) {
+    const pnl = trade.finalPnl ? parseFloat(trade.finalPnl) : 0;
     totalPnl += pnl;
 
+    // 승/패 계산
     if (pnl > 0) {
       winningTrades++;
+      totalProfit += pnl;
       maxProfit = Math.max(maxProfit, pnl);
+
+      // 연속 승 계산
+      if (lastResult === "win") {
+        currentStreak++;
+      } else {
+        currentStreak = 1;
+      }
+      maxWinStreak = Math.max(maxWinStreak, currentStreak);
+      lastResult = "win";
     } else if (pnl < 0) {
       losingTrades++;
+      totalLoss += Math.abs(pnl);
       maxLoss = Math.min(maxLoss, pnl);
+
+      // 연속 패 계산
+      if (lastResult === "loss") {
+        currentStreak++;
+      } else {
+        currentStreak = 1;
+      }
+      maxLoseStreak = Math.max(maxLoseStreak, currentStreak);
+      lastResult = "loss";
     }
 
     if (trade.finalRMultiple) {
@@ -163,6 +229,30 @@ export function calculateTradeStats(trades: (Trade & { actions: TradeAction[] })
       mistakeStats[trade.mistakeType] =
         (mistakeStats[trade.mistakeType] || 0) + 1;
     }
+
+    // 보유 기간 계산
+    const days = calculateHoldingDays(trade.startDate, trade.endDate);
+    if (days !== undefined) {
+      holdingDays.push(days);
+    }
+
+    // 전략별 통계
+    const strategy = trade.strategy || "기타";
+    const existing = strategyMap.get(strategy) || {
+      trades: 0,
+      wins: 0,
+      losses: 0,
+      totalPnl: 0,
+      rValues: [],
+    };
+    existing.trades++;
+    if (pnl > 0) existing.wins++;
+    else if (pnl < 0) existing.losses++;
+    existing.totalPnl += pnl;
+    if (trade.finalRMultiple) {
+      existing.rValues.push(parseFloat(trade.finalRMultiple));
+    }
+    strategyMap.set(strategy, existing);
   }
 
   const winRate =
@@ -172,6 +262,35 @@ export function calculateTradeStats(trades: (Trade & { actions: TradeAction[] })
     rMultiples.length > 0
       ? rMultiples.reduce((a, b) => a + b, 0) / rMultiples.length
       : null;
+
+  // Profit Factor (총 이익 / 총 손실)
+  const profitFactor = totalLoss > 0 ? totalProfit / totalLoss : null;
+
+  // 평균 보유 기간
+  const avgHoldingDays =
+    holdingDays.length > 0
+      ? holdingDays.reduce((a, b) => a + b, 0) / holdingDays.length
+      : null;
+
+  // 평균 승/패 금액
+  const avgWinAmount = winningTrades > 0 ? totalProfit / winningTrades : 0;
+  const avgLossAmount = losingTrades > 0 ? totalLoss / losingTrades : 0;
+
+  // 전략별 통계 배열 생성
+  const strategyStats: StrategyStats[] = Array.from(strategyMap.entries())
+    .map(([strategy, data]) => ({
+      strategy,
+      trades: data.trades,
+      wins: data.wins,
+      losses: data.losses,
+      winRate: data.trades > 0 ? (data.wins / data.trades) * 100 : 0,
+      totalPnl: data.totalPnl,
+      avgR:
+        data.rValues.length > 0
+          ? data.rValues.reduce((a, b) => a + b, 0) / data.rValues.length
+          : null,
+    }))
+    .sort((a, b) => b.trades - a.trades);
 
   return {
     totalTrades: closedTrades.length,
@@ -183,6 +302,14 @@ export function calculateTradeStats(trades: (Trade & { actions: TradeAction[] })
     maxProfit,
     maxLoss,
     mistakeStats,
+    // 추가 통계
+    profitFactor,
+    avgHoldingDays,
+    maxWinStreak,
+    maxLoseStreak,
+    avgWinAmount,
+    avgLossAmount,
+    strategyStats,
   };
 }
 

@@ -62,9 +62,10 @@
   - 자동 계산: 평단가, 보유수량, 손익금, 수익률, R-Multiple
   - 수수료율 설정 (개인화, localStorage 저장)
 - **자산 관리**: 현금 + 포지션 = 자산총계 트래킹
-  - 현금 보유 입력 (localStorage 저장)
+  - 현금 보유 입력 (DB 저장)
   - 포지션 가치 = 현재가 × 수량 (시가평가)
   - 포지션별 비중 표시
+  - 자산 할당 파이 차트 및 자산 흐름 그래프
 - **가격 바 차트**: 손절가 ~ 목표가 시각화
   - 손절가, 평단가, 현재가, n차 목표가를 점으로 표시
   - 현재가 위치 + 평단가 대비 손익 퍼센트 표시
@@ -147,7 +148,7 @@ yarn test:ui
 yarn test:all
 ```
 
-자세한 내용은 [TESTING.md](./TESTING.md) 참고
+자세한 내용은 [`docs/TESTING.md`](./docs/TESTING.md) 참고
 
 ## 📝 사용법
 
@@ -243,15 +244,19 @@ yarn workspace mobile android # Android 에뮬레이터/디바이스
 
 1. **브랜치 생성** → `git checkout -b feature/<name>` (새 작업은 항상 별도 브랜치에서 시작)
 2. **스펙/플랜/태스크 작성** → `.specify/templates/feature-template.md`를 참고해 `.specify/specs/[feature-name]/spec.md`에 작성
-3. **구현** → 백엔드 → 프론트엔드 → 타입
-4. **테스트** → 단위 테스트 → API 테스트 → 컴포넌트 테스트
-5. **리팩토링** → 코드 품질 개선
-6. **문서화** → README/AGENTS/스펙 업데이트
-7. **빌드 테스트** → `yarn test:all` 또는 `yarn build`
+3. **구현 순서** → 백엔드 → 프론트엔드 → 타입
+4. **셀프 리뷰** → 작성 코드를 "PR 리뷰어 관점"으로 검토
+5. **테스트** → 단위 → API → 컴포넌트 (`yarn test`, `yarn test:all`)
+6. **문서화** → README/AGENTS/spec/plan/tasks 동시 업데이트
+7. **빌드 테스트** → `yarn build` (또는 `yarn test:all`)
 
-추가 가이드: `docs/FEATURE_DEVELOPMENT_WORKFLOW.md`, `docs/TESTING.md`, `docs/REFACTORING_REVIEW.md` 참고.
+**추가 가이드**:
 
-자세한 내용은 [FEATURE_DEVELOPMENT_WORKFLOW.md](.specify/templates/FEATURE_DEVELOPMENT_WORKFLOW.md) 참고
+- [`docs/FEATURE_DEVELOPMENT_WORKFLOW.md`](./docs/FEATURE_DEVELOPMENT_WORKFLOW.md) - 피쳐 개발 워크플로우 및 3단계 검증 프로세스
+- [`docs/CODE_REVIEW_CHECKLIST.md`](./docs/CODE_REVIEW_CHECKLIST.md) - 코드 리뷰 체크리스트
+- [`docs/TESTING.md`](./docs/TESTING.md) - 테스트 가이드
+- [`docs/REFACTORING_REVIEW.md`](./docs/REFACTORING_REVIEW.md) - 리팩토링 리뷰 가이드
+- [`docs/FRONTEND_PRACTICES.md`](./docs/FRONTEND_PRACTICES.md) - 프론트엔드 품질 원칙
 
 ## 📁 폴더 구조
 

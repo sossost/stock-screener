@@ -1,6 +1,7 @@
 # FEATURE_DEVELOPMENT_WORKFLOW.md
 
 ## 기본 흐름
+
 1. **브랜치 생성**: `git checkout -b feature/<name>`
 2. **스펙/플랜/태스크 작성**: `.specify/specs/<feature>/spec.md` 또는 템플릿(`.specify/templates/feature-template.md`)을 사용
 3. **구현 순서**: 백엔드 → 프론트엔드 → 타입
@@ -10,7 +11,9 @@
 7. **빌드 테스트**: `yarn build` (또는 `yarn test:all`)
 
 ## 구현 체크리스트 (코드 작성 시 필수)
+
 코드 작성 전/중에 반드시 확인:
+
 - [ ] **입력 검증**: API 파라미터, 사용자 입력에 대한 유효성 검사
 - [ ] **에러 핸들링**: try-catch, 에러 응답, 폴백 처리
 - [ ] **메모리 관리**: 이벤트 리스너, 구독, 타이머 cleanup 처리
@@ -18,20 +21,73 @@
 - [ ] **타입 안전성**: 타입 단언(as) 최소화, 타입 가드 사용
 - [ ] **엣지 케이스**: 빈 배열, 단일 요소, 경계값 처리
 
-## 피쳐 완료 체크리스트
+**상세 체크리스트는 [`CODE_REVIEW_CHECKLIST.md`](./CODE_REVIEW_CHECKLIST.md)를 참조하세요.**
+
+## 📋 3단계 검증 프로세스
+
+코드 리뷰에서 놓치기 쉬운 문제들을 사전에 방지하고, 일관된 코드 품질을 유지합니다.
+
+### 1단계: 작업 중 실시간 검증 (코딩 시)
+
+**도구**: IDE 린터, TypeScript 컴파일러
+
+- 실시간 에러 표시
+- 타입 체크
+- 기본 린트 규칙
+
+**체크 항목**:
+
+- [ ] 타입 에러 없음
+- [ ] 기본 린트 규칙 통과
+- [ ] 컴포넌트 분리 필요성 인지
+
+### 2단계: 작업 완료 후 자동 검증 (커밋 전)
+
+**도구**: `scripts/pre-commit-check.sh`
+
+```bash
+# 수동 실행
+./scripts/pre-commit-check.sh
+
+# 또는 Git hook으로 자동화 (선택)
+cp scripts/pre-commit-check.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+**검증 항목**:
+
+1. `yarn lint` - ESLint 검사
+2. `yarn build` - 타입 체크 + 빌드
+3. `yarn test` - 테스트 실행
+
+### 3단계: 수동 체크리스트 검증 (PR 전)
+
+**도구**: [`CODE_REVIEW_CHECKLIST.md`](./CODE_REVIEW_CHECKLIST.md)
+
+**검증 항목**:
+
+1. 컴포넌트 설계 원칙 (DRY)
+2. 타입 안전성
+3. 에러 핸들링
+4. UI/UX 안전성
+5. 폴더 구조
+6. 성능 최적화
+
+## 피쳐 완료 체크리스트 (구현 후 필수)
+
 **"코드 완료" ≠ "피쳐 완료"**. 아래 모두 완료해야 피쳐 완료:
-- [ ] 브랜치 분리
-- [ ] 스펙/플랜/태스크 작성
-- [ ] 구현 (백엔드/프론트/타입)
-- [ ] **셀프 리뷰** (PR 리뷰어 관점으로 코드 검토)
-- [ ] 테스트 작성 & 실행 (새 로직/API/컴포넌트)
-- [ ] **문서 동시 업데이트** (구현 완료 즉시, 나중에 하지 않음)
-  - [ ] README.md (새 기능 설명)
-  - [ ] AGENTS.md (명령어/구조 변경 시)
-  - [ ] spec.md / plan.md / tasks.md (완료 표시)
-- [ ] **관련 단어 통일** (코드/주석/문서에서 용어 일관성)
-- [ ] **커밋 전 필수 검증** (생략 불가)
-  - [ ] `yarn lint` 통과
-  - [ ] `yarn test` 통과
-  - [ ] `yarn build` 통과
-  - [ ] **사용자 승인**
+
+1. **셀프 리뷰**: 작성한 코드를 "PR 리뷰어 관점"으로 검토
+   - **필수**: `docs/CODE_REVIEW_CHECKLIST.md` 체크리스트 전체 검증
+   - 컴포넌트 설계 원칙, 타입 안전성, 에러 핸들링, UI/UX 안전성 확인
+2. **UI 스타일 검토**: `docs/FRONTEND_PRACTICES.md` 기준으로 체크
+3. **문서 업데이트**: README, spec, plan, tasks 동시 업데이트
+4. **린트/테스트/빌드**: `yarn lint && yarn test && yarn build` 통과
+5. **관련 단어 통일**: 코드/주석/문서에서 용어 일관성 확인
+
+## 커밋 전 필수 체크 (생략 불가)
+
+- [ ] `yarn lint` 통과
+- [ ] `yarn test` 통과
+- [ ] `yarn build` 통과
+- [ ] **사용자 승인 후 커밋** (승인 없이 커밋 금지)

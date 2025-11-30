@@ -268,7 +268,8 @@ export const trades = pgTable(
     planEntryPrice: numeric("plan_entry_price"), // 계획 진입가
     planStopLoss: numeric("plan_stop_loss"), // 최초 손절가 (R 계산용)
     planTargetPrice: numeric("plan_target_price"), // 1차 목표가 (하위호환)
-    planTargets: jsonb("plan_targets").$type<{ price: number; weight: number }[]>(), // n차 목표가 [{price, weight}]
+    planTargets:
+      jsonb("plan_targets").$type<{ price: number; weight: number }[]>(), // n차 목표가 [{price, weight}]
     entryReason: text("entry_reason"), // 진입 근거 (일기)
     commissionRate: numeric("commission_rate").default("0.07"), // 수수료율 (%, 기본 0.07%)
 
@@ -329,3 +330,41 @@ export const tradeActions = pgTable(
     idx_action_date: index("idx_trade_actions_date").on(t.actionDate),
   })
 );
+
+// ==================== 자산 스냅샷 (Asset Snapshots) ====================
+
+/**
+ * 일별 자산 스냅샷
+ * - 자산 흐름 그래프용 데이터
+ */
+export const assetSnapshots = pgTable(
+  "asset_snapshots",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull().default("0"),
+    date: timestamp("date", { mode: "date" }).notNull(),
+    totalAssets: numeric("total_assets").notNull(), // 총 자산 (현금 + 포지션)
+    cash: numeric("cash").notNull(), // 현금
+    positionValue: numeric("position_value").notNull(), // 포지션 가치
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    uq_user_date: unique("uq_asset_snapshots_user_date").on(t.userId, t.date),
+    idx_user_date: index("idx_asset_snapshots_user_date").on(t.userId, t.date),
+  })
+);
+
+/**
+ * 사용자 포트폴리오 설정
+ * - 현금 보유량 등
+ */
+export const portfolioSettings = pgTable("portfolio_settings", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique().default("0"),
+  cashBalance: numeric("cash_balance").notNull().default("0"),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
