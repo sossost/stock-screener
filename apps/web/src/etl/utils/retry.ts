@@ -80,6 +80,15 @@ function isRetryableError(error: any): boolean {
     return true;
   }
 
+  // DB 연결 취소/종료 에러 (Neon DB idle timeout)
+  if (
+    error.message?.includes("canceled") ||
+    error.message?.includes("connection terminated") ||
+    error.message?.includes("Client has encountered a connection error")
+  ) {
+    return true;
+  }
+
   return false;
 }
 

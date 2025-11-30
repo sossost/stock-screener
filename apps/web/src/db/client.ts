@@ -8,8 +8,10 @@ const pool = new Pool({
     rejectUnauthorized: false,
   },
   max: 10, // 최대 연결 수
-  idleTimeoutMillis: 30000, // 유휴 연결 30초 후 정리
+  idleTimeoutMillis: 60000, // 유휴 연결 60초 후 정리 (ETL 배치 처리용)
   connectionTimeoutMillis: 30000, // 연결 타임아웃 30초
+  statement_timeout: 120000, // 쿼리 타임아웃 2분
+  query_timeout: 120000, // 쿼리 타임아웃 2분
 });
 
 export const db = drizzle(pool);
