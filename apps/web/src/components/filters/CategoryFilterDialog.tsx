@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import type { FilterState, FilterCategory } from "@/lib/filters/summary";
 import { profitabilityOptions } from "@/lib/filters/schema";
+import { FILTER_DEFAULTS, URL_PARAM_VALUES } from "@/lib/filters/constants";
 
 interface CategoryFilterDialogProps {
   category: FilterCategory;
@@ -48,14 +49,18 @@ export function CategoryFilterDialog({
   onReset,
   disabled,
 }: CategoryFilterDialogProps) {
-  // 카테고리별 초기 상태 계산 (useMemo로 최적화)
+  // 카테고리별 초기 상태 계산 (useMemo로 최적화 - open이 true일 때만 계산)
   const initialTempState = React.useMemo(() => {
+    if (!open) return {};
+
     if (category === "ma") {
       return {
-        ordered: filterState.ordered ?? true,
-        goldenCross: filterState.goldenCross ?? true,
+        // 이평선 필터는 URL 파라미터에 명시적으로 값이 있어야만 적용되므로
+        // null/undefined일 때는 false로 설정 (체크 해제 상태)
+        ordered: filterState.ordered ?? false,
+        goldenCross: filterState.goldenCross ?? false,
         justTurned: filterState.justTurned ?? false,
-        lookbackDays: filterState.lookbackDays ?? 10,
+        lookbackDays: filterState.lookbackDays ?? FILTER_DEFAULTS.LOOKBACK_DAYS,
         ma20Above: filterState.ma20Above ?? false,
         ma50Above: filterState.ma50Above ?? false,
         ma100Above: filterState.ma100Above ?? false,
@@ -64,10 +69,14 @@ export function CategoryFilterDialog({
     } else if (category === "growth") {
       return {
         revenueGrowth: filterState.revenueGrowth ?? false,
-        revenueGrowthQuarters: filterState.revenueGrowthQuarters ?? 3,
+        revenueGrowthQuarters:
+          filterState.revenueGrowthQuarters ??
+          FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
         revenueGrowthRate: filterState.revenueGrowthRate ?? null,
         incomeGrowth: filterState.incomeGrowth ?? false,
-        incomeGrowthQuarters: filterState.incomeGrowthQuarters ?? 3,
+        incomeGrowthQuarters:
+          filterState.incomeGrowthQuarters ??
+          FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
         incomeGrowthRate: filterState.incomeGrowthRate ?? null,
         pegFilter: filterState.pegFilter ?? false,
       };
@@ -78,38 +87,48 @@ export function CategoryFilterDialog({
       };
     }
     return {};
-  }, [category, filterState]);
+  }, [open, category, filterState]);
 
   // 팝업 내부에서만 사용하는 임시 상태
-  const [tempState, setTempState] =
-    useState<Partial<FilterState>>(initialTempState);
-  const [inputValue, setInputValue] = useState(
-    filterState.lookbackDays?.toString() || "10"
-  );
+  const [tempState, setTempState] = useState<Partial<FilterState>>({});
+  const [inputValue, setInputValue] = useState("10");
 
-  // 팝업이 열릴 때마다 현재 필터 상태로 초기화
+  // 팝업이 열릴 때마다 현재 필터 상태로 초기화 (open이 true일 때만)
   useEffect(() => {
     if (open) {
       setTempState(initialTempState);
       if (category === "ma") {
-        setInputValue(filterState.lookbackDays?.toString() || "10");
+        setInputValue(
+          filterState.lookbackDays?.toString() ||
+            FILTER_DEFAULTS.LOOKBACK_DAYS.toString()
+        );
       }
     }
-  }, [open, initialTempState, category, filterState.lookbackDays]);
+  }, [open, initialTempState, category, filterState.lookbackDays]); // 의존성 최적화
 
   const handleApply = () => {
     if (category === "ma") {
-      const lookbackDays = Number(inputValue);
-      if (lookbackDays >= 1 && lookbackDays <= 60) {
+      const lookbackDays = parseInt(inputValue, 10);
+      if (
+        !isNaN(lookbackDays) &&
+        lookbackDays >= FILTER_DEFAULTS.MIN_LOOKBACK_DAYS &&
+        lookbackDays <= FILTER_DEFAULTS.MAX_LOOKBACK_DAYS
+      ) {
         onApply({
           ...tempState,
           lookbackDays,
         });
+        onOpenChange(false);
+      } else {
+        // 입력값이 유효하지 않으면 에러 피드백 (추후 toast 등으로 개선 가능)
+        console.error(
+          `lookbackDays는 ${FILTER_DEFAULTS.MIN_LOOKBACK_DAYS}에서 ${FILTER_DEFAULTS.MAX_LOOKBACK_DAYS} 사이의 값이어야 합니다.`
+        );
       }
     } else {
       onApply(tempState);
+      onOpenChange(false);
     }
-    onOpenChange(false);
   };
 
   const handleCancel = () => {
@@ -118,24 +137,25 @@ export function CategoryFilterDialog({
 
   const handleReset = () => {
     if (category === "ma") {
+      // 초기화 시 모든 이평선 필터를 false로 설정 (URL에서 제거)
       setTempState({
-        ordered: true,
-        goldenCross: true,
+        ordered: false,
+        goldenCross: false,
         justTurned: false,
-        lookbackDays: 10,
+        lookbackDays: FILTER_DEFAULTS.LOOKBACK_DAYS,
         ma20Above: false,
         ma50Above: false,
         ma100Above: false,
         ma200Above: false,
       });
-      setInputValue("10");
+      setInputValue(FILTER_DEFAULTS.LOOKBACK_DAYS.toString());
     } else if (category === "growth") {
       setTempState({
         revenueGrowth: false,
-        revenueGrowthQuarters: 3,
+        revenueGrowthQuarters: FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
         revenueGrowthRate: null,
         incomeGrowth: false,
-        incomeGrowthQuarters: 3,
+        incomeGrowthQuarters: FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
         incomeGrowthRate: null,
         pegFilter: false,
       });
@@ -167,7 +187,7 @@ export function CategoryFilterDialog({
                 <div className="flex items-center gap-2 h-10">
                   <Checkbox
                     id="ordered"
-                    checked={tempState.ordered ?? true}
+                    checked={tempState.ordered ?? false}
                     onCheckedChange={(checked) =>
                       setTempState({ ...tempState, ordered: checked === true })
                     }
@@ -238,7 +258,7 @@ export function CategoryFilterDialog({
                 <div className="flex items-center gap-2 h-10">
                   <Checkbox
                     id="goldenCross"
-                    checked={tempState.goldenCross ?? true}
+                    checked={tempState.goldenCross ?? false}
                     onCheckedChange={(checked) =>
                       setTempState({
                         ...tempState,

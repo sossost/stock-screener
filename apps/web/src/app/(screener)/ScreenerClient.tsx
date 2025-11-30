@@ -10,6 +10,33 @@ import { CategoryFilterDialog } from "@/components/filters/CategoryFilterDialog"
 import type { FilterState, FilterCategory } from "@/lib/filters/summary";
 import type { ScreenerClientProps } from "@/types/screener";
 import { StockTable } from "@/components/screener/StockTable";
+
+/**
+ * useFilterState 반환값을 FilterState 타입으로 정규화
+ */
+function normalizeFilterState(
+  filterState: ReturnType<typeof useFilterState>
+): FilterState {
+  return {
+    ordered: filterState.ordered ?? undefined,
+    goldenCross: filterState.goldenCross ?? undefined,
+    justTurned: filterState.justTurned ?? undefined,
+    lookbackDays: filterState.lookbackDays ?? undefined,
+    profitability: filterState.profitability,
+    turnAround: filterState.turnAround ?? undefined,
+    revenueGrowth: filterState.revenueGrowth ?? undefined,
+    revenueGrowthQuarters: filterState.revenueGrowthQuarters,
+    revenueGrowthRate: filterState.revenueGrowthRate ?? null,
+    incomeGrowth: filterState.incomeGrowth ?? undefined,
+    incomeGrowthQuarters: filterState.incomeGrowthQuarters,
+    incomeGrowthRate: filterState.incomeGrowthRate ?? null,
+    pegFilter: filterState.pegFilter ?? undefined,
+    ma20Above: filterState.ma20Above ?? undefined,
+    ma50Above: filterState.ma50Above ?? undefined,
+    ma100Above: filterState.ma100Above ?? undefined,
+    ma200Above: filterState.ma200Above ?? undefined,
+  };
+}
 import { TableSkeleton } from "./TableSkeleton";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -22,25 +49,6 @@ export default function ScreenerClient({
 }: ScreenerClientProps) {
   // 필터 상태 관리 훅
   const filterState = useFilterState();
-  const {
-    ordered,
-    goldenCross,
-    justTurned,
-    lookbackDays,
-    profitability,
-    turnAround,
-    revenueGrowth,
-    revenueGrowthQuarters,
-    revenueGrowthRate,
-    incomeGrowth,
-    incomeGrowthQuarters,
-    incomeGrowthRate,
-    pegFilter,
-    ma20Above,
-    ma50Above,
-    ma100Above,
-    ma200Above,
-  } = filterState;
 
   // 필터 팝업 상태 (카테고리별)
   const [openCategory, setOpenCategory] = useState<FilterCategory | null>(null);
@@ -58,26 +66,11 @@ export default function ScreenerClient({
   const { handleFilterApply, handleFilterReset, isPending } =
     useFilterActions(filterState);
 
-  // 현재 필터 상태
-  const currentFilterState: FilterState = {
-    ordered,
-    goldenCross,
-    justTurned,
-    lookbackDays,
-    profitability,
-    turnAround,
-    revenueGrowth,
-    revenueGrowthQuarters,
-    revenueGrowthRate: revenueGrowthRate ?? null,
-    incomeGrowth,
-    incomeGrowthQuarters,
-    incomeGrowthRate: incomeGrowthRate ?? null,
-    pegFilter,
-    ma20Above,
-    ma50Above,
-    ma100Above,
-    ma200Above,
-  };
+  // 현재 필터 상태 (정규화)
+  const currentFilterState = React.useMemo(
+    () => normalizeFilterState(filterState),
+    [filterState]
+  );
 
   if (error) {
     return (
