@@ -105,7 +105,8 @@ export function useFilterActions(
       // URL 업데이트
       // 이평선 필터는 true일 때만 URL에 설정, false일 때는 URL에서 제거
       await setBooleanFilter(newOrdered, filterState.setOrdered);
-      await setBooleanFilter(newGoldenCross, filterState.setGoldenCross);
+      // goldenCross는 기본값이 true이므로, false일 때도 URL에 명시적으로 유지
+      await filterState.setGoldenCross(newGoldenCross);
       await setBooleanFilter(finalJustTurned, filterState.setJustTurned);
 
       // lookbackDays는 justTurned가 true일 때만 URL에 설정
@@ -149,10 +150,8 @@ export function useFilterActions(
       console.error("필터 적용 실패:", error);
       try {
         await setBooleanFilter(previousState.ordered, filterState.setOrdered);
-        await setBooleanFilter(
-          previousState.goldenCross,
-          filterState.setGoldenCross
-        );
+        // goldenCross는 기본값이 true이므로, 롤백 시에도 직접 설정
+        await filterState.setGoldenCross(previousState.goldenCross);
         await setBooleanFilter(
           previousState.justTurned,
           filterState.setJustTurned
