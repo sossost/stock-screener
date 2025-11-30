@@ -95,7 +95,9 @@ export function exportTradesToCsv(
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `trades-${status.toLowerCase()}-${formatDateKr(new Date())}.csv`;
+    a.download = `trades-${status.toLowerCase()}-${formatDateKr(
+      new Date()
+    )}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   } catch (error) {
@@ -104,4 +106,3 @@ export function exportTradesToCsv(
     throw error;
   }
 }
-

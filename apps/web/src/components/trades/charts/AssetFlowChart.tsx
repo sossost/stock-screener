@@ -65,25 +65,27 @@ export default function AssetFlowChart({
       currentPositionValue != null &&
       currentTotalAssets > 0
     ) {
-      fetch("/api/trades/assets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: new Date().toISOString(),
-          totalAssets: currentTotalAssets,
-          cash: currentCash,
-          positionValue: currentPositionValue,
-        }),
-      })
-        .then((res) => {
+      const saveSnapshot = async () => {
+        try {
+          const res = await fetch("/api/trades/assets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              date: new Date().toISOString(),
+              totalAssets: currentTotalAssets,
+              cash: currentCash,
+              positionValue: currentPositionValue,
+            }),
+          });
           if (!res.ok) {
             throw new Error(`Failed to save asset snapshot: ${res.status}`);
           }
-        })
-        .catch((error) => {
+        } catch (error) {
           console.error("Failed to save asset snapshot:", error);
           // 실패해도 치명적이지 않으므로 조용히 처리
-        });
+        }
+      };
+      saveSnapshot();
     }
   }, [currentTotalAssets, currentCash, currentPositionValue]);
 

@@ -181,11 +181,14 @@ export function calculateTradeStats(trades: (Trade & { actions: TradeAction[] })
     rValues: number[];
   }>();
 
-  // 날짜순 정렬
+  // 날짜순 정렬 (endDate 우선, 없으면 createdAt 사용)
   const sortedTrades = [...closedTrades].sort((a, b) => {
-    const dateA = a.endDate ? new Date(a.endDate).getTime() : 0;
-    const dateB = b.endDate ? new Date(b.endDate).getTime() : 0;
-    return dateA - dateB;
+    const getDate = (trade: Trade) => {
+      if (trade.endDate) return new Date(trade.endDate).getTime();
+      if (trade.createdAt) return new Date(trade.createdAt).getTime();
+      return 0;
+    };
+    return getDate(a) - getDate(b);
   });
 
   for (const trade of sortedTrades) {
