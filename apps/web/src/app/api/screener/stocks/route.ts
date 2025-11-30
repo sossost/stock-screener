@@ -13,33 +13,58 @@ import type {
   ScreenerQueryResult,
   ScreenerCompany,
 } from "@/types/screener";
+import { URL_PARAM_VALUES, FILTER_DEFAULTS } from "@/lib/filters/constants";
 
 // 캐싱 설정: 24시간 (종가 기준 데이터, 하루 1회 갱신)
 export const revalidate = 86400;
 
 /**
+ * Boolean 파라미터 파싱 헬퍼
+ */
+function parseBooleanParam(value: string | null): boolean | undefined {
+  if (value === URL_PARAM_VALUES.TRUE) return true;
+  if (value === URL_PARAM_VALUES.FALSE) return false;
+  return undefined;
+}
+
+/**
+ * 정수 파라미터 파싱 헬퍼 (NaN 체크 포함)
+ */
+function parseIntegerParam(
+  value: string | null,
+  defaultValue?: number
+): number | undefined {
+  if (value === null) return defaultValue;
+  const num = parseInt(value, 10);
+  return isNaN(num) ? defaultValue : num;
+}
+
+/**
+ * 부동소수점 파라미터 파싱 헬퍼 (null 허용)
+ */
+function parseGrowthRate(param: string | null): number | null {
+  if (!param) return null;
+  const parsed = Number(param);
+  return isNaN(parsed) || !isFinite(parsed) ? null : parsed;
+}
+
+/**
  * 요청 파라미터 파싱
  */
 function parseRequestParams(searchParams: URLSearchParams): ScreenerParams {
-  // 성장률 파싱 (null 허용)
-  const parseGrowthRate = (param: string | null): number | null => {
-    if (!param) return null;
-    const parsed = Number(param);
-    return isNaN(parsed) || !isFinite(parsed) ? null : parsed;
-  };
-
   return {
     // 이동평균선 필터
-    ordered: searchParams.get("ordered") !== "false",
-    goldenCross: searchParams.get("goldenCross") !== "false",
-    justTurned: searchParams.get("justTurned") === "true",
-    lookbackDays: Number(searchParams.get("lookbackDays") ?? 10),
+    ordered: parseBooleanParam(searchParams.get("ordered")),
+    // goldenCross는 기본값 true (성능 최적화: 초기 로드 시 데이터 양 감소)
+    goldenCross: parseBooleanParam(searchParams.get("goldenCross")) ?? true,
+    justTurned: parseBooleanParam(searchParams.get("justTurned")),
+    lookbackDays: parseIntegerParam(searchParams.get("lookbackDays")),
 
     // 기본 필터
-    minMcap: Number(searchParams.get("minMcap") ?? 0),
-    minPrice: Number(searchParams.get("minPrice") ?? 0),
-    minAvgVol: Number(searchParams.get("minAvgVol") ?? 0),
-    allowOTC: searchParams.get("allowOTC") !== "false",
+    minMcap: parseIntegerParam(searchParams.get("minMcap"), 0) ?? 0,
+    minPrice: parseIntegerParam(searchParams.get("minPrice"), 0) ?? 0,
+    minAvgVol: parseIntegerParam(searchParams.get("minAvgVol"), 0) ?? 0,
+    allowOTC: searchParams.get("allowOTC") !== URL_PARAM_VALUES.FALSE,
 
     // 수익성/성장성 필터
     profitability:
@@ -47,24 +72,30 @@ function parseRequestParams(searchParams: URLSearchParams): ScreenerParams {
         | "all"
         | "profitable"
         | "unprofitable") ?? "all",
-    turnAround: searchParams.get("turnAround") === "true",
-    revenueGrowth: searchParams.get("revenueGrowth") === "true",
-    incomeGrowth: searchParams.get("incomeGrowth") === "true",
-    revenueGrowthQuarters: Number(
-      searchParams.get("revenueGrowthQuarters") ?? 3
-    ),
-    incomeGrowthQuarters: Number(searchParams.get("incomeGrowthQuarters") ?? 3),
+    turnAround: parseBooleanParam(searchParams.get("turnAround")),
+    revenueGrowth: parseBooleanParam(searchParams.get("revenueGrowth")),
+    incomeGrowth: parseBooleanParam(searchParams.get("incomeGrowth")),
+    revenueGrowthQuarters:
+      parseIntegerParam(
+        searchParams.get("revenueGrowthQuarters"),
+        FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS
+      ) ?? FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
+    incomeGrowthQuarters:
+      parseIntegerParam(
+        searchParams.get("incomeGrowthQuarters"),
+        FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS
+      ) ?? FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
     revenueGrowthRate: parseGrowthRate(searchParams.get("revenueGrowthRate")),
     incomeGrowthRate: parseGrowthRate(searchParams.get("incomeGrowthRate")),
 
     // 밸류에이션 필터
-    pegFilter: searchParams.get("pegFilter") === "true",
+    pegFilter: parseBooleanParam(searchParams.get("pegFilter")),
 
     // 이평선 위 필터
-    ma20Above: searchParams.get("ma20Above") === "true",
-    ma50Above: searchParams.get("ma50Above") === "true",
-    ma100Above: searchParams.get("ma100Above") === "true",
-    ma200Above: searchParams.get("ma200Above") === "true",
+    ma20Above: parseBooleanParam(searchParams.get("ma20Above")),
+    ma50Above: parseBooleanParam(searchParams.get("ma50Above")),
+    ma100Above: parseBooleanParam(searchParams.get("ma100Above")),
+    ma200Above: parseBooleanParam(searchParams.get("ma200Above")),
   };
 }
 
@@ -99,7 +130,7 @@ function transformResults(
     income_growth_quarters: r.income_growth_quarters || 0,
     revenue_avg_growth_rate: r.revenue_avg_growth_rate,
     income_avg_growth_rate: r.income_avg_growth_rate,
-    ordered: true,
+    ordered: r.ordered ?? false, // 쿼리에서 계산된 정배열 여부 (null이면 false)
     just_turned: justTurned,
     pe_ratio: parseNumericValue(r.pe_ratio),
     peg_ratio: parseNumericValue(r.peg_ratio),

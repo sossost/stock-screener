@@ -26,6 +26,7 @@ import { Star } from "lucide-react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { formatSector } from "@/utils/sector";
 import Link from "next/link";
+import { INFINITE_SCROLL } from "@/lib/filters/constants";
 
 interface StockTableProps {
   data: ScreenerCompany[];
@@ -180,13 +181,13 @@ export function StockTable({
     }
   }, [hasLoaded, refresh]);
 
-  // 포트폴리오 버튼 클릭 핸들러
-  const handleTogglePortfolio = async (symbol: string) => {
+  // 포트폴리오 버튼 클릭 핸들러 (메모이제이션)
+  const handleTogglePortfolio = React.useCallback(async (symbol: string) => {
     const success = await togglePortfolio(symbol);
     if (success && onSymbolToggle) {
       onSymbolToggle(symbol);
     }
-  };
+  }, [togglePortfolio, onSymbolToggle]);
 
   const [sort, setSort] = React.useState<SortState>({
     key: defaultSort.key,
@@ -272,13 +273,68 @@ export function StockTable({
     return arr;
   }, [data, sort]);
 
-  const handleSort = (key: SortKey) => {
+  // 포트폴리오 상태 맵 생성 (5000번 호출 방지) - sortedData 이후에 선언
+  const portfolioMap = React.useMemo(() => {
+    const map = new Map<string, boolean>();
+    sortedData.forEach((c) => {
+      map.set(c.symbol, isInPortfolio(c.symbol));
+    });
+    return map;
+  }, [sortedData, isInPortfolio]);
+
+  // 무한 스크롤을 위한 상태
+  const [visibleCount, setVisibleCount] = React.useState<number>(
+    INFINITE_SCROLL.INITIAL_LOAD_COUNT
+  );
+  const observerRef = React.useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = React.useRef<HTMLTableRowElement>(null);
+  const sortedDataLengthRef = React.useRef(sortedData.length);
+
+  // sortedData.length를 ref로 추적하여 observer 콜백에서 최신 값 참조
+  React.useEffect(() => {
+    sortedDataLengthRef.current = sortedData.length;
+  }, [sortedData.length]);
+
+  // Intersection Observer로 무한 스크롤 구현
+  React.useEffect(() => {
+    const loadMoreEl = loadMoreRef.current;
+    if (!loadMoreEl) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => {
+            const maxLength = sortedDataLengthRef.current;
+            return prev < maxLength
+              ? Math.min(prev + INFINITE_SCROLL.LOAD_MORE_COUNT, maxLength)
+              : prev;
+          });
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observerRef.current.observe(loadMoreEl);
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [sortedData.length]); // 데이터 길이 변경 시 observer 재연결
+
+  // 데이터가 변경되면 visibleCount 리셋
+  React.useEffect(() => {
+    setVisibleCount(INFINITE_SCROLL.INITIAL_LOAD_COUNT);
+  }, [data]); // data.length 대신 data 전체로 변경 감지
+
+  const handleSort = React.useCallback((key: SortKey) => {
     setSort((prev) =>
       prev.key === key
         ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
         : { key, direction: "desc" }
     );
-  };
+  }, []);
 
   if (sortedData.length === 0 && tickerSearch) {
     return (
@@ -369,9 +425,64 @@ export function StockTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedData.map((c, idx) => (
-            <TableRow key={`${c.symbol}-${idx}`}>
-              {screenerColumns.map((col) => {
+          {sortedData.slice(0, visibleCount).map((c, idx) => (
+            <StockTableRow
+              key={`${c.symbol}-${idx}`}
+              company={c}
+              index={idx}
+              isInPortfolio={portfolioMap.get(c.symbol) ?? false}
+              onTogglePortfolio={handleTogglePortfolio}
+            />
+          ))}
+          {visibleCount < sortedData.length && (
+            <TableRow ref={loadMoreRef}>
+              <TableCell colSpan={screenerColumns.length} className="text-center py-4">
+                <div className="text-sm text-muted-foreground">로딩 중...</div>
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </>
+  );
+}
+
+// 차트 데이터를 메모이제이션하는 헬퍼 함수
+const getChartData = (financials: ScreenerCompany["quarterly_financials"], type: "revenue" | "eps") => {
+  return prepareChartData(financials, type);
+};
+
+// 테이블 행 컴포넌트를 메모이제이션하여 불필요한 리렌더링 방지
+const StockTableRow = React.memo(function StockTableRow({
+  company: c,
+  index: idx,
+  isInPortfolio,
+  onTogglePortfolio,
+}: {
+  company: ScreenerCompany;
+  index: number;
+  isInPortfolio: boolean;
+  onTogglePortfolio: (symbol: string) => void;
+}) {
+  // 차트 데이터를 메모이제이션
+  const revenueChartData = React.useMemo(
+    () => getChartData(c.quarterly_financials, "revenue"),
+    [c.quarterly_financials]
+  );
+  const epsChartData = React.useMemo(
+    () => getChartData(c.quarterly_financials, "eps"),
+    [c.quarterly_financials]
+  );
+
+  // 섹터 포맷팅 메모이제이션
+  const sectorDisplay = React.useMemo(
+    () => formatSector(c.sector),
+    [c.sector]
+  );
+
+  return (
+    <TableRow style={{ display: "table-row", width: "100%" }}>
+      {screenerColumns.map((col) => {
                 const alignClass =
                   col.align === "right"
                     ? "text-right"
@@ -430,14 +541,13 @@ export function StockTable({
                         key={col.key}
                         className={`${alignClass} ${widthClass}`}
                         title={
-                          c.sector &&
-                          formatSector(c.sector).display !== c.sector
+                          c.sector && sectorDisplay.display !== c.sector
                             ? c.sector
                             : undefined
                         }
                       >
                         <span className="block w-full truncate text-right">
-                          {formatSector(c.sector).display}
+                          {sectorDisplay.display}
                         </span>
                       </TableCell>
                     );
@@ -475,10 +585,7 @@ export function StockTable({
                         className={`${alignClass} ${widthClass}`}
                       >
                         <QuarterlyBarChart
-                          data={prepareChartData(
-                            c.quarterly_financials,
-                            "revenue"
-                          )}
+                          data={revenueChartData}
                           type="revenue"
                           height={28}
                           width={160}
@@ -492,7 +599,7 @@ export function StockTable({
                         className={`${alignClass} ${widthClass}`}
                       >
                         <QuarterlyBarChart
-                          data={prepareChartData(c.quarterly_financials, "eps")}
+                          data={epsChartData}
                           type="eps"
                           height={28}
                           width={160}
@@ -508,17 +615,17 @@ export function StockTable({
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => handleTogglePortfolio(c.symbol)}
+                          onClick={() => onTogglePortfolio(c.symbol)}
                           className="cursor-pointer"
                           aria-label={
-                            isInPortfolio(c.symbol)
+                            isInPortfolio
                               ? "포트폴리오에서 제거"
                               : "포트폴리오에 추가"
                           }
                         >
                           <Star
                             className={`h-5 w-5 ${
-                              isInPortfolio(c.symbol)
+                              isInPortfolio
                                 ? "fill-yellow-400 text-yellow-400"
                                 : "text-gray-400"
                             }`}
@@ -530,10 +637,6 @@ export function StockTable({
                     return null;
                 }
               })}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </>
+    </TableRow>
   );
-}
+});

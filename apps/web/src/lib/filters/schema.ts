@@ -9,8 +9,8 @@ export const profitabilityOptions = [
 export const profitabilityValues = profitabilityOptions.map((opt) => opt.value);
 
 export const filterDefaults = {
-  ordered: true,
-  goldenCross: true,
+  ordered: false, // URL 파라미터에 명시적으로 값이 있어야만 적용
+  goldenCross: false, // URL 파라미터에 명시적으로 값이 있어야만 적용
   justTurned: false,
   lookbackDays: 10,
   profitability: "all" as (typeof profitabilityValues)[number],
@@ -28,15 +28,22 @@ export const filterDefaults = {
   ma200Above: false,
 };
 
+// 문자열 "true"/"false"를 boolean으로 변환하는 커스텀 스키마
+const booleanString = z.union([
+  z.literal("true").transform(() => true),
+  z.literal("false").transform(() => false),
+  z.boolean(),
+]).optional();
+
 export const filterSchema = z.object({
-  ordered: z.coerce.boolean().default(filterDefaults.ordered),
-  goldenCross: z.coerce.boolean().default(filterDefaults.goldenCross),
-  justTurned: z.coerce.boolean().default(filterDefaults.justTurned),
+  ordered: booleanString.default(filterDefaults.ordered),
+  goldenCross: booleanString.default(filterDefaults.goldenCross),
+  justTurned: booleanString.default(filterDefaults.justTurned),
   lookbackDays: z.coerce.number().default(filterDefaults.lookbackDays),
   profitability: z.enum(profitabilityValues).default(filterDefaults.profitability),
-  turnAround: z.coerce.boolean().default(filterDefaults.turnAround),
-  revenueGrowth: z.coerce.boolean().default(filterDefaults.revenueGrowth),
-  incomeGrowth: z.coerce.boolean().default(filterDefaults.incomeGrowth),
+  turnAround: booleanString.default(filterDefaults.turnAround),
+  revenueGrowth: booleanString.default(filterDefaults.revenueGrowth),
+  incomeGrowth: booleanString.default(filterDefaults.incomeGrowth),
   revenueGrowthQuarters: z.coerce
     .number()
     .default(filterDefaults.revenueGrowthQuarters),
@@ -51,11 +58,11 @@ export const filterSchema = z.object({
     .union([z.coerce.number(), z.null()])
     .optional()
     .transform((v) => (v === undefined ? null : v)),
-  pegFilter: z.coerce.boolean().default(filterDefaults.pegFilter),
-  ma20Above: z.coerce.boolean().default(filterDefaults.ma20Above),
-  ma50Above: z.coerce.boolean().default(filterDefaults.ma50Above),
-  ma100Above: z.coerce.boolean().default(filterDefaults.ma100Above),
-  ma200Above: z.coerce.boolean().default(filterDefaults.ma200Above),
+  pegFilter: booleanString.default(filterDefaults.pegFilter),
+  ma20Above: booleanString.default(filterDefaults.ma20Above),
+  ma50Above: booleanString.default(filterDefaults.ma50Above),
+  ma100Above: booleanString.default(filterDefaults.ma100Above),
+  ma200Above: booleanString.default(filterDefaults.ma200Above),
 });
 
 export type ParsedFilters = z.infer<typeof filterSchema>;
@@ -88,8 +95,23 @@ export function parseFilters(
     }
   });
 
+  // URL 파라미터가 없으면 기본값 사용 (MA 필터는 false로 설정)
+  const hasAnyParams = Object.keys(normalized).length > 0;
   const result = filterSchema.safeParse(normalized);
   if (result.success) {
+    // URL 파라미터가 없으면 MA 필터를 false로 설정 (명시적으로 true일 때만 적용)
+    if (!hasAnyParams) {
+      return {
+        ...result.data,
+        ordered: false,
+        goldenCross: false,
+        justTurned: false,
+        ma20Above: false,
+        ma50Above: false,
+        ma100Above: false,
+        ma200Above: false,
+      };
+    }
     return result.data;
   }
 
@@ -99,24 +121,57 @@ export function parseFilters(
 
 export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
   const params = new URLSearchParams();
-  params.set("ordered", String(filters.ordered));
-  params.set("goldenCross", String(filters.goldenCross));
-  params.set("justTurned", String(filters.justTurned));
-  params.set("lookbackDays", String(filters.lookbackDays));
+  
+  // 이평선 필터는 true일 때만 쿼리 파라미터에 포함 (URL 파라미터에 명시적으로 값이 있어야만 적용)
+  if (filters.ordered === true) {
+    params.set("ordered", "true");
+  }
+  // goldenCross는 서버 기본값이 true이므로, 항상 명시적으로 전달
+  params.set("goldenCross", filters.goldenCross ? "true" : "false");
+  if (filters.justTurned === true) {
+    params.set("justTurned", "true");
+  }
+  if (filters.justTurned === true && filters.lookbackDays !== filterDefaults.lookbackDays) {
+    params.set("lookbackDays", String(filters.lookbackDays));
+  }
+  
   params.set("profitability", filters.profitability);
-  params.set("turnAround", String(filters.turnAround));
-  params.set("revenueGrowth", String(filters.revenueGrowth));
-  params.set("incomeGrowth", String(filters.incomeGrowth));
-  params.set(
-    "revenueGrowthQuarters",
-    String(filters.revenueGrowthQuarters)
-  );
-  params.set("incomeGrowthQuarters", String(filters.incomeGrowthQuarters));
-  params.set("pegFilter", String(filters.pegFilter));
-  params.set("ma20Above", String(filters.ma20Above));
-  params.set("ma50Above", String(filters.ma50Above));
-  params.set("ma100Above", String(filters.ma100Above));
-  params.set("ma200Above", String(filters.ma200Above));
+  
+  if (filters.turnAround === true) {
+    params.set("turnAround", "true");
+  }
+  if (filters.revenueGrowth === true) {
+    params.set("revenueGrowth", "true");
+  }
+  if (filters.incomeGrowth === true) {
+    params.set("incomeGrowth", "true");
+  }
+  if (filters.revenueGrowth === true && filters.revenueGrowthQuarters !== filterDefaults.revenueGrowthQuarters) {
+    params.set(
+      "revenueGrowthQuarters",
+      String(filters.revenueGrowthQuarters)
+    );
+  }
+  if (filters.incomeGrowth === true && filters.incomeGrowthQuarters !== filterDefaults.incomeGrowthQuarters) {
+    params.set("incomeGrowthQuarters", String(filters.incomeGrowthQuarters));
+  }
+  if (filters.pegFilter === true) {
+    params.set("pegFilter", "true");
+  }
+  
+  // 이평선 위 필터는 true일 때만 쿼리 파라미터에 포함
+  if (filters.ma20Above === true) {
+    params.set("ma20Above", "true");
+  }
+  if (filters.ma50Above === true) {
+    params.set("ma50Above", "true");
+  }
+  if (filters.ma100Above === true) {
+    params.set("ma100Above", "true");
+  }
+  if (filters.ma200Above === true) {
+    params.set("ma200Above", "true");
+  }
 
   if (filters.revenueGrowthRate !== null && filters.revenueGrowthRate !== undefined) {
     params.set("revenueGrowthRate", String(filters.revenueGrowthRate));

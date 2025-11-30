@@ -12,21 +12,19 @@ import { filterDefaults, profitabilityValues } from "@/lib/filters/schema";
  */
 export function useFilterState() {
   // 이평선 필터
-  const [ordered, setOrdered] = useQueryState(
-    "ordered",
-    parseAsBoolean.withDefault(filterDefaults.ordered)
-  );
+  const [ordered, setOrdered] = useQueryState("ordered", parseAsBoolean);
+  // goldenCross는 ScreenerClient에서 초기 로드 시 기본값 true로 URL 설정
   const [goldenCross, setGoldenCross] = useQueryState(
     "goldenCross",
-    parseAsBoolean.withDefault(filterDefaults.goldenCross)
+    parseAsBoolean
   );
   const [justTurned, setJustTurned] = useQueryState(
     "justTurned",
-    parseAsBoolean.withDefault(filterDefaults.justTurned)
+    parseAsBoolean
   );
   const [lookbackDays, setLookbackDays] = useQueryState(
     "lookbackDays",
-    parseAsInteger.withDefault(filterDefaults.lookbackDays)
+    parseAsInteger
   );
 
   // 수익성 필터
@@ -73,22 +71,16 @@ export function useFilterState() {
     parseAsBoolean.withDefault(false)
   );
 
-  // 이평선 위 필터
-  const [ma20Above, setMa20Above] = useQueryState(
-    "ma20Above",
-    parseAsBoolean.withDefault(filterDefaults.ma20Above)
-  );
-  const [ma50Above, setMa50Above] = useQueryState(
-    "ma50Above",
-    parseAsBoolean.withDefault(filterDefaults.ma50Above)
-  );
+  // 이평선 위 필터 (URL 파라미터에 명시적으로 값이 있어야만 적용)
+  const [ma20Above, setMa20Above] = useQueryState("ma20Above", parseAsBoolean);
+  const [ma50Above, setMa50Above] = useQueryState("ma50Above", parseAsBoolean);
   const [ma100Above, setMa100Above] = useQueryState(
     "ma100Above",
-    parseAsBoolean.withDefault(filterDefaults.ma100Above)
+    parseAsBoolean
   );
   const [ma200Above, setMa200Above] = useQueryState(
     "ma200Above",
-    parseAsBoolean.withDefault(filterDefaults.ma200Above)
+    parseAsBoolean
   );
 
   return {

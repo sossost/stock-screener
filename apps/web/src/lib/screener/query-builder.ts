@@ -2,15 +2,34 @@
 // 스크리너 쿼리 빌더 - 모듈화된 SQL 구성
 import { sql, SQL } from "drizzle-orm";
 import type { ScreenerParams } from "@/types/screener";
+import { QUERY_CONSTANTS, FILTER_DEFAULTS } from "@/lib/filters/constants";
 
 /**
  * 파라미터 유효성 검사
  */
+/**
+ * MA 데이터가 필요한 필터가 활성화되어 있는지 확인
+ */
+function requiresMA(params: ScreenerParams): boolean {
+  return (
+    params.ordered === true ||
+    params.goldenCross === true ||
+    params.justTurned === true ||
+    params.ma20Above === true ||
+    params.ma50Above === true ||
+    params.ma100Above === true ||
+    params.ma200Above === true
+  );
+}
+
 export function validateParams(params: ScreenerParams): {
   valid: boolean;
   error?: string;
 } {
-  const { revenueGrowthQuarters = 3, incomeGrowthQuarters = 3 } = params;
+  const {
+    revenueGrowthQuarters = FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
+    incomeGrowthQuarters = FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
+  } = params;
 
   if (revenueGrowthQuarters < 2 || revenueGrowthQuarters > 8) {
     return {
@@ -79,7 +98,7 @@ function buildLastDateCTE(requireMA: boolean): SQL {
  * 현재 데이터 CTE 생성 (MA 조건 포함)
  */
 function buildCurrentDataCTE(params: ScreenerParams, requireMA: boolean): SQL {
-  const { ordered = true, goldenCross = true } = params;
+  const { ordered = false, goldenCross = true } = params; // goldenCross 기본값 true (성능 최적화)
 
   if (requireMA) {
     return sql`
@@ -111,19 +130,36 @@ function buildCurrentDataCTE(params: ScreenerParams, requireMA: boolean): SQL {
     `;
   }
 
+  // requireMA = false일 때는 각 심볼의 최신 데이터를 가져옴
+  // daily_ma에서 MA 데이터를 LEFT JOIN하여 정배열 여부 확인 (MA 데이터가 없어도 포함)
   return sql`
     SELECT
       dp.symbol,
       dp.date::date AS d,
-      NULL::numeric AS ma20,
-      NULL::numeric AS ma50,
-      NULL::numeric AS ma100,
-      NULL::numeric AS ma200,
-      NULL::numeric AS vol_ma30,
+      dm.ma20,
+      dm.ma50,
+      dm.ma100,
+      dm.ma200,
+      dm.vol_ma30,
       dp.adj_close::numeric AS close,
       dp.rs_score
     FROM daily_prices dp
-    JOIN last_d ld ON dp.date::date = ld.d
+    LEFT JOIN daily_ma dm ON dm.symbol = dp.symbol AND dm.date = dp.date
+    WHERE dp.symbol ~ '^[A-Z]{1,6}$'
+      AND dp.symbol NOT LIKE '%W'
+      AND dp.symbol NOT LIKE '%X'
+      AND dp.symbol NOT LIKE '%U'
+      AND dp.symbol NOT LIKE '%WS'
+      AND (dp.symbol, dp.date::date) IN (
+        SELECT symbol, MAX(date::date)
+        FROM daily_prices
+        WHERE symbol ~ '^[A-Z]{1,6}$'
+          AND symbol NOT LIKE '%W'
+          AND symbol NOT LIKE '%X'
+          AND symbol NOT LIKE '%U'
+          AND symbol NOT LIKE '%WS'
+        GROUP BY symbol
+      )
   `;
 }
 
@@ -136,7 +172,7 @@ function buildCandidatesCTE(params: ScreenerParams): SQL {
   return sql`
     SELECT c.symbol, c.d, c.ma20, c.ma50, c.ma100, c.ma200, c.vol_ma30, c.close, c.rs_score
     FROM cur c
-    JOIN symbols s ON s.symbol = c.symbol
+    LEFT JOIN symbols s ON s.symbol = c.symbol
     WHERE
       (${minAvgVol} = 0 OR c.vol_ma30 IS NULL OR c.vol_ma30 >= ${minAvgVol})
       AND (${minPrice} = 0 OR c.close IS NULL OR c.close >= ${minPrice})
@@ -144,7 +180,7 @@ function buildCandidatesCTE(params: ScreenerParams): SQL {
       AND (${
         allowOTC
           ? sql`TRUE`
-          : sql`(s.exchange NOT ILIKE 'OTC%' AND s.exchange NOT ILIKE 'PINK%')`
+          : sql`(s.exchange IS NULL OR (s.exchange NOT ILIKE 'OTC%' AND s.exchange NOT ILIKE 'PINK%'))`
       })
   `;
 }
@@ -350,7 +386,7 @@ function buildValuationCTE(): SQL {
 function buildWhereFilters(params: ScreenerParams): SQL {
   const {
     justTurned = false,
-    ordered = true,
+    ordered = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
     profitability = "all",
     turnAround = false,
     revenueGrowth = false,
@@ -360,10 +396,10 @@ function buildWhereFilters(params: ScreenerParams): SQL {
     revenueGrowthRate = null,
     incomeGrowthRate = null,
     pegFilter = false,
-    ma20Above = false,
-    ma50Above = false,
-    ma100Above = false,
-    ma200Above = false,
+    ma20Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
+    ma50Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
+    ma100Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
+    ma200Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
   } = params;
 
   return sql`
@@ -431,24 +467,77 @@ function buildWhereFilters(params: ScreenerParams): SQL {
  */
 export function buildScreenerQuery(params: ScreenerParams): SQL {
   const {
-    ordered = true,
-    goldenCross = true,
+    ordered = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
     justTurned = false,
-    lookbackDays = 10,
-    revenueGrowthQuarters = 3,
-    incomeGrowthQuarters = 3,
+    lookbackDays = FILTER_DEFAULTS.LOOKBACK_DAYS, // lookbackDays는 justTurned가 true일 때만 사용되므로 기본값 유지
+    revenueGrowthQuarters = FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
+    incomeGrowthQuarters = FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
   } = params;
 
-  const requireMA =
-    ordered ||
-    goldenCross ||
-    justTurned ||
-    (params.ma20Above ?? false) ||
-    (params.ma50Above ?? false) ||
-    (params.ma100Above ?? false) ||
-    (params.ma200Above ?? false);
-  const maxRn = 1 + lookbackDays;
+  // requireMA: MA 데이터가 필요한 필터가 하나라도 켜져 있으면 true
+  // ordered와 goldenCross는 명시적으로 true일 때만 포함
+  const requireMA = requiresMA(params);
+  const maxRn = QUERY_CONSTANTS.MAX_RN_OFFSET + lookbackDays;
+  const needPrevStatus = justTurned && ordered === true;
 
+  // justTurned 필터가 필요할 때만 prev_ma와 prev_status CTE 포함
+  if (needPrevStatus) {
+    return sql`
+      WITH last_d AS (
+        ${buildLastDateCTE(requireMA)}
+      ),
+      cur AS (
+        ${buildCurrentDataCTE(params, requireMA)}
+      ),
+      candidates AS (
+        ${buildCandidatesCTE(params)}
+      ),
+      prev_ma AS (
+        ${buildPrevMACTE()}
+      ),
+      prev_status AS (
+        ${buildPrevStatusCTE(maxRn)}
+      )
+      SELECT
+        cand.symbol,
+        cand.d AS trade_date,
+        cand.close AS last_close,
+        cand.rs_score AS rs_score,
+        s.market_cap,
+        s.sector,
+        qf.quarterly_data,
+        qf.eps_q1 AS latest_eps,
+        qf.eps_prev AS prev_eps,
+        qf.turned_profitable,
+        qf.revenue_growth_quarters,
+        qf.income_growth_quarters,
+        qf.revenue_avg_growth_rate,
+        qf.income_avg_growth_rate,
+        qr.pe_ratio,
+        qr.peg_ratio,
+        CASE 
+          WHEN cand.ma20 IS NOT NULL AND cand.ma50 IS NOT NULL AND cand.ma100 IS NOT NULL AND cand.ma200 IS NOT NULL
+            THEN (cand.ma20 > cand.ma50 AND cand.ma50 > cand.ma100 AND cand.ma100 > cand.ma200)
+          ELSE NULL
+        END AS ordered
+      FROM candidates cand
+      LEFT JOIN prev_status ps ON ps.symbol = cand.symbol
+      LEFT JOIN symbols s ON s.symbol = cand.symbol
+      LEFT JOIN LATERAL (
+        ${buildQuarterlyFinancialsCTE(
+          revenueGrowthQuarters,
+          incomeGrowthQuarters
+        )}
+      ) qf ON true
+      LEFT JOIN LATERAL (
+        ${buildValuationCTE()}
+      ) qr ON true
+      ${buildWhereFilters(params)}
+      ORDER BY s.market_cap DESC NULLS LAST, cand.symbol ASC
+    `;
+  }
+
+  // justTurned 필터가 필요 없을 때는 prev_ma와 prev_status CTE 제외
   return sql`
     WITH last_d AS (
       ${buildLastDateCTE(requireMA)}
@@ -458,12 +547,6 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
     ),
     candidates AS (
       ${buildCandidatesCTE(params)}
-    ),
-    prev_ma AS (
-      ${buildPrevMACTE()}
-    ),
-    prev_status AS (
-      ${buildPrevStatusCTE(maxRn)}
     )
     SELECT
       cand.symbol,
@@ -481,9 +564,13 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
       qf.revenue_avg_growth_rate,
       qf.income_avg_growth_rate,
       qr.pe_ratio,
-      qr.peg_ratio
+      qr.peg_ratio,
+      CASE 
+        WHEN cand.ma20 IS NOT NULL AND cand.ma50 IS NOT NULL AND cand.ma100 IS NOT NULL AND cand.ma200 IS NOT NULL
+          THEN (cand.ma20 > cand.ma50 AND cand.ma50 > cand.ma100 AND cand.ma100 > cand.ma200)
+        ELSE NULL
+      END AS ordered
     FROM candidates cand
-    LEFT JOIN prev_status ps ON ps.symbol = cand.symbol
     LEFT JOIN symbols s ON s.symbol = cand.symbol
     LEFT JOIN LATERAL (
       ${buildQuarterlyFinancialsCTE(

@@ -81,6 +81,7 @@ export interface ScreenerQueryResult {
   pe_ratio: number | string | null;
   peg_ratio: number | string | null;
   sector: string | null;
+  ordered: boolean | null; // 정배열 여부 (MA 데이터가 없으면 null)
 }
 
 // 이평선 필터 상태 타입
