@@ -73,6 +73,24 @@ export function useFilterState() {
     parseAsBoolean.withDefault(false)
   );
 
+  // 이평선 위 필터
+  const [ma20Above, setMa20Above] = useQueryState(
+    "ma20Above",
+    parseAsBoolean.withDefault(filterDefaults.ma20Above)
+  );
+  const [ma50Above, setMa50Above] = useQueryState(
+    "ma50Above",
+    parseAsBoolean.withDefault(filterDefaults.ma50Above)
+  );
+  const [ma100Above, setMa100Above] = useQueryState(
+    "ma100Above",
+    parseAsBoolean.withDefault(filterDefaults.ma100Above)
+  );
+  const [ma200Above, setMa200Above] = useQueryState(
+    "ma200Above",
+    parseAsBoolean.withDefault(filterDefaults.ma200Above)
+  );
+
   return {
     // 이평선 필터
     ordered,
@@ -104,5 +122,14 @@ export function useFilterState() {
     // PEG 필터
     pegFilter,
     setPegFilter,
+    // 이평선 위 필터
+    ma20Above,
+    setMa20Above,
+    ma50Above,
+    setMa50Above,
+    ma100Above,
+    setMa100Above,
+    ma200Above,
+    setMa200Above,
   };
 }

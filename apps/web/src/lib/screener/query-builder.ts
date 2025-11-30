@@ -360,6 +360,10 @@ function buildWhereFilters(params: ScreenerParams): SQL {
     revenueGrowthRate = null,
     incomeGrowthRate = null,
     pegFilter = false,
+    ma20Above = false,
+    ma50Above = false,
+    ma100Above = false,
+    ma200Above = false,
   } = params;
 
   return sql`
@@ -399,6 +403,26 @@ function buildWhereFilters(params: ScreenerParams): SQL {
         ? sql`AND qr.peg_ratio IS NOT NULL AND qr.peg_ratio::numeric >= 0 AND qr.peg_ratio::numeric < 1`
         : sql``
     }
+    ${
+      ma20Above
+        ? sql`AND cand.close IS NOT NULL AND cand.ma20 IS NOT NULL AND cand.close > cand.ma20`
+        : sql``
+    }
+    ${
+      ma50Above
+        ? sql`AND cand.close IS NOT NULL AND cand.ma50 IS NOT NULL AND cand.close > cand.ma50`
+        : sql``
+    }
+    ${
+      ma100Above
+        ? sql`AND cand.close IS NOT NULL AND cand.ma100 IS NOT NULL AND cand.close > cand.ma100`
+        : sql``
+    }
+    ${
+      ma200Above
+        ? sql`AND cand.close IS NOT NULL AND cand.ma200 IS NOT NULL AND cand.close > cand.ma200`
+        : sql``
+    }
   `;
 }
 
@@ -415,7 +439,14 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
     incomeGrowthQuarters = 3,
   } = params;
 
-  const requireMA = ordered || goldenCross || justTurned;
+  const requireMA =
+    ordered ||
+    goldenCross ||
+    justTurned ||
+    (params.ma20Above ?? false) ||
+    (params.ma50Above ?? false) ||
+    (params.ma100Above ?? false) ||
+    (params.ma200Above ?? false);
   const maxRn = 1 + lookbackDays;
 
   return sql`

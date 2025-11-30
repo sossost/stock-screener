@@ -25,6 +25,10 @@ export const portfolioFilterState: FilterState = {
   revenueGrowthRate: null,
   incomeGrowthRate: null,
   pegFilter: false,
+  ma20Above: false,
+  ma50Above: false,
+  ma100Above: false,
+  ma200Above: false,
 };
 
 export function PortfolioTableClient({

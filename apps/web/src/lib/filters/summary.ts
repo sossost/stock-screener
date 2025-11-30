@@ -17,6 +17,10 @@ export interface FilterState {
   incomeGrowthQuarters?: number;
   incomeGrowthRate?: number | null;
   pegFilter?: boolean; // PEG < 1 필터
+  ma20Above?: boolean; // 20일선 위
+  ma50Above?: boolean; // 50일선 위
+  ma100Above?: boolean; // 100일선 위
+  ma200Above?: boolean; // 200일선 위
 }
 
 export interface FilterSummary {
@@ -41,6 +45,18 @@ export function getMAFilterSummary(filterState: FilterState): FilterSummary {
   }
   if (filterState.justTurned && filterState.ordered) {
     activeFilters.push(`최근 전환 (${filterState.lookbackDays ?? 10}일)`);
+  }
+  if (filterState.ma20Above) {
+    activeFilters.push("20MA");
+  }
+  if (filterState.ma50Above) {
+    activeFilters.push("50MA");
+  }
+  if (filterState.ma100Above) {
+    activeFilters.push("100MA");
+  }
+  if (filterState.ma200Above) {
+    activeFilters.push("200MA");
   }
 
   const count = activeFilters.length;

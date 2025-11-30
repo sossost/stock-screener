@@ -59,6 +59,12 @@ function parseRequestParams(searchParams: URLSearchParams): ScreenerParams {
 
     // 밸류에이션 필터
     pegFilter: searchParams.get("pegFilter") === "true",
+
+    // 이평선 위 필터
+    ma20Above: searchParams.get("ma20Above") === "true",
+    ma50Above: searchParams.get("ma50Above") === "true",
+    ma100Above: searchParams.get("ma100Above") === "true",
+    ma200Above: searchParams.get("ma200Above") === "true",
   };
 }
 
@@ -142,6 +148,8 @@ export async function GET(req: Request) {
     // 쿼리 실행
     const query = buildScreenerQuery(params);
     const rows = await db.execute(query);
+    // Drizzle의 결과 타입이 Record<string, unknown>[]이므로
+    // ScreenerQueryResult[]로 변환 (쿼리 구조가 타입과 일치함)
     const results = rows.rows as unknown as ScreenerQueryResult[];
     const tradeDate = results.length > 0 ? results[0].trade_date : null;
 

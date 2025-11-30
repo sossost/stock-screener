@@ -398,6 +398,8 @@ export function StockTable({
                       >
                         <Link
                           href={`/stock/${c.symbol}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="text-blue-600 hover:underline"
                         >
                           {c.symbol}

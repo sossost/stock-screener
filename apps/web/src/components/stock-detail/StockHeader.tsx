@@ -14,6 +14,7 @@ import type {
 } from "@/types/stock-detail";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MAStatusBadge } from "./MAStatusBadge";
 
 interface StockHeaderProps {
@@ -61,6 +62,7 @@ export function StockHeader({
   maStatus,
   ratios,
 }: StockHeaderProps) {
+  const router = useRouter();
   const { isInPortfolio, togglePortfolio, refresh } = usePortfolio(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [showTradeForm, setShowTradeForm] = useState(false);
@@ -260,8 +262,8 @@ export function StockHeader({
           onClose={() => setShowTradeForm(false)}
           onCreated={() => {
             setShowTradeForm(false);
-            // 매매일지 페이지로 이동하거나 알림 표시
-            window.location.href = "/trades";
+            // 매매일지 페이지로 이동
+            router.push("/trades");
           }}
         />
       )}

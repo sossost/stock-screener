@@ -57,6 +57,10 @@ export interface ScreenerParams {
   revenueGrowthRate?: number | null;
   incomeGrowthRate?: number | null;
   pegFilter?: boolean;
+  ma20Above?: boolean; // 20일선 위
+  ma50Above?: boolean; // 50일선 위
+  ma100Above?: boolean; // 100일선 위
+  ma200Above?: boolean; // 200일선 위
 }
 
 // DB 쿼리 결과 타입

@@ -56,6 +56,10 @@ export function CategoryFilterDialog({
         goldenCross: filterState.goldenCross ?? true,
         justTurned: filterState.justTurned ?? false,
         lookbackDays: filterState.lookbackDays ?? 10,
+        ma20Above: filterState.ma20Above ?? false,
+        ma50Above: filterState.ma50Above ?? false,
+        ma100Above: filterState.ma100Above ?? false,
+        ma200Above: filterState.ma200Above ?? false,
       };
     } else if (category === "growth") {
       return {
@@ -119,6 +123,10 @@ export function CategoryFilterDialog({
         goldenCross: true,
         justTurned: false,
         lookbackDays: 10,
+        ma20Above: false,
+        ma50Above: false,
+        ma100Above: false,
+        ma200Above: false,
       });
       setInputValue("10");
     } else if (category === "growth") {
@@ -250,6 +258,52 @@ export function CategoryFilterDialog({
                   </span>
                 </div>
               </div>
+
+              {/* 이평선 위 필터 */}
+              <div className="bg-card rounded-lg px-4 py-2.5 border shadow-sm">
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-muted-foreground mb-2">
+                    이평선 위
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    {(
+                      [
+                        { key: "ma20Above", label: "20MA" },
+                        { key: "ma50Above", label: "50MA" },
+                        { key: "ma100Above", label: "100MA" },
+                        { key: "ma200Above", label: "200MA" },
+                      ] as const
+                    ).map(({ key, label }) => {
+                      // 타입 안전성을 위해 key가 tempState의 키인지 확인
+                      const stateKey = key as keyof typeof tempState;
+                      const isChecked =
+                        (tempState[stateKey] as boolean | undefined) ?? false;
+
+                      return (
+                        <div key={key} className="flex items-center gap-2">
+                          <Checkbox
+                            id={key}
+                            checked={isChecked}
+                            onCheckedChange={(checked) =>
+                              setTempState({
+                                ...tempState,
+                                [key]: checked === true,
+                              })
+                            }
+                            disabled={disabled}
+                          />
+                          <label
+                            htmlFor={key}
+                            className="text-sm leading-none cursor-pointer select-none"
+                          >
+                            {label}
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -347,8 +401,8 @@ export function CategoryFilterDialog({
                   </label>
                 </div>
                 <p className="text-xs text-muted-foreground leading-snug max-w-[420px] pl-6">
-                  가장 최근 EPS가 양수이고 직전 분기 EPS가 0 이하인 기업만 보여줍니다.
-                  EPS 데이터가 2분기 이상 없으면 제외됩니다.
+                  가장 최근 EPS가 양수이고 직전 분기 EPS가 0 이하인 기업만
+                  보여줍니다. EPS 데이터가 2분기 이상 없으면 제외됩니다.
                 </p>
               </div>
             </div>
