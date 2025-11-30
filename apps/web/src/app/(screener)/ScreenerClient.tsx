@@ -160,7 +160,7 @@ export default function ScreenerClient({
         )}
       </CardHeader>
       <CardContent className="px-4">
-        {isPending && !isSearching ? (
+        {(isPending && !isSearching) || (data.length === 0 && !error) ? (
           <TableSkeleton />
         ) : noData ? (
           <StateMessage

@@ -1,35 +1,22 @@
-import React from "react";
+import { Suspense } from "react";
 import { DataWrapper } from "@/app/(screener)/DataWrapper";
 import { Navigation } from "@/components/navigation";
+import { TableSkeleton } from "@/app/(screener)/TableSkeleton";
 
-type SearchParams = {
-  justTurned?: string;
-  lookbackDays?: string;
-  profitability?: string;
-  revenueGrowth?: string;
-  revenueGrowthQuarters?: string;
-  revenueGrowthRate?: string;
-  incomeGrowth?: string;
-  incomeGrowthQuarters?: string;
-  incomeGrowthRate?: string;
-  goldenCross?: string;
+export const metadata = {
+  title: "주식 스크리너 | Stock Screener",
+  description: "기술적 분석과 펀더멘털 분석을 위한 주식 스크리닝 도구",
 };
 
-const Home = async ({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) => {
-  const resolvedParams = await searchParams;
-
+export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navigation showPortfolioButton={true} />
       <div className="container mx-auto px-4 py-8">
-        <DataWrapper searchParams={resolvedParams} />
+        <Suspense fallback={<TableSkeleton />}>
+          <DataWrapper />
+        </Suspense>
       </div>
     </div>
   );
-};
-
-export default Home;
+}
