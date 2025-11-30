@@ -1,6 +1,21 @@
 import { TradeListItem, TradeStatus } from "@/lib/trades/types";
 import { formatDateKr } from "./format";
 
+/**
+ * CSV 값 이스케이프 처리
+ * 쉼표, 따옴표, 줄바꿈이 포함된 값을 CSV 형식에 맞게 이스케이프
+ */
+function escapeCsvValue(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  const str = String(value);
+  // 쉼표, 따옴표, 줄바꿈이 포함된 경우 이스케이프 처리
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    // 내부 따옴표는 두 개로 변환하고 전체를 따옴표로 감싸기
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
 export function exportTradesToCsv(
   trades: TradeListItem[],
   status: TradeStatus
@@ -38,27 +53,29 @@ export function exportTradesToCsv(
     const rows = trades.map((t) => {
       if (status === "OPEN") {
         return [
-          t.symbol,
-          t.strategy || "",
+          escapeCsvValue(t.symbol),
+          escapeCsvValue(t.strategy),
           t.calculated.avgEntryPrice.toFixed(2),
-          t.planStopLoss || "",
-          t.planTargetPrice || "",
+          escapeCsvValue(t.planStopLoss),
+          escapeCsvValue(t.planTargetPrice),
           t.calculated.currentQuantity,
-          t.startDate ? formatDateKr(t.startDate) : "",
+          t.startDate ? escapeCsvValue(formatDateKr(t.startDate)) : "",
         ];
       }
       return [
-        t.symbol,
-        t.strategy || "",
+        escapeCsvValue(t.symbol),
+        escapeCsvValue(t.strategy),
         t.calculated.avgEntryPrice.toFixed(2),
         t.calculated.avgExitPrice?.toFixed(2) || "",
         t.calculated.totalBuyQuantity,
-        t.finalPnl || "",
-        t.finalRoi ? (parseFloat(t.finalRoi) * 100).toFixed(2) + "%" : "",
-        t.finalRMultiple || "",
-        t.startDate ? formatDateKr(t.startDate) : "",
-        t.endDate ? formatDateKr(t.endDate) : "",
-        t.mistakeType || "",
+        escapeCsvValue(t.finalPnl),
+        t.finalRoi != null
+          ? escapeCsvValue((parseFloat(t.finalRoi) * 100).toFixed(2) + "%")
+          : "",
+        escapeCsvValue(t.finalRMultiple),
+        t.startDate ? escapeCsvValue(formatDateKr(t.startDate)) : "",
+        t.endDate ? escapeCsvValue(formatDateKr(t.endDate)) : "",
+        escapeCsvValue(t.mistakeType),
       ];
     });
 
