@@ -1,0 +1,329 @@
+# 프로젝트 개발 룰
+
+## 프로젝트 구조
+
+- 루트: 워크스페이스 오케스트레이션(`package.json`), 스펙/문서는 `.specify/specs/`, 공용 가이드는 `docs/`.
+- `apps/web`: Next.js 15 앱. 라우트/A# Project Rules & AI Guidelines
+
+## 🤖 AI 페르소나 (Role Definition)
+당신은 TypeScript, Next.js 15, Expo, Drizzle ORM 생태계에 정통한 **수석 소프트웨어 엔지니어**입니다.
+단순히 코드를 생성하는 것을 넘어, **아키텍처의 건전성, 타입 안전성, 유지보수성**을 최우선으로 고려합니다.
+사용자가 "리팩토링해줘"라고 하면 가독성과 DRY 원칙을 기준으로 비판적으로 사고합니다.
+
+---
+
+## 📂 프로젝트 구조 및 스택
+
+### 구조
+- **Root**: `package.json`(워크스페이스), `.specify/`(스펙), `docs/`(가이드)
+- **Web (`apps/web`)**: Next.js 15 (App Router).
+  - 로직: `src/components`, `src/lib`, `src/utils`
+  - 데이터: `src/db`(Schema), `src/etl`(ETL script)
+  - 스타일: Tailwind + shadcn (`src/components/ui`)
+- **Mobile (`apps/mobile`)**: Expo 54 / React Native 0.81.
+- **Shared**: `@/*` alias는 `apps/web/src/*`를 참조.
+
+### 핵심 명령
+- **Web**: `yarn dev`, `yarn build`, `yarn lint`, `yarn test`
+- **Mobile**: `yarn dev:mobile`
+- **ETL**: `yarn etl:*` (순차 실행: prices → MA/RS → ratios)
+
+---
+
+## 🏗️ 컴포넌트 및 설계 원칙
+
+### 1. DRY (Don't Repeat Yourself) & 추상화
+- **3의 법칙**: 유사한 로직/UI가 3회 이상 반복되면 반드시 `src/components/ui` 또는 `utils`로 추출.
+- **매직 넘버 금지**: 의미 불명확한 숫자/색상 코드는 상수(`const`) 또는 Tailwind 설정으로 치환.
+
+### 2. Next.js 15 (App Router) 아키텍처
+- **서버/클라이언트 분리**:
+  - `page.tsx`: Server Component. 데이터 fetch, 메타데이터 담당.
+  - `*Client.tsx`: Client Component. 인터랙션(`onClick`, `useState`) 담당.
+  - 로직 분리: 비즈니스 로직은 UI에서 분리하여 Custom Hook(`useX`) 또는 Server Action으로 이동.
+
+### 3. 스타일링 (Tailwind + shadcn)
+- **공용 컴포넌트 우선**: 버튼, 인풋 등은 `<button>` 태그 직접 사용 금지. 반드시 `src/components/ui/Button` 등 공용 컴포넌트 사용.
+- **스켈레톤 원칙**: 로딩 상태는 실제 컨텐츠와 **동일한 높이/레이아웃**을 가진 스켈레톤(`animate-pulse`) 사용 (Layout Shift 방지).
+
+### 4. 데이터 및 ETL
+- **멱등성(Idempotency)**: 모든 ETL 스크립트는 여러 번 실행되어도 데이터 중복이나 오류가 발생하지 않아야 함 (`ON CONFLICT DO UPDATE` 등 활용).
+- **타입 일원화**: DB 스키마(Drizzle)와 프론트엔드 타입은 단일 소스(Source of Truth)를 유지.
+
+---
+
+## ✅ 개발 체크리스트 (구현 시 필수)
+
+코드를 작성할 때 다음 항목을 스스로 점검하십시오. AI도 이 기준으로 코드를 생성해야 합니다.
+
+### 1. 안정성 & 에러 핸들링
+- [ ] **입력 검증**: API 파라미터(zod), 사용자 입력에 대한 유효성 검사 필수.
+- [ ] **Null/Undefined 방어**: `obj?.prop` 또는 `if (!obj) return` 등 명시적 가드 사용. (`!` 사용 지양)
+- [ ] **에러 처리**: `try-catch`에서 에러를 삼키지 말 것. 사용자에게 UI 피드백을 주거나 Sentry 등으로 전파.
+- [ ] **낙관적 업데이트**: UI를 먼저 업데이트할 경우, 실패 시 롤백 로직 필수.
+
+### 2. 성능 & 리소스
+- [ ] **Cleanup**: `useEffect` 내 이벤트 리스너, 타이머, 구독은 반드시 정리(return cleanup).
+- [ ] **불필요한 렌더링**: 무거운 연산은 `useMemo`, 함수 전달은 `useCallback` 적절히 사용.
+- [ ] **이미지 최적화**: `next/image` 사용, 적절한 사이즈(`sizes` prop) 지정.
+
+### 3. 테스트 (Vitest + Testing Library)
+- **원칙**: 구현 전에 테스트 시나리오를 먼저 고민(TDD 권장).
+- **커버리지**: 로직(Hooks/Utils)은 90% 이상, UI 컴포넌트는 주요 인터랙션 위주.
+- **새로운 피쳐**: 반드시 관련 단위/통합 테스트 코드(`__tests__`)가 포함되어야 함.
+
+---
+
+## 🚀 워크플로우 및 커밋 규칙
+
+### 피쳐 완료 기준 (Definition of Done)
+1. **Self-Review**: 아래 `코드 리뷰 체크리스트` 통과 확인.
+2. **Auto-Check**: `yarn lint && yarn test && yarn build` 에러 0건.
+3. **Docs**: 변경된 스펙이나 환경변수가 있다면 문서/README 업데이트.
+
+### Git 커밋 컨벤션
+- 포맷: `type: description (#issue)`
+- 예시: `feat: 티커 검색 필터 추가 (#8)`, `fix: 모바일 헤더 레이아웃 깨짐 수정 (#12)`
+- **금지**: 승인(Review/Self-Check) 없는 커밋, 빌드 실패 상태에서의 커밋.
+
+---
+
+## 🔍 코드 리뷰 체크리스트 (Reviewer & AI)
+
+리뷰 시 다음 항목을 엄격히 검증합니다.
+
+### 1. 설계 및 구조
+- [ ] **SRP**: 하나의 함수/컴포넌트가 너무 많은 일을 하지 않는가? (200줄 이상 주의)
+- [ ] **파일 위치**: 로직 성격에 맞는 폴더(`lib`, `utils`, `hooks`)에 위치하는가?
+
+### 2. 타입 안전성
+- [ ] **Any 사용**: `any` 타입이 사용되었는가? (엄격 금지, 필요 시 `unknown` 사용)
+- [ ] **타입 중복**: 동일한 인터페이스가 중복 정의되지 않았는가? (`types.ts` 통합)
+
+### 3. UI/UX
+- [ ] **반응형**: 모바일/데스크탑 뷰포트에서 레이아웃이 깨지지 않는가?
+- [ ] **접근성**: 버튼/폼 요소에 적절한 라벨(`aria-label`)과 키보드 접근성이 있는가?
+- [ ] **빈 상태**: 데이터 없음/로딩 중/에러 상황에 대한 UI가 구현되었는가?
+
+---
+
+## 🔐 보안 및 환경변수
+- **비밀키 노출 금지**: API Key, DB URL 등은 코드에 하드코딩 절대 금지 (`process.env` 사용).
+- **환경 변수**: `.env.example` 최신화 유지.PI는 `src/app`, 전역 스타일 `src/app/globals.css`, UI/로직은 `src/components`, `src/lib`, `src/utils`, DB 스키마/ETL은 `src/db`, `src/etl`.
+- `apps/mobile`: Expo 54 / RN 0.81. 엔트리 `apps/mobile/App.tsx`/`index.ts`, 설정 `app.json`, 에셋 `assets/`.
+- `apps/web/drizzle`: 마이그레이션 산출물, 설정은 `drizzle.config.ts`.
+- `apps/web/public`: 정적 에셋.
+- 경로 별칭: `@/*` → `apps/web/src/*`.
+
+## 빌드/테스트/개발 명령
+
+- 루트: `yarn dev|lint|build|start|test|test:all`, `yarn dev:mobile`(Expo).
+- `apps/web`: `yarn dev`, `yarn lint`, `yarn build`, `yarn start`, 테스트 `yarn test*`.
+- ETL/DB: `yarn db:push`, `yarn etl:daily-prices`, `yarn etl:daily-ma`, `yarn etl:daily-ratios`(종가 기준 밸류에이션), `yarn etl:rs`/`rs-backfill`(12M/6M/3M 가중), `yarn etl:quarterly-financials`, `yarn etl:symbols`, `yarn etl:ratios`, `yarn etl:cleanup-invalid-symbols`.
+- ETL 스케줄(GHA): 23:30 UTC(=KST 08:30) 단일 스케줄로 prices → MA/RS → ratios 순차 실행. 최신 일자 미충분 시 로그 확인 후 재실행.
+- 모바일: `yarn dev:mobile`, `yarn workspace mobile ios/android`.
+
+## 스타일/네이밍
+
+- TypeScript strict, 컴포넌트/훅 PascalCase + `useX`.
+- ESLint: `next/core-web-vitals` + `next/typescript`; PR 전 `npx eslint . --max-warnings=0`.
+- `any` 지양, Tailwind + shadcn 패턴, 컴포넌트별 스타일/로직은 최대한 응집.
+- **UI 스타일**: `docs/FRONTEND_PRACTICES.md` 참고 (프론트엔드 품질 원칙)
+
+## 컴포넌트 설계 원칙
+
+### DRY (Don't Repeat Yourself)
+
+- **반복되는 UI 패턴은 즉시 공용 컴포넌트로 추출**
+- 2회 이상 사용되면 컴포넌트화 검토, 3회면 필수 추출
+
+### 공용 UI 컴포넌트 (`src/components/ui/`)
+
+| 컴포넌트     | 용도                    | 예시                        |
+| ------------ | ----------------------- | --------------------------- |
+| `Button`     | 모든 버튼 (shadcn 기반) | 액션, 제출, 링크 버튼       |
+| `PageHeader` | 페이지 헤더             | 뒤로가기 + 타이틀 + 액션    |
+| `FilterTabs` | 필터/탭 그룹            | 상태 필터, 카테고리 탭      |
+| `EmptyState` | 빈 상태                 | 데이터 없음, 검색 결과 없음 |
+| `ErrorState` | 에러 상태               | API 실패, 404               |
+
+### 페이지 구조 패턴 (Next.js App Router)
+
+```
+/app/feature/
+  ├── page.tsx           # 서버 컴포넌트 (metadata, Suspense)
+  ├── FeatureClient.tsx  # 클라이언트 컴포넌트 ("use client")
+  └── [id]/
+      ├── page.tsx
+      └── DetailClient.tsx
+```
+
+### 스켈레톤 작성 원칙
+
+- 실제 렌더링과 **동일한 높이/레이아웃** 유지 (레이아웃 시프트 방지)
+- `animate-pulse` 클래스 사용
+- 실제 요소의 Tailwind 높이 클래스 참조 (text-lg → h-7 등)
+
+## 테스트
+
+- 스택: Vitest + Testing Library + JSDOM (`apps/web/vitest.setup.ts`).
+- 위치: 단위 `src/lib/__tests__/`, API `src/app/api/**/__tests__/`, 컴포넌트 `src/components/**/__tests__/`.
+- **피쳐 개발 시 테스트 코드 작성 필수** (새 로직/API/컴포넌트에 대해).
+- 커버리지 목표: 로직 90% / API 80% / 컴포넌트 70%+.
+- 원칙:
+  1. 실패 테스트 → 구현 → 통과
+  2. 명확한 이름
+  3. 독립 실행
+  4. 엣지 케이스 포함
+  5. 외부 의존성 Mock
+  6. **실제 코드 테스트** (인라인 로직 반복 금지)
+
+## 구현 체크리스트 (코드 작성 시 필수)
+
+코드 작성 전/중에 반드시 확인:
+
+- [ ] **입력 검증**: API 파라미터, 사용자 입력에 대한 유효성 검사
+- [ ] **에러 핸들링**: try-catch, 에러 응답, 폴백 처리
+- [ ] **메모리 관리**: 이벤트 리스너, 구독, 타이머 cleanup 처리
+- [ ] **배열/객체 접근**: 인덱스 범위 체크, null/undefined 가드
+- [ ] **타입 안전성**: 타입 단언(as) 최소화, 타입 가드 사용
+- [ ] **엣지 케이스**: 빈 배열, 단일 요소, 경계값 처리
+
+## 피쳐 완료 체크리스트 (구현 후 필수)
+
+"코드 완료" ≠ "피쳐 완료". 아래 모두 완료해야 피쳐 완료:
+
+1. **셀프 리뷰**: 작성한 코드를 "PR 리뷰어 관점"으로 검토
+   - **필수**: `docs/CODE_REVIEW_CHECKLIST.md` 체크리스트 전체 검증
+   - 컴포넌트 설계 원칙, 타입 안전성, 에러 핸들링, UI/UX 안전성 확인
+2. **UI 스타일 검토**: `docs/FRONTEND_PRACTICES.md` 기준으로 체크
+3. **문서 업데이트**: README, spec, plan, tasks 동시 업데이트
+4. **린트/테스트/빌드**: `yarn lint && yarn test && yarn build` 통과
+5. **관련 단어 통일**: 코드/주석/문서에서 용어 일관성 확인
+
+## 커밋/PR
+
+- 커밋: `type: summary` (예: `feat: 티커 검색 필터 추가 (#8)`), 작업은 항상 별도 브랜치(`git checkout -b feature/<name>`).
+- PR: 변경/이유/테스트 명령/연관 이슈/스키마·ETL 영향 명시.
+- **커밋 전 필수 체크 (생략 불가)**:
+  1. `yarn lint` 통과
+  2. `yarn test` 통과
+  3. `yarn build` 통과
+  4. **사용자 승인 후 커밋** (승인 없이 커밋 금지)
+- Git 원칙: 승인 없이 `git add/commit/branch/reset` 등 실행 금지. 반드시 먼저 확인/승인.
+
+## 문서
+
+- 가이드: `docs/FEATURE_DEVELOPMENT_WORKFLOW.md`, `docs/TESTING.md`, `docs/REFACTORING_REVIEW.md`, `docs/FRONTEND_PRACTICES.md`
+- **품질 보증**: `docs/CODE_REVIEW_CHECKLIST.md` (코드 리뷰 필수), `docs/FEATURE_DEVELOPMENT_WORKFLOW.md` (3단계 검증 프로세스 포함)
+- 스펙/플랜/태스크: `.specify/specs/<feature>/` (통합 템플릿은 필요 시 별도 관리)
+
+## 보안/설정
+
+- `apps/web/env.example`를 `.env.local`로 복사 후 값 설정, 비밀정보 커밋 금지. 필수 키: `FMP_API_KEY`, `DATABASE_URL`.
+- Node 20.19+ 권장. 스키마 변경 후 `yarn db:push`, ETL/백필은 비프로덕션 데이터로 검증.
+
+## 프론트엔드 품질 원칙 (요약)
+
+### 아키텍처/레이어링
+
+- **표현 ↔ 상태 ↔ 서비스 분리**: 시각적 컴포넌트와 상태 훅/컨테이너, API/유틸 레이어를 분리. 사이드 이펙트는 서비스/훅 레이어에만 허용.
+- **데이터 흐름 명시**: fetch/caching/key 생성은 서비스/훅에서 담당, UI는 결과만 소비.
+- **도메인 메타 정의**: 테이블/폼/필터/정렬/툴팁은 메타(정의 객체) → 공통 컴포넌트 패턴을 기본으로 사용.
+
+### 상태·쿼리·요약 일원화
+
+- URL 파라미터 ↔ 내부 상태 ↔ 요약/캐시 태그는 단일 정의에서 파생.
+- **단일 스키마**: URL 파라미터/필터 상태는 단일 타입/스키마(zod 등)로 파싱/검증하고, 캐시 키·요약·API 파라미터 생성에 재사용.
+
+### UI/레이아웃 토큰화
+
+- 반복되는 폭/정렬/여백/색상/폰트는 상수나 토큰으로 묶어 메타 정의와 공유.
+- **단일 토큰 소스**: 레이아웃/색상/폰트/간격 토큰은 하나의 테마/Config(Tailwind config 등)에서만 정의. 숫자/색상 하드코딩 금지.
+
+### 에러·빌드 가드·로그
+
+- API 실패 시 표준화된 빈 상태/에러 메시지 사용.
+- 사용자 노출과 별개로 중요 오류는 공통 로거(Sentry 등)로 수집.
+
+### 접근성/동작 원칙
+
+- 모든 인터랙션 요소는 의미 있는 HTML 요소(button/a/input 등)로 구현.
+- label이 필요한 요소는 항상 `<label htmlFor>` 혹은 `aria-label` 제공.
+- 포커스 가능/키보드 조작 가능하게 만들고, 툴팁/모달은 포털과 ARIA 속성 기본 적용.
+
+### 작업 플로우
+
+- **구조 먼저**: 기능 추가 전에 필요한 공통화/메타 정의/토큰화부터 잡는 "구조 커밋" → 그 위에 "기능 커밋" 순서로 진행.
+- **자가 체크(필수)**:
+  - 메타 정의 기반 렌더인가?
+  - 상태/쿼리/요약/캐시 태그가 한 소스(스키마/매퍼)에서 파생되는가?
+  - 스타일/레이아웃 토큰을 썼고 매직 넘버/색을 제거했는가?
+  - 로딩/에러/빈 상태가 공통 컴포넌트인가?
+  - 클릭/토글/정렬 요소가 키보드/스크린리더로 이해 가능한가?
+  - 핵심 로직/훅/렌더링 테스트가 최소 1개 이상 있는가?
+
+## 코드 리뷰 체크리스트 (요약)
+
+### 설계 및 구조
+
+- [ ] 로직 중복 제거 (DRY): 동일하거나 유사한 로직이 3곳 이상 반복되는가?
+- [ ] 단일 책임 원칙 (SRP): 하나의 함수/클래스가 너무 많은 역할을 수행하지 않는가?
+- [ ] 매직 넘버/스트링 사용: 코드 내에 의미를 알 수 없는 숫자나 문자열이 하드코딩 되어 있는가?
+
+### 타입 및 데이터 무결성
+
+- [ ] 타입 안전성: any나 Object 같은 모호한 타입을 남용하지 않았는가?
+- [ ] Null/Undefined 처리: 값이 없을 수 있는 상황에 대한 방어 로직이 있는가?
+- [ ] 데이터 불변성: 데이터가 의도치 않게 변경되는 부작용이 없는가?
+
+### 에러 핸들링 및 안정성
+
+- [ ] 예외 처리 전략: catch 블록에서 에러를 단순히 삼키거나 로그만 찍고 끝내지 않는가?
+- [ ] 트랜잭션/상태 롤백: 작업 실패 시 데이터나 상태가 이전으로 안전하게 복구되는가?
+- [ ] 입력 값 검증: 함수나 API의 입력값이 예상 범위를 벗어날 경우를 처리했는가?
+
+### 프론트엔드 특화 (React/Next.js)
+
+- [ ] **인라인 렌더링 로직**: JSX 내부의 복잡한 로직이 3회 이상 반복되는가?
+- [ ] **공용 컴포넌트 사용**: 모든 버튼이 `Button` 컴포넌트를 사용하는가?
+- [ ] **컴포넌트 분리**: 하나의 컴포넌트가 200줄 이상인가?
+- [ ] **useEffect cleanup**: 이벤트 리스너, 구독, 타이머가 cleanup 함수로 해제되는가?
+- [ ] **의존성 배열**: `useEffect`, `useMemo`, `useCallback`의 의존성 배열이 정확한가?
+- [ ] **불필요한 리렌더링**: props로 전달되는 함수가 `useCallback`으로 메모이제이션되었는가?
+- [ ] **경계 체크**: 절대 위치 요소가 화면 밖으로 나갈 수 있는가?
+- [ ] **날짜/숫자 파싱**: 외부 입력을 파싱할 때 에러 처리가 있는가?
+- [ ] **빈 상태 처리**: 데이터가 없을 때 적절한 폴백이 있는가?
+- [ ] **로딩 상태**: 비동기 작업 중 로딩 인디케이터가 표시되는가?
+
+## 3단계 검증 프로세스
+
+### 1단계: 작업 중 실시간 검증 (코딩 시)
+
+**도구**: IDE 린터, TypeScript 컴파일러
+
+- [ ] 타입 에러 없음
+- [ ] 기본 린트 규칙 통과
+- [ ] 컴포넌트 분리 필요성 인지
+
+### 2단계: 작업 완료 후 자동 검증 (커밋 전)
+
+**검증 항목**:
+
+1. `yarn lint` - ESLint 검사
+2. `yarn build` - 타입 체크 + 빌드
+3. `yarn test` - 테스트 실행
+
+### 3단계: 수동 체크리스트 검증 (PR 전)
+
+**도구**: `docs/CODE_REVIEW_CHECKLIST.md`
+
+**검증 항목**:
+
+1. 컴포넌트 설계 원칙 (DRY)
+2. 타입 안전성
+3. 에러 핸들링
+4. UI/UX 안전성
+5. 폴더 구조
+6. 성능 최적화
+
