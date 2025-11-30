@@ -22,7 +22,9 @@ const eslintConfig = [
   },
   {
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "warn", // any 사용 시 경고
+      "@typescript-eslint/no-non-null-assertion": "warn", // non-null assertion 경고
+      "react-hooks/exhaustive-deps": "warn", // useEffect 의존성 배열 경고
     },
   },
 ];

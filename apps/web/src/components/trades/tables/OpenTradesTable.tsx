@@ -6,7 +6,7 @@ import { TradeListItem, PlanTarget } from "@/lib/trades/types";
 import { calculateUnrealizedPnl } from "@/lib/trades/calculations";
 import { formatPnl, formatRoi, formatDateKr, formatPositionValue, formatPrice, formatPercent, formatQuantity } from "@/utils/format";
 import { PopupPortal } from "@/components/ui/popup-portal";
-import { PriceBarPopup } from "@/components/trades/PriceBarPopup";
+import { PriceBarPopup } from "@/components/trades/charts/PriceBarPopup";
 import {
   Table,
   TableBody,

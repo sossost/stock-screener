@@ -167,10 +167,10 @@ export default function StatsClient() {
           </div>
         </div>
 
-        {/* 최대 손익 */}
+        {/* 손익 분석 */}
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="font-semibold mb-4">💰 최대 손익</h2>
-          <div className="grid grid-cols-2 gap-8">
+          <h2 className="font-semibold mb-4">💰 손익 분석</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
               <p className="text-sm text-gray-500 mb-1">최대 이익</p>
               <p className="text-xl font-bold text-green-600">
@@ -183,8 +183,84 @@ export default function StatsClient() {
                 {formatPnl(stats.maxLoss)}
               </p>
             </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">평균 이익</p>
+              <p className="text-lg font-semibold text-green-600">
+                {formatPnl(stats.avgWinAmount || 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">평균 손실</p>
+              <p className="text-lg font-semibold text-red-600">
+                {formatPnl(-(stats.avgLossAmount || 0))}
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* 성과 지표 */}
+        <div className="bg-white rounded-xl border p-6">
+          <h2 className="font-semibold mb-4">📈 성과 지표</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Profit Factor</p>
+              <p className={`text-xl font-bold ${
+                stats.profitFactor && stats.profitFactor >= 1 ? "text-green-600" : "text-red-600"
+              }`}>
+                {stats.profitFactor ? formatRatio(stats.profitFactor) : "-"}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">총이익/총손실</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">평균 보유기간</p>
+              <p className="text-xl font-bold">
+                {stats.avgHoldingDays ? `${Math.round(stats.avgHoldingDays)}일` : "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">최대 연승</p>
+              <p className="text-xl font-bold text-green-600">
+                {stats.maxWinStreak || 0}연승
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">최대 연패</p>
+              <p className="text-xl font-bold text-red-600">
+                {stats.maxLoseStreak || 0}연패
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 전략별 성과 */}
+        {stats.strategyStats && stats.strategyStats.length > 0 && (
+          <div className="bg-white rounded-xl border p-6">
+            <h2 className="font-semibold mb-4">🎯 전략별 성과</h2>
+            <div className="space-y-3">
+              {stats.strategyStats.map((s) => (
+                <div key={s.strategy} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{s.strategy}</span>
+                    <span className="text-sm text-gray-500">{s.trades}건</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className={s.winRate >= 50 ? "text-green-600" : "text-red-600"}>
+                      승률 {formatPercent(s.winRate, 0)}
+                    </span>
+                    <span className={s.totalPnl >= 0 ? "text-green-600" : "text-red-600"}>
+                      {formatPnl(s.totalPnl)}
+                    </span>
+                    {s.avgR !== null && (
+                      <span className={s.avgR >= 0 ? "text-green-600" : "text-red-600"}>
+                        {formatRatio(s.avgR)}R
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 실수 유형 통계 */}
         <div className="bg-white rounded-xl border p-6">

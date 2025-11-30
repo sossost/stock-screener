@@ -1,5 +1,11 @@
 import { db } from "@/db/client";
-import { trades, tradeActions, symbols, dailyPrices } from "@/db/schema";
+import {
+  trades,
+  tradeActions,
+  symbols,
+  dailyPrices,
+  portfolioSettings,
+} from "@/db/schema";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import {
   calculateTradeMetrics,
@@ -72,7 +78,10 @@ export async function getTradesList(
         inArray(dailyPrices.symbol, uniqueSymbols),
         sql`(${dailyPrices.symbol}, ${dailyPrices.date}) IN (
           SELECT symbol, MAX(date) FROM daily_prices 
-          WHERE symbol IN (${sql.join(uniqueSymbols.map(s => sql`${s}`), sql`, `)})
+          WHERE symbol IN (${sql.join(
+            uniqueSymbols.map((s) => sql`${s}`),
+            sql`, `
+          )})
           GROUP BY symbol
         )`
       )
@@ -182,3 +191,15 @@ export async function getTradeDetail(
   };
 }
 
+/**
+ * 현금 보유량 조회 (서버 컴포넌트용)
+ */
+export async function getCashBalance(): Promise<number> {
+  const [settings] = await db
+    .select({ cashBalance: portfolioSettings.cashBalance })
+    .from(portfolioSettings)
+    .where(eq(portfolioSettings.userId, DEFAULT_USER_ID))
+    .limit(1);
+
+  return settings?.cashBalance ? parseFloat(settings.cashBalance) : 0;
+}

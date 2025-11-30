@@ -7,9 +7,9 @@ import { TradeWithDetails } from "@/lib/trades/types";
 import { calculateUnrealizedPnl } from "@/lib/trades/calculations";
 import { formatPnlFull, formatRoi, formatPrice, formatPercent, formatQuantity, formatRatio } from "@/utils/format";
 import ActionTimeline from "@/components/trades/ActionTimeline";
-import ActionForm from "@/components/trades/ActionForm";
-import TradeCloseModal from "@/components/trades/TradeCloseModal";
-import TradeEditModal from "@/components/trades/TradeEditModal";
+import ActionForm from "@/components/trades/forms/ActionForm";
+import TradeCloseModal from "@/components/trades/modals/TradeCloseModal";
+import TradeEditModal from "@/components/trades/modals/TradeEditModal";
 import { Button } from "@/components/ui/button";
 
 interface TradeDetailClientProps {
@@ -186,8 +186,8 @@ export default function TradeDetailClient({ trade }: TradeDetailClientProps) {
                   displayPnl > 0
                     ? "text-green-600"
                     : displayPnl < 0
-                    ? "text-red-600"
-                    : ""
+                      ? "text-red-600"
+                      : ""
                 }`}
               >
                 {formatPnlFull(displayPnl)} ({formatRoi(displayRoi)})
@@ -197,7 +197,7 @@ export default function TradeDetailClient({ trade }: TradeDetailClientProps) {
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">R</span>
                 <span className="font-semibold">{formatRatio(rMultiple)}R</span>
-              </div>
+            </div>
             )}
           </div>
         </section>
@@ -214,37 +214,37 @@ export default function TradeDetailClient({ trade }: TradeDetailClientProps) {
               <span className="text-gray-500">손절</span>
               <span className="text-red-600">
                 {trade.planStopLoss ? formatPrice(parseFloat(trade.planStopLoss)) : "-"}
-                {trade.planStopLoss && avgEntryPrice > 0 && (
+              {trade.planStopLoss && avgEntryPrice > 0 && (
                   <span className="text-xs ml-0.5">
                     ({formatPercent(
                       ((parseFloat(trade.planStopLoss) - avgEntryPrice) / avgEntryPrice) * 100,
                       1
                     )})
                   </span>
-                )}
+              )}
               </span>
             </div>
             {trade.planEntryPrice && (
               <div className="flex items-center gap-1">
                 <span className="text-gray-500">계획진입</span>
                 <span>{formatPrice(parseFloat(trade.planEntryPrice))}</span>
-              </div>
+            </div>
             )}
           </div>
 
           {/* n차 목표가 */}
           {trade.planTargets && trade.planTargets.length > 0 && (
             <div className="mt-3 pt-3 border-t flex flex-wrap gap-2">
-              {trade.planTargets.map((target, index) => {
+                {trade.planTargets.map((target, index) => {
                 const percent =
                   avgEntryPrice > 0
                     ? ((target.price - avgEntryPrice) / avgEntryPrice) * 100
                     : null;
-                return (
-                  <div
-                    key={index}
+                  return (
+                    <div
+                      key={index}
                     className="px-2 py-1 bg-green-50 rounded border border-green-100 text-sm"
-                  >
+                    >
                     <span className="text-gray-500 text-xs">{index + 1}차</span>
                     <span className="font-semibold text-green-700 ml-1">
                       {formatPrice(target.price)}
@@ -255,11 +255,11 @@ export default function TradeDetailClient({ trade }: TradeDetailClientProps) {
                       </span>
                     )}
                     <span className="text-xs text-gray-400 ml-1">
-                      {target.weight}%
-                    </span>
-                  </div>
-                );
-              })}
+                          {target.weight}%
+                        </span>
+                    </div>
+                  );
+                })}
             </div>
           )}
 
@@ -310,25 +310,25 @@ export default function TradeDetailClient({ trade }: TradeDetailClientProps) {
             <h2 className="font-semibold text-sm mb-2">📝 매매 복기</h2>
             <div className="flex items-center gap-2 text-sm">
               <span className="text-gray-500">실수 태그:</span>
-              {trade.mistakeType ? (
-                <span
+                {trade.mistakeType ? (
+                  <span
                   className={`px-2 py-0.5 rounded-full text-xs ${
-                    trade.mistakeType === "원칙준수"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {trade.mistakeType}
-                </span>
-              ) : (
-                <span className="text-gray-400">-</span>
-              )}
-            </div>
-            {trade.reviewNote && (
-              <div className="mt-2 p-2 bg-gray-50 rounded text-sm whitespace-pre-wrap">
-                {trade.reviewNote}
+                      trade.mistakeType === "원칙준수"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {trade.mistakeType}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
               </div>
-            )}
+              {trade.reviewNote && (
+              <div className="mt-2 p-2 bg-gray-50 rounded text-sm whitespace-pre-wrap">
+                  {trade.reviewNote}
+                </div>
+              )}
           </section>
         )}
       </main>
