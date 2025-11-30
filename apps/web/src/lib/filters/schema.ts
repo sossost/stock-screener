@@ -28,15 +28,22 @@ export const filterDefaults = {
   ma200Above: false,
 };
 
+// 문자열 "true"/"false"를 boolean으로 변환하는 커스텀 스키마
+const booleanString = z.union([
+  z.literal("true").transform(() => true),
+  z.literal("false").transform(() => false),
+  z.boolean(),
+]).optional();
+
 export const filterSchema = z.object({
-  ordered: z.coerce.boolean().default(filterDefaults.ordered),
-  goldenCross: z.coerce.boolean().default(filterDefaults.goldenCross),
-  justTurned: z.coerce.boolean().default(filterDefaults.justTurned),
+  ordered: booleanString.default(filterDefaults.ordered),
+  goldenCross: booleanString.default(filterDefaults.goldenCross),
+  justTurned: booleanString.default(filterDefaults.justTurned),
   lookbackDays: z.coerce.number().default(filterDefaults.lookbackDays),
   profitability: z.enum(profitabilityValues).default(filterDefaults.profitability),
-  turnAround: z.coerce.boolean().default(filterDefaults.turnAround),
-  revenueGrowth: z.coerce.boolean().default(filterDefaults.revenueGrowth),
-  incomeGrowth: z.coerce.boolean().default(filterDefaults.incomeGrowth),
+  turnAround: booleanString.default(filterDefaults.turnAround),
+  revenueGrowth: booleanString.default(filterDefaults.revenueGrowth),
+  incomeGrowth: booleanString.default(filterDefaults.incomeGrowth),
   revenueGrowthQuarters: z.coerce
     .number()
     .default(filterDefaults.revenueGrowthQuarters),
@@ -51,11 +58,11 @@ export const filterSchema = z.object({
     .union([z.coerce.number(), z.null()])
     .optional()
     .transform((v) => (v === undefined ? null : v)),
-  pegFilter: z.coerce.boolean().default(filterDefaults.pegFilter),
-  ma20Above: z.coerce.boolean().default(filterDefaults.ma20Above),
-  ma50Above: z.coerce.boolean().default(filterDefaults.ma50Above),
-  ma100Above: z.coerce.boolean().default(filterDefaults.ma100Above),
-  ma200Above: z.coerce.boolean().default(filterDefaults.ma200Above),
+  pegFilter: booleanString.default(filterDefaults.pegFilter),
+  ma20Above: booleanString.default(filterDefaults.ma20Above),
+  ma50Above: booleanString.default(filterDefaults.ma50Above),
+  ma100Above: booleanString.default(filterDefaults.ma100Above),
+  ma200Above: booleanString.default(filterDefaults.ma200Above),
 });
 
 export type ParsedFilters = z.infer<typeof filterSchema>;
