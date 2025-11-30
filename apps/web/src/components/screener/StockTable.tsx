@@ -297,7 +297,8 @@ export function StockTable({
 
   // Intersection Observer로 무한 스크롤 구현
   React.useEffect(() => {
-    if (!loadMoreRef.current) return;
+    const loadMoreEl = loadMoreRef.current;
+    if (!loadMoreEl) return;
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -313,14 +314,14 @@ export function StockTable({
       { threshold: 0.1 }
     );
 
-    observerRef.current.observe(loadMoreRef.current);
+    observerRef.current.observe(loadMoreEl);
 
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
     };
-  }, []); // 의존성 배열 비워서 observer는 한 번만 생성
+  }, [sortedData.length]); // 데이터 길이 변경 시 observer 재연결
 
   // 데이터가 변경되면 visibleCount 리셋
   React.useEffect(() => {

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import type { FilterState, FilterCategory } from "@/lib/filters/summary";
 import { profitabilityOptions } from "@/lib/filters/schema";
-import { FILTER_DEFAULTS, URL_PARAM_VALUES } from "@/lib/filters/constants";
+import { FILTER_DEFAULTS } from "@/lib/filters/constants";
 
 interface CategoryFilterDialogProps {
   category: FilterCategory;
@@ -120,9 +120,9 @@ export function CategoryFilterDialog({
         });
         onOpenChange(false);
       } else {
-        // 입력값이 유효하지 않으면 에러 피드백 (추후 toast 등으로 개선 가능)
-        console.error(
-          `lookbackDays는 ${FILTER_DEFAULTS.MIN_LOOKBACK_DAYS}에서 ${FILTER_DEFAULTS.MAX_LOOKBACK_DAYS} 사이의 값이어야 합니다.`
+        // 입력값이 유효하지 않으면 사용자에게 알림
+        alert(
+          `기간은 ${FILTER_DEFAULTS.MIN_LOOKBACK_DAYS}일에서 ${FILTER_DEFAULTS.MAX_LOOKBACK_DAYS}일 사이여야 합니다.`
         );
       }
     } else {

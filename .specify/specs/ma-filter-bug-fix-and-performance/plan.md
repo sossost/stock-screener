@@ -106,16 +106,31 @@ const initialTempState = React.useMemo(() => {
 #### 2. 무한 스크롤 구현
 
 ```typescript
-const [visibleCount, setVisibleCount] = React.useState(100);
+const [visibleCount, setVisibleCount] = React.useState(INFINITE_SCROLL.INITIAL_LOAD_COUNT);
+const sortedDataLengthRef = React.useRef(sortedData.length);
+
+// sortedData.length를 ref로 추적
+React.useEffect(() => {
+  sortedDataLengthRef.current = sortedData.length;
+}, [sortedData.length]);
 
 React.useEffect(() => {
-  const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && visibleCount < sortedData.length) {
-      setVisibleCount((prev) => Math.min(prev + 50, sortedData.length));
+  const loadMoreEl = loadMoreRef.current;
+  if (!loadMoreEl) return;
+
+  observerRef.current = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      setVisibleCount((prev) => {
+        const maxLength = sortedDataLengthRef.current;
+        return prev < maxLength
+          ? Math.min(prev + INFINITE_SCROLL.LOAD_MORE_COUNT, maxLength)
+          : prev;
+      });
     }
   });
+  observerRef.current.observe(loadMoreEl);
   // ...
-}, [visibleCount, sortedData.length]);
+}, [sortedData.length]); // 데이터 길이 변경 시 observer 재연결
 ```
 
 #### 3. 테이블 행 및 차트 메모이제이션
