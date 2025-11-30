@@ -119,6 +119,7 @@ yarn install
 ```env
 FMP_API_KEY=your_fmp_api_key_here
 DATABASE_URL=postgresql://username:password@localhost:5432/screener
+DATA_API=https://financialmodelingprep.com/
 ```
 
 ### 3. 데이터베이스 설정
