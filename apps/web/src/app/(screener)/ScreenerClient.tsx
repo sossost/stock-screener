@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFilterState } from "@/hooks/useFilterState";
 import { useTickerSearch } from "@/hooks/useTickerSearch";
 import { useFilterActions } from "@/hooks/useFilterActions";
@@ -49,6 +49,15 @@ export default function ScreenerClient({
 }: ScreenerClientProps) {
   // 필터 상태 관리 훅
   const filterState = useFilterState();
+
+  // 초기 로드 시 goldenCross가 URL에 없으면 true로 설정 (성능 최적화)
+  useEffect(() => {
+    // goldenCross가 null이면 URL에 파라미터가 없는 것이므로 기본값 true 설정
+    if (filterState.goldenCross === null) {
+      filterState.setGoldenCross(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 마운트 시 한 번만 실행
 
   // 필터 팝업 상태 (카테고리별)
   const [openCategory, setOpenCategory] = useState<FilterCategory | null>(null);

@@ -106,7 +106,9 @@ const initialTempState = React.useMemo(() => {
 #### 2. 무한 스크롤 구현
 
 ```typescript
-const [visibleCount, setVisibleCount] = React.useState(INFINITE_SCROLL.INITIAL_LOAD_COUNT);
+const [visibleCount, setVisibleCount] = React.useState(
+  INFINITE_SCROLL.INITIAL_LOAD_COUNT
+);
 const sortedDataLengthRef = React.useRef(sortedData.length);
 
 // sortedData.length를 ref로 추적

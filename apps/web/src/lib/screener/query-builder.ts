@@ -98,7 +98,7 @@ function buildLastDateCTE(requireMA: boolean): SQL {
  * 현재 데이터 CTE 생성 (MA 조건 포함)
  */
 function buildCurrentDataCTE(params: ScreenerParams, requireMA: boolean): SQL {
-  const { ordered = false, goldenCross = false } = params; // URL 파라미터에 명시적으로 값이 있어야만 적용
+  const { ordered = false, goldenCross = true } = params; // goldenCross 기본값 true (성능 최적화)
 
   if (requireMA) {
     return sql`

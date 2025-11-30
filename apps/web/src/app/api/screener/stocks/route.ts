@@ -53,9 +53,10 @@ function parseGrowthRate(param: string | null): number | null {
  */
 function parseRequestParams(searchParams: URLSearchParams): ScreenerParams {
   return {
-    // 이동평균선 필터 (URL 파라미터에 명시적으로 값이 있어야만 적용)
+    // 이동평균선 필터
     ordered: parseBooleanParam(searchParams.get("ordered")),
-    goldenCross: parseBooleanParam(searchParams.get("goldenCross")),
+    // goldenCross는 기본값 true (성능 최적화: 초기 로드 시 데이터 양 감소)
+    goldenCross: parseBooleanParam(searchParams.get("goldenCross")) ?? true,
     justTurned: parseBooleanParam(searchParams.get("justTurned")),
     lookbackDays: parseIntegerParam(searchParams.get("lookbackDays")),
 

@@ -11,8 +11,9 @@ import { filterDefaults, profitabilityValues } from "@/lib/filters/schema";
  * 모든 필터 상태를 URL 쿼리 파라미터로 관리
  */
 export function useFilterState() {
-  // 이평선 필터 (URL 파라미터에 명시적으로 값이 있어야만 적용)
+  // 이평선 필터
   const [ordered, setOrdered] = useQueryState("ordered", parseAsBoolean);
+  // goldenCross는 ScreenerClient에서 초기 로드 시 기본값 true로 URL 설정
   const [goldenCross, setGoldenCross] = useQueryState(
     "goldenCross",
     parseAsBoolean
