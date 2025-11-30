@@ -119,9 +119,8 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
   if (filters.ordered === true) {
     params.set("ordered", "true");
   }
-  if (filters.goldenCross === true) {
-    params.set("goldenCross", "true");
-  }
+  // goldenCross는 서버 기본값이 true이므로, 항상 명시적으로 전달
+  params.set("goldenCross", filters.goldenCross ? "true" : "false");
   if (filters.justTurned === true) {
     params.set("justTurned", "true");
   }

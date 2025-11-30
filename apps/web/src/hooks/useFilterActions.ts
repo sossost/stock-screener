@@ -156,7 +156,10 @@ export function useFilterActions(
           previousState.justTurned,
           filterState.setJustTurned
         );
-        if (previousState.lookbackDays !== null && previousState.lookbackDays !== undefined) {
+        if (
+          previousState.lookbackDays !== null &&
+          previousState.lookbackDays !== undefined
+        ) {
           await filterState.setLookbackDays(previousState.lookbackDays);
         } else {
           await filterState.setLookbackDays(null);
@@ -196,13 +199,14 @@ export function useFilterActions(
           await filterState.setRevenueGrowthRate(null);
         }
         if (previousState.incomeGrowthRate !== undefined) {
-          await filterState.setIncomeGrowthRate(
-            previousState.incomeGrowthRate
-          );
+          await filterState.setIncomeGrowthRate(previousState.incomeGrowthRate);
         } else {
           await filterState.setIncomeGrowthRate(null);
         }
-        await setBooleanFilter(previousState.pegFilter, filterState.setPegFilter);
+        await setBooleanFilter(
+          previousState.pegFilter,
+          filterState.setPegFilter
+        );
         await setBooleanFilter(
           previousState.ma20Above,
           filterState.setMa20Above
@@ -233,7 +237,9 @@ export function useFilterActions(
       newState.ordered ?? filterState.ordered ?? false,
       newState.goldenCross ?? filterState.goldenCross ?? false,
       newState.justTurned ?? filterState.justTurned ?? false,
-      newState.lookbackDays ?? filterState.lookbackDays ?? FILTER_DEFAULTS.LOOKBACK_DAYS,
+      newState.lookbackDays ??
+        filterState.lookbackDays ??
+        FILTER_DEFAULTS.LOOKBACK_DAYS,
       newState.profitability ?? filterState.profitability,
       newState.turnAround ?? filterState.turnAround ?? false,
       newState.revenueGrowth ?? filterState.revenueGrowth ?? false,
@@ -317,8 +323,10 @@ export function useFilterActions(
         false, // turnAround
         filterState.revenueGrowth ?? false,
         filterState.incomeGrowth ?? false,
-        filterState.revenueGrowthQuarters ?? FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
-        filterState.incomeGrowthQuarters ?? FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
+        filterState.revenueGrowthQuarters ??
+          FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
+        filterState.incomeGrowthQuarters ??
+          FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
         filterState.revenueGrowthRate ?? null,
         filterState.incomeGrowthRate ?? null,
         filterState.pegFilter ?? false,
