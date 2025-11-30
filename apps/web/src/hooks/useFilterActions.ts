@@ -157,7 +157,7 @@ export function useFilterActions(
           previousState.justTurned,
           filterState.setJustTurned
         );
-        if (previousState.lookbackDays !== null) {
+        if (previousState.lookbackDays !== null && previousState.lookbackDays !== undefined) {
           await filterState.setLookbackDays(previousState.lookbackDays);
         } else {
           await filterState.setLookbackDays(null);
@@ -179,21 +179,29 @@ export function useFilterActions(
           await filterState.setRevenueGrowthQuarters(
             previousState.revenueGrowthQuarters
           );
+        } else {
+          await filterState.setRevenueGrowthQuarters(null);
         }
         if (previousState.incomeGrowthQuarters !== undefined) {
           await filterState.setIncomeGrowthQuarters(
             previousState.incomeGrowthQuarters
           );
+        } else {
+          await filterState.setIncomeGrowthQuarters(null);
         }
         if (previousState.revenueGrowthRate !== undefined) {
           await filterState.setRevenueGrowthRate(
             previousState.revenueGrowthRate
           );
+        } else {
+          await filterState.setRevenueGrowthRate(null);
         }
         if (previousState.incomeGrowthRate !== undefined) {
           await filterState.setIncomeGrowthRate(
             previousState.incomeGrowthRate
           );
+        } else {
+          await filterState.setIncomeGrowthRate(null);
         }
         await setBooleanFilter(previousState.pegFilter, filterState.setPegFilter);
         await setBooleanFilter(
