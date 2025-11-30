@@ -36,6 +36,10 @@ export default function ScreenerClient({
     incomeGrowthQuarters,
     incomeGrowthRate,
     pegFilter,
+    ma20Above,
+    ma50Above,
+    ma100Above,
+    ma200Above,
   } = filterState;
 
   // 필터 팝업 상태 (카테고리별)
@@ -69,6 +73,10 @@ export default function ScreenerClient({
     incomeGrowthQuarters,
     incomeGrowthRate: incomeGrowthRate ?? null,
     pegFilter,
+    ma20Above,
+    ma50Above,
+    ma100Above,
+    ma200Above,
   };
 
   if (error) {

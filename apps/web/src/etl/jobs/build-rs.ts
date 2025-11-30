@@ -9,16 +9,16 @@ const LOOKBACK_12M = 252;
 const LOOKBACK_6M = 126;
 const LOOKBACK_3M = 63;
 
-// 가중치: 최근 모멘텀을 더 반영
-const WEIGHT_12M = 0.4;
-const WEIGHT_6M = 0.35;
-const WEIGHT_3M = 0.25;
+// 가중치: 최근 모멘텀을 더 강조
+const WEIGHT_12M = 0.3;
+const WEIGHT_6M = 0.3;
+const WEIGHT_3M = 0.4; // 최근 모멘텀 강조
 
 async function computeRsForDate(targetDate: string) {
   console.log(`📊 Computing RS for ${targetDate}...`);
 
   try {
-    const result = await db.execute(sql`
+    const result = (await db.execute(sql`
       WITH target AS (
         SELECT ${targetDate}::date AS d
       ),
@@ -101,14 +101,17 @@ async function computeRsForDate(targetDate: string) {
         RETURNING dp.symbol, dp.rs_score
       )
       SELECT COUNT(*) AS updated_count FROM updated;
-    `) as { rows: { updated_count: number }[] };
+    `)) as { rows: { updated_count: number }[] };
 
     const updatedCount = result.rows?.[0]?.updated_count ?? 0;
     console.log(
       `✅ RS computed for ${targetDate} (rows updated: ${updatedCount})`
     );
   } catch (e: any) {
-    console.error(`❌ Failed to compute RS for ${targetDate}:`, e?.message ?? e);
+    console.error(
+      `❌ Failed to compute RS for ${targetDate}:`,
+      e?.message ?? e
+    );
     throw e;
   }
 }

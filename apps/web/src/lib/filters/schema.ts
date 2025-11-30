@@ -22,6 +22,10 @@ export const filterDefaults = {
   revenueGrowthRate: null as number | null,
   incomeGrowthRate: null as number | null,
   pegFilter: false,
+  ma20Above: false,
+  ma50Above: false,
+  ma100Above: false,
+  ma200Above: false,
 };
 
 export const filterSchema = z.object({
@@ -48,6 +52,10 @@ export const filterSchema = z.object({
     .optional()
     .transform((v) => (v === undefined ? null : v)),
   pegFilter: z.coerce.boolean().default(filterDefaults.pegFilter),
+  ma20Above: z.coerce.boolean().default(filterDefaults.ma20Above),
+  ma50Above: z.coerce.boolean().default(filterDefaults.ma50Above),
+  ma100Above: z.coerce.boolean().default(filterDefaults.ma100Above),
+  ma200Above: z.coerce.boolean().default(filterDefaults.ma200Above),
 });
 
 export type ParsedFilters = z.infer<typeof filterSchema>;
@@ -105,6 +113,10 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
   );
   params.set("incomeGrowthQuarters", String(filters.incomeGrowthQuarters));
   params.set("pegFilter", String(filters.pegFilter));
+  params.set("ma20Above", String(filters.ma20Above));
+  params.set("ma50Above", String(filters.ma50Above));
+  params.set("ma100Above", String(filters.ma100Above));
+  params.set("ma200Above", String(filters.ma200Above));
 
   if (filters.revenueGrowthRate !== null && filters.revenueGrowthRate !== undefined) {
     params.set("revenueGrowthRate", String(filters.revenueGrowthRate));
@@ -117,5 +129,5 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
 }
 
 export function buildCacheTag(filters: ParsedFilters): string {
-  return `golden-cross-${filters.ordered}-${filters.goldenCross}-${filters.justTurned}-${filters.lookbackDays}-${filters.profitability}-${filters.revenueGrowth}-${filters.revenueGrowthQuarters}-${filters.revenueGrowthRate ?? ""}-${filters.incomeGrowth}-${filters.incomeGrowthQuarters}-${filters.incomeGrowthRate ?? ""}-${filters.pegFilter}-${filters.turnAround}`;
+  return `golden-cross-${filters.ordered}-${filters.goldenCross}-${filters.justTurned}-${filters.lookbackDays}-${filters.profitability}-${filters.revenueGrowth}-${filters.revenueGrowthQuarters}-${filters.revenueGrowthRate ?? ""}-${filters.incomeGrowth}-${filters.incomeGrowthQuarters}-${filters.incomeGrowthRate ?? ""}-${filters.pegFilter}-${filters.turnAround}-${filters.ma20Above}-${filters.ma50Above}-${filters.ma100Above}-${filters.ma200Above}`;
 }

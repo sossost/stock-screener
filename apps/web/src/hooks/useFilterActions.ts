@@ -7,7 +7,9 @@ import { buildCacheTag } from "@/lib/filters/schema";
 /**
  * 필터 액션(변경, 적용, 초기화)을 관리하는 커스텀 훅
  */
-export function useFilterActions(filterState: ReturnType<typeof useFilterState>) {
+export function useFilterActions(
+  filterState: ReturnType<typeof useFilterState>
+) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -25,7 +27,11 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
     newIncomeGrowthQuarters?: number,
     newRevenueGrowthRate?: number | null,
     newIncomeGrowthRate?: number | null,
-    newPegFilter?: boolean
+    newPegFilter?: boolean,
+    newMa20Above?: boolean,
+    newMa50Above?: boolean,
+    newMa100Above?: boolean,
+    newMa200Above?: boolean
   ) => {
     // 정배열 필터가 비활성화되면 "최근 전환" 옵션도 비활성화
     const finalJustTurned = newOrdered ? newJustTurned : false;
@@ -51,6 +57,10 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
           ? null
           : filterState.incomeGrowthRate,
       pegFilter: filterState.pegFilter ?? false,
+      ma20Above: filterState.ma20Above ?? false,
+      ma50Above: filterState.ma50Above ?? false,
+      ma100Above: filterState.ma100Above ?? false,
+      ma200Above: filterState.ma200Above ?? false,
     });
     await fetch("/api/cache/revalidate", {
       method: "POST",
@@ -83,6 +93,18 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
     if (newPegFilter !== undefined) {
       await filterState.setPegFilter(newPegFilter);
     }
+    if (newMa20Above !== undefined) {
+      await filterState.setMa20Above(newMa20Above);
+    }
+    if (newMa50Above !== undefined) {
+      await filterState.setMa50Above(newMa50Above);
+    }
+    if (newMa100Above !== undefined) {
+      await filterState.setMa100Above(newMa100Above);
+    }
+    if (newMa200Above !== undefined) {
+      await filterState.setMa200Above(newMa200Above);
+    }
 
     // 서버 컴포넌트 리패치 (transition으로 감싸서 로딩 표시)
     startTransition(() => {
@@ -111,7 +133,19 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
         : filterState.incomeGrowthRate ?? null,
       Object.prototype.hasOwnProperty.call(newState, "pegFilter")
         ? newState.pegFilter ?? false
-        : filterState.pegFilter
+        : filterState.pegFilter,
+      Object.prototype.hasOwnProperty.call(newState, "ma20Above")
+        ? newState.ma20Above ?? false
+        : filterState.ma20Above,
+      Object.prototype.hasOwnProperty.call(newState, "ma50Above")
+        ? newState.ma50Above ?? false
+        : filterState.ma50Above,
+      Object.prototype.hasOwnProperty.call(newState, "ma100Above")
+        ? newState.ma100Above ?? false
+        : filterState.ma100Above,
+      Object.prototype.hasOwnProperty.call(newState, "ma200Above")
+        ? newState.ma200Above ?? false
+        : filterState.ma200Above
     );
   };
 
@@ -131,7 +165,11 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
         filterState.incomeGrowthQuarters,
         filterState.revenueGrowthRate,
         filterState.incomeGrowthRate,
-        filterState.pegFilter
+        filterState.pegFilter,
+        false, // ma20Above 초기화
+        false, // ma50Above 초기화
+        false, // ma100Above 초기화
+        false // ma200Above 초기화
       );
     } else if (category === "growth") {
       handleFilterChange(
@@ -147,7 +185,11 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
         3, // incomeGrowthQuarters
         null, // revenueGrowthRate
         null, // incomeGrowthRate
-        false // pegFilter
+        false, // pegFilter
+        filterState.ma20Above,
+        filterState.ma50Above,
+        filterState.ma100Above,
+        filterState.ma200Above
       );
     } else if (category === "profitability") {
       handleFilterChange(
@@ -163,7 +205,11 @@ export function useFilterActions(filterState: ReturnType<typeof useFilterState>)
         filterState.incomeGrowthQuarters,
         filterState.revenueGrowthRate,
         filterState.incomeGrowthRate,
-        filterState.pegFilter
+        filterState.pegFilter,
+        filterState.ma20Above,
+        filterState.ma50Above,
+        filterState.ma100Above,
+        filterState.ma200Above
       );
     }
   };
