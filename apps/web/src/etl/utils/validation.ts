@@ -9,7 +9,8 @@ export interface ValidationResult {
 }
 
 /**
- * 필수 환경 변수 검증
+ * 필수 환경 변수 검증 (API 사용 ETL용)
+ * DATABASE_URL, FMP_API_KEY, DATA_API 모두 필수
  */
 export function validateEnvironmentVariables(): ValidationResult {
   const errors: string[] = [];
@@ -49,7 +50,34 @@ export function validateEnvironmentVariables(): ValidationResult {
     );
   }
 
-  // 선택적 환경 변수 확인 (현재 없음)
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
+
+/**
+ * 데이터베이스 전용 환경 변수 검증 (API 미사용 ETL용)
+ * DATABASE_URL만 필수
+ */
+export function validateDatabaseOnlyEnvironment(): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // DATABASE_URL만 필수
+  if (!process.env.DATABASE_URL) {
+    errors.push("필수 환경 변수가 누락되었습니다: DATABASE_URL");
+  }
+
+  // DATABASE_URL 형식 검증
+  if (process.env.DATABASE_URL) {
+    try {
+      new URL(process.env.DATABASE_URL);
+    } catch {
+      errors.push("DATABASE_URL 형식이 올바르지 않습니다");
+    }
+  }
 
   return {
     isValid: errors.length === 0,

@@ -2,7 +2,7 @@
 import "dotenv/config";
 import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
-import { validateEnvironmentVariables } from "../utils/validation";
+import { validateDatabaseOnlyEnvironment } from "../utils/validation";
 
 const BACKFILL_DAYS = 365; // 최근 1년 기준일만 백필
 const LOOKBACK_12M = 252;
@@ -116,7 +116,8 @@ async function computeRsForDate(targetDate: string) {
 async function main() {
   console.log("🚀 Starting RS build...");
 
-  const envValidation = validateEnvironmentVariables();
+  // RS ETL은 외부 API를 사용하지 않으므로 DATABASE_URL만 검증
+  const envValidation = validateDatabaseOnlyEnvironment();
   if (!envValidation.isValid) {
     console.error("❌ Environment validation failed:", envValidation.errors);
     process.exit(1);
