@@ -1,9 +1,12 @@
-"use client";
-
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { DataWrapper } from "@/app/(screener)/DataWrapper";
 import { Navigation } from "@/components/navigation";
 import { TableSkeleton } from "@/app/(screener)/TableSkeleton";
+
+export const metadata = {
+  title: "주식 스크리너 | Stock Screener",
+  description: "기술적 분석과 펀더멘털 분석을 위한 주식 스크리닝 도구",
+};
 
 export default function Home() {
   return (

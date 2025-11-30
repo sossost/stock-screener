@@ -29,13 +29,19 @@ export function useFilterActions(
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
   // debounce로 localStorage에 필터 저장 (500ms)
+  // 컴포넌트가 언마운트된 경우 저장하지 않음
   const debouncedSaveFilters = useCallback((filters: FilterState) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
     saveTimeoutRef.current = setTimeout(() => {
+      // 컴포넌트가 언마운트된 경우 저장하지 않음
+      if (!isMountedRef.current) {
+        return;
+      }
       try {
         saveDefaultFilters(filters);
       } catch (error) {
@@ -44,11 +50,14 @@ export function useFilterActions(
     }, 500);
   }, []);
 
-  // cleanup: 컴포넌트 언마운트 시 타이머 정리
+  // cleanup: 컴포넌트 언마운트 시 타이머 정리 및 마운트 상태 업데이트
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
       }
     };
   }, []);
@@ -169,7 +178,7 @@ export function useFilterActions(
       await setBooleanFilter(newMa100Above, filterState.setMa100Above);
       await setBooleanFilter(newMa200Above, filterState.setMa200Above);
 
-      // localStorage에 필터 저장 (debounce 적용)
+      // 모든 URL 업데이트 완료 후 localStorage에 필터 저장 (debounce 적용)
       debouncedSaveFilters({
         ordered: newOrdered,
         goldenCross: newGoldenCross,
@@ -199,6 +208,12 @@ export function useFilterActions(
     } catch (error) {
       // 에러 발생 시 상태 롤백
       console.error("필터 적용 실패:", error);
+      
+      // pending 중인 localStorage 저장 취소 (잘못된 상태 저장 방지)
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
       try {
         await setBooleanFilter(previousState.ordered, filterState.setOrdered);
         // goldenCross는 기본값이 true이므로, 롤백 시에도 직접 설정
