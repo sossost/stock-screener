@@ -70,7 +70,11 @@ export function exportTradesToCsv(
         t.calculated.totalBuyQuantity,
         escapeCsvValue(t.finalPnl),
         t.finalRoi != null
-          ? escapeCsvValue((parseFloat(t.finalRoi) * 100).toFixed(2) + "%")
+          ? (() => {
+              const roiNumber = parseFloat(t.finalRoi);
+              if (Number.isNaN(roiNumber)) return "";
+              return escapeCsvValue((roiNumber * 100).toFixed(2) + "%");
+            })()
           : "",
         escapeCsvValue(t.finalRMultiple),
         t.startDate ? escapeCsvValue(formatDateKr(t.startDate)) : "",
