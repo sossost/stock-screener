@@ -69,7 +69,7 @@ jobs:
 
   etl-daily-ma:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     name: Daily MA ETL
     needs: etl-daily-prices
     if: always() && (needs.etl-daily-prices.result == 'success' || needs.etl-daily-prices.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'daily-ma' || github.event.inputs.job_type == 'all')

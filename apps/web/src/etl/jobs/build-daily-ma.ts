@@ -10,8 +10,8 @@ import {
 } from "../utils/validation";
 import { retryDatabaseOperation, DEFAULT_RETRY_OPTIONS } from "../utils/retry";
 
-const BATCH_SIZE = 50;
-const PAUSE_MS = 100;
+const BATCH_SIZE = 100;
+const PAUSE_MS = 50;
 
 async function calculateMAForSymbol(symbol: string, targetDate: string) {
   console.log(`📊 Calculating MA for ${symbol} on ${targetDate}`);
