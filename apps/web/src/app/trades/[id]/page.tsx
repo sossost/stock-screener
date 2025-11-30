@@ -1,4 +1,5 @@
-import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { getTradeDetail } from "@/lib/trades/queries";
 import TradeDetailClient from "./TradeDetailClient";
 
 interface Props {
@@ -7,17 +8,17 @@ interface Props {
 
 export default async function TradeDetailPage({ params }: Props) {
   const { id } = await params;
+  const tradeId = parseInt(id, 10);
 
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-        </div>
-      }
-    >
-      <TradeDetailClient tradeId={id} />
-    </Suspense>
-  );
+  if (isNaN(tradeId)) {
+    notFound();
+  }
+
+  const trade = await getTradeDetail(tradeId);
+
+  if (!trade) {
+    notFound();
+  }
+
+  return <TradeDetailClient trade={trade} />;
 }
-

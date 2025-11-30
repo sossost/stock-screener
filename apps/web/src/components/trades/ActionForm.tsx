@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CreateActionRequest } from "@/lib/trades/types";
+import { formatPrice, formatPercent } from "@/utils/format";
 import { Button } from "@/components/ui/button";
 
 interface ActionFormProps {
@@ -123,7 +124,7 @@ export default function ActionForm({
               현재 보유: <span className="font-semibold">{currentQuantity}주</span>
               {avgEntryPrice > 0 && (
                 <span className="text-gray-500 ml-2">
-                  (평균가 ${avgEntryPrice.toFixed(2)})
+                  (평균가 {formatPrice(avgEntryPrice)})
                 </span>
               )}
             </div>
@@ -150,7 +151,7 @@ export default function ActionForm({
             </div>
             {pricePercent !== null && (
               <p className={`text-xs mt-1 ${pricePercent > 0 ? "text-green-500" : pricePercent < 0 ? "text-red-500" : "text-gray-500"}`}>
-                평균가 대비 {pricePercent >= 0 ? "+" : ""}{pricePercent.toFixed(1)}%
+                평균가 대비 {pricePercent >= 0 ? "+" : ""}{formatPercent(pricePercent, 1)}
               </p>
             )}
           </div>

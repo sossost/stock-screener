@@ -10,6 +10,111 @@ type RouteContext = {
 };
 
 /**
+ * PATCH /api/trades/[id]/actions/[actionId] - 매매 내역 수정
+ */
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  try {
+    const { id, actionId } = await context.params;
+    const tradeId = parseInt(id, 10);
+    const actionIdNum = parseInt(actionId, 10);
+
+    if (isNaN(tradeId) || isNaN(actionIdNum)) {
+      return NextResponse.json(
+        { error: "유효하지 않은 ID입니다" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { price, quantity, actionDate, note } = body;
+
+    // 매매 소유권 확인
+    const [trade] = await db
+      .select()
+      .from(trades)
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID)));
+
+    if (!trade) {
+      return NextResponse.json(
+        { error: "매매를 찾을 수 없습니다" },
+        { status: 404 }
+      );
+    }
+
+    // 액션 존재 확인
+    const [action] = await db
+      .select()
+      .from(tradeActions)
+      .where(
+        and(eq(tradeActions.id, actionIdNum), eq(tradeActions.tradeId, tradeId))
+      );
+
+    if (!action) {
+      return NextResponse.json(
+        { error: "매매 내역을 찾을 수 없습니다" },
+        { status: 404 }
+      );
+    }
+
+    // 업데이트할 필드 구성
+    const updateData: Partial<{
+      price: string;
+      quantity: number;
+      actionDate: Date;
+      note: string | null;
+      updatedAt: Date;
+    }> = {
+      updatedAt: new Date(),
+    };
+
+    if (price !== undefined) {
+      if (typeof price !== "number" || price <= 0) {
+        return NextResponse.json(
+          { error: "가격은 0보다 커야 합니다" },
+          { status: 400 }
+        );
+      }
+      updateData.price = price.toString();
+    }
+
+    if (quantity !== undefined) {
+      if (typeof quantity !== "number" || quantity <= 0) {
+        return NextResponse.json(
+          { error: "수량은 0보다 커야 합니다" },
+          { status: 400 }
+        );
+      }
+      updateData.quantity = quantity;
+    }
+
+    if (actionDate !== undefined) {
+      updateData.actionDate = new Date(actionDate);
+    }
+
+    if (note !== undefined) {
+      updateData.note = note || null;
+    }
+
+    // 수정
+    await db
+      .update(tradeActions)
+      .set(updateData)
+      .where(eq(tradeActions.id, actionIdNum));
+
+    // 매매 updatedAt 업데이트
+    await db
+      .update(trades)
+      .set({ updatedAt: new Date() })
+      .where(eq(trades.id, tradeId));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[Actions API] PATCH error:", error);
+    return NextResponse.json({ error: "매매 내역 수정 실패" }, { status: 500 });
+  }
+}
+
+/**
  * DELETE /api/trades/[id]/actions/[actionId] - 매매 내역 삭제
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
@@ -57,6 +162,19 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { error: "매매 내역을 찾을 수 없습니다" },
         { status: 404 }
+      );
+    }
+
+    // 최소 1개 액션 확인
+    const allActions = await db
+      .select()
+      .from(tradeActions)
+      .where(eq(tradeActions.tradeId, tradeId));
+
+    if (allActions.length <= 1) {
+      return NextResponse.json(
+        { error: "최소 1개의 매매 내역이 필요합니다" },
+        { status: 400 }
       );
     }
 

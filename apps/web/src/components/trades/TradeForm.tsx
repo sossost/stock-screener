@@ -6,6 +6,7 @@ import { CreateTradeRequest, StrategyTag, PlanTarget } from "@/lib/trades/types"
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { DEFAULT_COMMISSION_RATE } from "@/lib/trades/calculations";
+import { formatPercent } from "@/utils/format";
 
 const COMMISSION_RATE_KEY = "trading-journal-commission-rate";
 
@@ -240,7 +241,7 @@ export default function TradeForm({
             </div>
             {stopLossPercent !== null && (
               <p className={`text-xs mt-1 ${stopLossPercent < 0 ? "text-red-500" : "text-green-500"}`}>
-                진입가 대비 {stopLossPercent >= 0 ? "+" : ""}{stopLossPercent.toFixed(1)}%
+                진입가 대비 {stopLossPercent >= 0 ? "+" : ""}{formatPercent(stopLossPercent, 1)}
               </p>
             )}
           </div>
@@ -297,7 +298,7 @@ export default function TradeForm({
                       </div>
                       {percent !== null && (
                         <p className={`text-xs mt-0.5 ${percent > 0 ? "text-green-500" : "text-red-500"}`}>
-                          진입가 대비 {percent >= 0 ? "+" : ""}{percent.toFixed(1)}%
+                          진입가 대비 {percent >= 0 ? "+" : ""}{formatPercent(percent, 1)}
                         </p>
                       )}
                     </div>
