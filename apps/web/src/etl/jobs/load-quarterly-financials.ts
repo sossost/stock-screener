@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { quarterlyFinancials } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { asQuarter, fetchJson, sleep, toStrNum, ensureSymbol } from "../utils";
+import { deduplicateByQuarter } from "../utils/quarter-deduplication";
 
 const API = process.env.DATA_API! + "/stable";
 const KEY = process.env.FMP_API_KEY!;
@@ -75,10 +76,13 @@ async function loadOne(symbol: string) {
     map.set(r.date, { ...cur, ...r }); // operatingCashFlow/freeCashFlow 등 합치기
   }
 
+  // 같은 분기(asOfQ)에 대해 가장 최신 날짜만 유지
+  const quarterMap = deduplicateByQuarter(map);
+
   await ensureSymbol(symbol);
 
   // 최신부터 LIMIT_Q개 업서트
-  for (const [, row] of map) {
+  for (const [, row] of quarterMap) {
     await upsertQuarter(symbol, row);
   }
 }
