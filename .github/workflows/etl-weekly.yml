@@ -17,6 +17,7 @@ on:
           - all
           - symbols
           - ratios
+          - quarterly-financials
 
 jobs:
   etl-symbols:
@@ -62,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Financial Ratios ETL
     needs: etl-symbols
-    if: always() && (needs.etl-symbols.result == 'success' || needs.etl-symbols.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'ratios' || github.event.inputs.job_type == 'all')
+    if: always() && (needs.etl-symbols.result == 'success' || needs.etl-symbols.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'ratios' || github.event.inputs.job_type == 'quarterly-financials' || github.event.inputs.job_type == 'all')
 
     steps:
       - name: Checkout code
@@ -88,6 +89,18 @@ jobs:
           echo "🚀 Starting Financial Ratios ETL..."
           yarn etl:ratios
           echo "✅ Financial Ratios ETL completed!"
+
+      - name: Run Quarterly Financials ETL
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+          DATA_API: ${{ secrets.DATA_API }}
+          PGSSLMODE: no-verify
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        run: |
+          echo "🚀 Starting Quarterly Financials ETL..."
+          yarn etl:quarterly-financials
+          echo "✅ Quarterly Financials ETL completed!"
 
       - name: Upload logs
         if: always()
