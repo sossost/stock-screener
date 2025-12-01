@@ -15,8 +15,9 @@ async function registerAccessCode(code: string): Promise<boolean> {
       body: JSON.stringify({ code }),
     });
     return res.ok;
-  } catch {
+  } catch (err) {
     // 네트워크 에러 시에도 실패로 처리
+    console.error("[AccessGuard] Failed to register access code:", err);
     return false;
   }
 }
@@ -59,6 +60,11 @@ export function AccessGuard({ children }: AccessGuardProps) {
           window.localStorage.removeItem(ACCESS_CODE_STORAGE_KEY);
           setHasAccess(false);
         }
+      })
+      .catch((err) => {
+        console.error("[AccessGuard] Verification failed:", err);
+        window.localStorage.removeItem(ACCESS_CODE_STORAGE_KEY);
+        setHasAccess(false);
       })
       .finally(() => setIsChecking(false));
   }, []);

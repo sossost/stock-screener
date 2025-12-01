@@ -131,7 +131,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const userId = await getUserIdFromRequest(request);
+    const userId = getUserIdFromRequest(request);
 
     // 매매 소유권 및 상태 확인
     const [trade] = await db

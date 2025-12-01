@@ -150,11 +150,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       updateData.reviewNote = body.reviewNote;
     }
 
-    // 업데이트
+    // 업데이트 (소유권 조건 포함)
     const [updatedTrade] = await db
       .update(trades)
       .set(updateData)
-      .where(eq(trades.id, tradeId))
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)))
       .returning();
 
     return NextResponse.json(updatedTrade);
@@ -194,8 +194,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // 삭제 (CASCADE로 액션도 함께 삭제됨)
-    await db.delete(trades).where(eq(trades.id, tradeId));
+    // 삭제 (CASCADE로 액션도 함께 삭제됨) - 소유권 조건 포함
+    await db
+      .delete(trades)
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -55,10 +55,10 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("Failed to register access code:", error);
+    console.error("Failed to verify access code:", error);
     return NextResponse.json(
-      { error: "접근 코드 등록 중 오류가 발생했습니다." },
-      { status: 400 }
+      { error: "접근 코드 처리 중 서버 오류가 발생했습니다." },
+      { status: 500 }
     );
   }
 }
