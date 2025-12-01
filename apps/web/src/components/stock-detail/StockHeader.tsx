@@ -13,7 +13,7 @@ import type {
   StockRatios,
 } from "@/types/stock-detail";
 // TODO: Link가 필요해지면 다시 사용, 현재는 미사용이라 제거
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MAStatusBadge } from "./MAStatusBadge";
 
@@ -63,27 +63,9 @@ export function StockHeader({
   ratios,
 }: StockHeaderProps) {
   const router = useRouter();
-  const { isInWatchlist, toggleWatchlist, refresh } = useWatchlist(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  // 관심종목 자동 로드 (초기 로드 시 상태 표시를 위해)
+  const { isInWatchlist, toggleWatchlist } = useWatchlist(true);
   const [showTradeForm, setShowTradeForm] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    if (!hasLoaded) {
-      refresh()
-        .then(() => {
-          if (isMounted) setHasLoaded(true);
-        })
-        .catch((err) => {
-          console.error("[StockHeader] refresh error:", err);
-        });
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [hasLoaded, refresh]);
 
   const handleToggleWatchlist = async () => {
     try {
