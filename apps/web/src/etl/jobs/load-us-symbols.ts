@@ -51,7 +51,7 @@ async function main() {
 
   // 각 거래소별로 API 병렬 호출
   console.log(`📡 Fetching symbols from ${SUPPORTED_EXCHANGES.join(", ")}...`);
-  
+
   const results = await Promise.all(
     SUPPORTED_EXCHANGES.map(async (exchange) => {
       const list = await retryApiCall(

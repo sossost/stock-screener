@@ -31,7 +31,9 @@ export default function AssetAllocationChart({
 
   // 세그먼트 렌더링 데이터 계산 (IIFE 대신 useMemo 사용)
   const segmentElements = segments.map((seg, index) => {
-    const offset = segments.slice(0, index).reduce((sum, s) => sum + s.weight, 0);
+    const offset = segments
+      .slice(0, index)
+      .reduce((sum, s) => sum + s.weight, 0);
     const dashArray = `${seg.weight} ${100 - seg.weight}`;
     const dashOffset = -offset;
     return (
@@ -66,4 +68,3 @@ export default function AssetAllocationChart({
     </div>
   );
 }
-

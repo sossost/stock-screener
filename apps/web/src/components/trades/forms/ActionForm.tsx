@@ -121,7 +121,8 @@ export default function ActionForm({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!isBuy && (
             <div className="p-3 bg-gray-50 rounded-lg text-sm">
-              현재 보유: <span className="font-semibold">{currentQuantity}주</span>
+              현재 보유:{" "}
+              <span className="font-semibold">{currentQuantity}주</span>
               {avgEntryPrice > 0 && (
                 <span className="text-gray-500 ml-2">
                   (평균가 {formatPrice(avgEntryPrice)})
@@ -150,8 +151,11 @@ export default function ActionForm({
               />
             </div>
             {pricePercent !== null && (
-              <p className={`text-xs mt-1 ${pricePercent > 0 ? "text-green-500" : pricePercent < 0 ? "text-red-500" : "text-gray-500"}`}>
-                평균가 대비 {pricePercent >= 0 ? "+" : ""}{formatPercent(pricePercent, 1)}
+              <p
+                className={`text-xs mt-1 ${pricePercent > 0 ? "text-green-500" : pricePercent < 0 ? "text-red-500" : "text-gray-500"}`}
+              >
+                평균가 대비 {pricePercent >= 0 ? "+" : ""}
+                {formatPercent(pricePercent, 1)}
               </p>
             )}
           </div>

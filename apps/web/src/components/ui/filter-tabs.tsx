@@ -27,11 +27,7 @@ export function FilterTabs<T extends string>({
           variant={value === tab.value ? "default" : "outline"}
           size="sm"
           onClick={() => onChange(tab.value)}
-          className={
-            value === tab.value
-              ? "bg-gray-900 hover:bg-gray-800"
-              : ""
-          }
+          className={value === tab.value ? "bg-gray-900 hover:bg-gray-800" : ""}
         >
           {tab.label}
           {tab.count !== undefined && ` (${tab.count})`}
@@ -40,4 +36,3 @@ export function FilterTabs<T extends string>({
     </div>
   );
 }
-

@@ -105,10 +105,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("[Trades API] GET error:", error);
-    return NextResponse.json(
-      { error: "매매 목록 조회 실패" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "매매 목록 조회 실패" }, { status: 500 });
   }
 }
 
@@ -207,10 +204,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("[Trades API] POST error:", error);
-    return NextResponse.json(
-      { error: "매매 생성 실패" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "매매 생성 실패" }, { status: 500 });
   }
 }
-

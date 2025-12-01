@@ -345,26 +345,26 @@ export function useFilterActions(
       newState.revenueGrowthQuarters ?? filterState.revenueGrowthQuarters,
       newState.incomeGrowthQuarters ?? filterState.incomeGrowthQuarters,
       Object.prototype.hasOwnProperty.call(newState, "revenueGrowthRate")
-        ? newState.revenueGrowthRate ?? null
-        : filterState.revenueGrowthRate ?? null,
+        ? (newState.revenueGrowthRate ?? null)
+        : (filterState.revenueGrowthRate ?? null),
       Object.prototype.hasOwnProperty.call(newState, "incomeGrowthRate")
-        ? newState.incomeGrowthRate ?? null
-        : filterState.incomeGrowthRate ?? null,
+        ? (newState.incomeGrowthRate ?? null)
+        : (filterState.incomeGrowthRate ?? null),
       Object.prototype.hasOwnProperty.call(newState, "pegFilter")
-        ? newState.pegFilter ?? false
-        : filterState.pegFilter ?? false,
+        ? (newState.pegFilter ?? false)
+        : (filterState.pegFilter ?? false),
       Object.prototype.hasOwnProperty.call(newState, "ma20Above")
-        ? newState.ma20Above ?? false
-        : filterState.ma20Above ?? false,
+        ? (newState.ma20Above ?? false)
+        : (filterState.ma20Above ?? false),
       Object.prototype.hasOwnProperty.call(newState, "ma50Above")
-        ? newState.ma50Above ?? false
-        : filterState.ma50Above ?? false,
+        ? (newState.ma50Above ?? false)
+        : (filterState.ma50Above ?? false),
       Object.prototype.hasOwnProperty.call(newState, "ma100Above")
-        ? newState.ma100Above ?? false
-        : filterState.ma100Above ?? false,
+        ? (newState.ma100Above ?? false)
+        : (filterState.ma100Above ?? false),
       Object.prototype.hasOwnProperty.call(newState, "ma200Above")
-        ? newState.ma200Above ?? false
-        : filterState.ma200Above ?? false
+        ? (newState.ma200Above ?? false)
+        : (filterState.ma200Above ?? false)
     );
   };
 

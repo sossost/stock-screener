@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { STRATEGY_TAGS } from "@/db/schema";
-import { CreateTradeRequest, StrategyTag, PlanTarget } from "@/lib/trades/types";
+import {
+  CreateTradeRequest,
+  StrategyTag,
+  PlanTarget,
+} from "@/lib/trades/types";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { DEFAULT_COMMISSION_RATE } from "@/lib/trades/calculations";
@@ -27,9 +31,9 @@ export default function TradeForm({
   const [symbol, setSymbol] = useState(defaultSymbol || "");
   const [strategy, setStrategy] = useState<StrategyTag | "">("");
   const [planStopLoss, setPlanStopLoss] = useState("");
-  const [planTargets, setPlanTargets] = useState<{ price: string; weight: string }[]>([
-    { price: "", weight: "100" },
-  ]);
+  const [planTargets, setPlanTargets] = useState<
+    { price: string; weight: string }[]
+  >([{ price: "", weight: "100" }]);
   const [entryReason, setEntryReason] = useState("");
   const [commissionRate, setCommissionRate] = useState(
     DEFAULT_COMMISSION_RATE.toString()
@@ -76,7 +80,11 @@ export default function TradeForm({
     }
   };
 
-  const updateTarget = (index: number, field: "price" | "weight", value: string) => {
+  const updateTarget = (
+    index: number,
+    field: "price" | "weight",
+    value: string
+  ) => {
     const updated = [...planTargets];
     updated[index][field] = value;
     setPlanTargets(updated);
@@ -240,8 +248,11 @@ export default function TradeForm({
               />
             </div>
             {stopLossPercent !== null && (
-              <p className={`text-xs mt-1 ${stopLossPercent < 0 ? "text-red-500" : "text-green-500"}`}>
-                진입가 대비 {stopLossPercent >= 0 ? "+" : ""}{formatPercent(stopLossPercent, 1)}
+              <p
+                className={`text-xs mt-1 ${stopLossPercent < 0 ? "text-red-500" : "text-green-500"}`}
+              >
+                진입가 대비 {stopLossPercent >= 0 ? "+" : ""}
+                {formatPercent(stopLossPercent, 1)}
               </p>
             )}
           </div>
@@ -278,7 +289,9 @@ export default function TradeForm({
                             type="number"
                             step="0.01"
                             value={target.price}
-                            onChange={(e) => updateTarget(index, "price", e.target.value)}
+                            onChange={(e) =>
+                              updateTarget(index, "price", e.target.value)
+                            }
                             placeholder={`${index + 1}차 목표가`}
                             className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                           />
@@ -287,7 +300,9 @@ export default function TradeForm({
                           <input
                             type="number"
                             value={target.weight}
-                            onChange={(e) => updateTarget(index, "weight", e.target.value)}
+                            onChange={(e) =>
+                              updateTarget(index, "weight", e.target.value)
+                            }
                             placeholder="비중"
                             className="w-full pl-3 pr-7 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                           />
@@ -297,8 +312,11 @@ export default function TradeForm({
                         </div>
                       </div>
                       {percent !== null && (
-                        <p className={`text-xs mt-0.5 ${percent > 0 ? "text-green-500" : "text-red-500"}`}>
-                          진입가 대비 {percent >= 0 ? "+" : ""}{formatPercent(percent, 1)}
+                        <p
+                          className={`text-xs mt-0.5 ${percent > 0 ? "text-green-500" : "text-red-500"}`}
+                        >
+                          진입가 대비 {percent >= 0 ? "+" : ""}
+                          {formatPercent(percent, 1)}
                         </p>
                       )}
                     </div>

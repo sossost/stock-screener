@@ -32,4 +32,3 @@ export function PopupPortal({ children, position }: PopupPortalProps) {
     document.body
   );
 }
-

@@ -130,7 +130,9 @@ describe("technical-indicators", () => {
       const rsi = calculateRSIWithTime(sampleData, 14);
 
       expect(rsi[0].time).toBe(sampleData[0].time);
-      expect(rsi[rsi.length - 1].time).toBe(sampleData[sampleData.length - 1].time);
+      expect(rsi[rsi.length - 1].time).toBe(
+        sampleData[sampleData.length - 1].time
+      );
     });
   });
 
@@ -187,10 +189,10 @@ describe("technical-indicators", () => {
 
       // 5번째 데이터부터 유효
       const closes = sampleData.map((d) => d.close);
-      const expected = (closes[0] + closes[1] + closes[2] + closes[3] + closes[4]) / 5;
+      const expected =
+        (closes[0] + closes[1] + closes[2] + closes[3] + closes[4]) / 5;
 
       expect(ma5[4].value).toBeCloseTo(expected, 5);
     });
   });
 });
-

@@ -84,7 +84,9 @@ export default function CashBalanceEditor({
       ) : (
         <>
           <span className="text-gray-700">{formatPositionValue(value)}</span>
-          <span className="text-gray-400 text-xs">{formatPercent(weight, 0)}</span>
+          <span className="text-gray-400 text-xs">
+            {formatPercent(weight, 0)}
+          </span>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -99,4 +101,3 @@ export default function CashBalanceEditor({
     </div>
   );
 }
-

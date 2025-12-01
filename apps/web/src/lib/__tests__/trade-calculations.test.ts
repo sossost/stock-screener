@@ -240,10 +240,7 @@ describe("calculateTradeStats", () => {
   });
 
   it("총 손익 계산", () => {
-    const trades = [
-      createTrade("CLOSED", 100),
-      createTrade("CLOSED", -30),
-    ];
+    const trades = [createTrade("CLOSED", 100), createTrade("CLOSED", -30)];
     const stats = calculateTradeStats(trades);
 
     expect(stats.totalPnl).toBe(70);
@@ -276,10 +273,7 @@ describe("calculateTradeStats", () => {
   });
 
   it("OPEN 매매는 통계에서 제외", () => {
-    const trades = [
-      createTrade("OPEN", null),
-      createTrade("CLOSED", 100),
-    ];
+    const trades = [createTrade("OPEN", null), createTrade("CLOSED", 100)];
     const stats = calculateTradeStats(trades);
 
     expect(stats.totalTrades).toBe(1);
@@ -385,7 +379,7 @@ describe("calculateHoldingDays", () => {
 describe("calculateUnrealizedPnl", () => {
   it("수익인 경우 양수 손익", () => {
     const result = calculateUnrealizedPnl(100, 10, 120);
-    
+
     // (120 - 100) * 10 = 200
     expect(result.unrealizedPnl).toBe(200);
     // 200 / (100 * 10) = 0.2 (20%)
@@ -394,7 +388,7 @@ describe("calculateUnrealizedPnl", () => {
 
   it("손실인 경우 음수 손익", () => {
     const result = calculateUnrealizedPnl(100, 10, 80);
-    
+
     // (80 - 100) * 10 = -200
     expect(result.unrealizedPnl).toBe(-200);
     // -200 / (100 * 10) = -0.2 (-20%)
@@ -403,37 +397,36 @@ describe("calculateUnrealizedPnl", () => {
 
   it("현재가가 평단가와 같으면 0", () => {
     const result = calculateUnrealizedPnl(100, 10, 100);
-    
+
     expect(result.unrealizedPnl).toBe(0);
     expect(result.unrealizedRoi).toBe(0);
   });
 
   it("수량이 0이면 0 반환", () => {
     const result = calculateUnrealizedPnl(100, 0, 120);
-    
+
     expect(result.unrealizedPnl).toBe(0);
     expect(result.unrealizedRoi).toBe(0);
   });
 
   it("평단가가 0이면 0 반환", () => {
     const result = calculateUnrealizedPnl(0, 10, 120);
-    
+
     expect(result.unrealizedPnl).toBe(0);
     expect(result.unrealizedRoi).toBe(0);
   });
 
   it("현재가가 0이면 0 반환", () => {
     const result = calculateUnrealizedPnl(100, 10, 0);
-    
+
     expect(result.unrealizedPnl).toBe(0);
     expect(result.unrealizedRoi).toBe(0);
   });
 
   it("음수 값이면 0 반환", () => {
     const result = calculateUnrealizedPnl(100, -5, 120);
-    
+
     expect(result.unrealizedPnl).toBe(0);
     expect(result.unrealizedRoi).toBe(0);
   });
 });
-

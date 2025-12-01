@@ -54,7 +54,10 @@ function RevenueChart({ data }: { data: QuarterlyFinancial[] }) {
           const pct = maxVal === 0 ? 100 : (value / maxVal) * 100;
 
           return (
-            <div key={index} className="flex-1 flex justify-center items-end h-full group relative">
+            <div
+              key={index}
+              className="flex-1 flex justify-center items-end h-full group relative"
+            >
               <div
                 className="w-1/2 max-w-[24px] bg-green-500 rounded-t hover:bg-green-600 transition-colors relative"
                 style={{ height: `${pct}%` }}
@@ -96,7 +99,9 @@ function EpsChart({ data }: { data: QuarterlyFinancial[] }) {
 
       <div
         className="flex"
-        style={{ height: hasNegative ? `${BAR_HEIGHT * 2 + 1}px` : `${BAR_HEIGHT}px` }}
+        style={{
+          height: hasNegative ? `${BAR_HEIGHT * 2 + 1}px` : `${BAR_HEIGHT}px`,
+        }}
       >
         {data.map((item, index) => {
           const value = item.eps;

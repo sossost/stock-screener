@@ -2,7 +2,13 @@
 
 import { TradeListItem, PlanTarget } from "@/lib/trades/types";
 import { calculateUnrealizedPnl } from "@/lib/trades/calculations";
-import { formatRoi, formatPnlFull, formatQuantity, formatPositionValueFull, formatPrice } from "@/utils/format";
+import {
+  formatRoi,
+  formatPnlFull,
+  formatQuantity,
+  formatPositionValueFull,
+  formatPrice,
+} from "@/utils/format";
 import PriceBarChart from "./PriceBarChart";
 import PriceBarLegend from "./PriceBarLegend";
 
@@ -14,14 +20,16 @@ export function PriceBarPopup({ trade }: PriceBarPopupProps) {
   const { avgEntryPrice, currentQuantity } = trade.calculated;
   const currentPrice = trade.currentPrice || 0;
 
-  const targets: PlanTarget[] = (trade.planTargets as PlanTarget[] | null)?.length
+  const targets: PlanTarget[] = (trade.planTargets as PlanTarget[] | null)
+    ?.length
     ? (trade.planTargets as PlanTarget[])
     : trade.planTargetPrice
       ? [{ price: parseFloat(trade.planTargetPrice), weight: 100 }]
       : [];
 
   const stopLoss = trade.planStopLoss ? parseFloat(trade.planStopLoss) : null;
-  const maxTarget = targets.length > 0 ? Math.max(...targets.map((t) => t.price)) : null;
+  const maxTarget =
+    targets.length > 0 ? Math.max(...targets.map((t) => t.price)) : null;
 
   if (stopLoss === null || maxTarget === null) {
     return (
@@ -45,7 +53,9 @@ export function PriceBarPopup({ trade }: PriceBarPopupProps) {
       {/* 심볼 + 손익 */}
       <div className="flex justify-between items-center mb-3">
         <span className="font-bold text-lg">{trade.symbol}</span>
-        <span className={`font-bold ${unrealizedPnl >= 0 ? "text-green-600" : "text-red-600"}`}>
+        <span
+          className={`font-bold ${unrealizedPnl >= 0 ? "text-green-600" : "text-red-600"}`}
+        >
           {formatPnlFull(unrealizedPnl)} ({formatRoi(unrealizedRoi)})
         </span>
       </div>
@@ -72,7 +82,8 @@ export function PriceBarPopup({ trade }: PriceBarPopupProps) {
 
       {/* 포지션 정보 */}
       <div className="mt-3 pt-3 border-t text-xs text-gray-500">
-        보유 {formatQuantity(currentQuantity)}주 × {formatPrice(avgEntryPrice)} = {formatPositionValueFull(avgEntryPrice * currentQuantity)}
+        보유 {formatQuantity(currentQuantity)}주 × {formatPrice(avgEntryPrice)}{" "}
+        = {formatPositionValueFull(avgEntryPrice * currentQuantity)}
       </div>
     </div>
   );

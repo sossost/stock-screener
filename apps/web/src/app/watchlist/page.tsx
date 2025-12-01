@@ -21,5 +21,3 @@ const WatchlistPage = async () => {
 };
 
 export default WatchlistPage;
-
-

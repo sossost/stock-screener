@@ -302,9 +302,9 @@ export function ETLMetrics() {
                   "text-red-600"
                     ? "bg-red-500"
                     : getUsageColor(system.apiUsage.fmpApiUsagePercent) ===
-                      "text-yellow-600"
-                    ? "bg-yellow-500"
-                    : "bg-green-500"
+                        "text-yellow-600"
+                      ? "bg-yellow-500"
+                      : "bg-green-500"
                 }`}
                 style={{ width: `${system.apiUsage.fmpApiUsagePercent}%` }}
               ></div>
@@ -335,9 +335,9 @@ export function ETLMetrics() {
                   "text-red-600"
                     ? "bg-red-500"
                     : getUsageColor(system.githubActions.usagePercent) ===
-                      "text-yellow-600"
-                    ? "bg-yellow-500"
-                    : "bg-green-500"
+                        "text-yellow-600"
+                      ? "bg-yellow-500"
+                      : "bg-green-500"
                 }`}
                 style={{ width: `${system.githubActions.usagePercent}%` }}
               ></div>

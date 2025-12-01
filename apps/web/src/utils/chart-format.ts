@@ -17,4 +17,3 @@ export function formatXLabel(dateStr: string): string {
   }
   return `${d.getMonth() + 1}.${d.getDate()}`;
 }
-

@@ -259,13 +259,11 @@ export async function GET(request: NextRequest) {
         sector: r.sector ?? null,
         last_close: r.last_close?.toString() || "0",
         quarterly_financials: r.quarterly_data || [],
-        profitability_status: (
-          r.latest_eps !== null && r.latest_eps > 0
-            ? "profitable"
-            : r.latest_eps !== null && r.latest_eps < 0
+        profitability_status: (r.latest_eps !== null && r.latest_eps > 0
+          ? "profitable"
+          : r.latest_eps !== null && r.latest_eps < 0
             ? "unprofitable"
-            : "unknown"
-        ) as "profitable" | "unprofitable" | "unknown",
+            : "unknown") as "profitable" | "unprofitable" | "unknown",
         revenue_growth_quarters: r.revenue_growth_quarters || 0,
         income_growth_quarters: r.income_growth_quarters || 0,
         revenue_avg_growth_rate: r.revenue_avg_growth_rate,
@@ -326,10 +324,7 @@ export async function POST(request: NextRequest) {
       .select()
       .from(watchlist)
       .where(
-        and(
-          eq(watchlist.userId, userId),
-          eq(watchlist.symbol, body.symbol)
-        )
+        and(eq(watchlist.userId, userId), eq(watchlist.symbol, body.symbol))
       )
       .limit(1);
 
@@ -395,9 +390,7 @@ export async function DELETE(request: NextRequest) {
     // 해당 사용자의 종목만 삭제 가능 (보안)
     const result = await db
       .delete(watchlist)
-      .where(
-        and(eq(watchlist.userId, userId), eq(watchlist.symbol, symbol))
-      )
+      .where(and(eq(watchlist.userId, userId), eq(watchlist.symbol, symbol)))
       .returning();
 
     if (result.length === 0) {
@@ -422,4 +415,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-

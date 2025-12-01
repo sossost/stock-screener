@@ -21,9 +21,7 @@ export function EmptyState({
     <div className="text-center py-20">
       {icon && <div className="mb-4 text-4xl">{icon}</div>}
       <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
-      {description && (
-        <p className="text-gray-500 mb-4">{description}</p>
-      )}
+      {description && <p className="text-gray-500 mb-4">{description}</p>}
       {action && (
         <Button variant="link" onClick={action.onClick}>
           {action.label}
@@ -32,4 +30,3 @@ export function EmptyState({
     </div>
   );
 }
-

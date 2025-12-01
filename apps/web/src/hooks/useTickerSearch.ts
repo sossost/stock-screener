@@ -1,4 +1,10 @@
-import { useState, useEffect, useMemo, useDeferredValue, useTransition } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useDeferredValue,
+  useTransition,
+} from "react";
 import { filterTickerData } from "@/lib/filters/ticker";
 import type { ScreenerCompany } from "@/types/screener";
 
@@ -8,7 +14,7 @@ import type { ScreenerCompany } from "@/types/screener";
  */
 export function useTickerSearch(data: ScreenerCompany[]) {
   const [, startTransition] = useTransition();
-  
+
   // 티커 검색 필터 (입력값과 실제 검색값 분리)
   const [tickerSearchInput, setTickerSearchInput] = useState<string>("");
   const [tickerSearch, setTickerSearch] = useState<string>("");

@@ -44,7 +44,11 @@ export default function PriceBarLegend({
         >
           {formatPrice(currentPrice)}
           {currentPercent !== null && (
-            <> ({currentPercent >= 0 ? "+" : ""}{formatPercent(currentPercent, 1)})</>
+            <>
+              {" "}
+              ({currentPercent >= 0 ? "+" : ""}
+              {formatPercent(currentPercent, 1)})
+            </>
           )}
         </span>
       </div>
@@ -60,4 +64,3 @@ export default function PriceBarLegend({
     </div>
   );
 }
-

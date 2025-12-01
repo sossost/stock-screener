@@ -75,15 +75,15 @@ export function ETLStatus() {
             data.overallStatus === "operational"
               ? "text-green-600 bg-green-50"
               : data.overallStatus === "degraded"
-              ? "text-yellow-600 bg-yellow-50"
-              : "text-red-600 bg-red-50"
+                ? "text-yellow-600 bg-yellow-50"
+                : "text-red-600 bg-red-50"
           }`}
         >
           {data.overallStatus === "operational"
             ? "정상"
             : data.overallStatus === "degraded"
-            ? "부분 장애"
-            : "장애"}
+              ? "부분 장애"
+              : "장애"}
         </div>
       </div>
 
