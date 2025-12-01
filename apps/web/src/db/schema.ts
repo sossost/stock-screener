@@ -205,19 +205,19 @@ export const dailyRatios = pgTable(
   })
 );
 
-export const portfolio = pgTable(
-  "portfolio",
+export const watchlist = pgTable(
+  "watchlist",
   {
     id: serial("id").primaryKey(),
-    sessionId: text("session_id").notNull(),
+    userId: text("user_id").notNull(),
     symbol: text("symbol")
       .notNull()
       .references(() => symbols.symbol, { onDelete: "cascade" }),
     addedAt: timestamp("added_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
-    uq: unique("uq_portfolio_session_symbol").on(t.sessionId, t.symbol),
-    idx_session: index("idx_portfolio_session").on(t.sessionId),
+    uq: unique("uq_watchlist_user_symbol").on(t.userId, t.symbol),
+    idx_user: index("idx_watchlist_user").on(t.userId),
   })
 );
 
@@ -382,4 +382,3 @@ export const accessCodes = pgTable("access_codes", {
     .notNull()
     .defaultNow(),
 });
-

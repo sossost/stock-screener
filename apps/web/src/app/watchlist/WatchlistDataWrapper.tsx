@@ -1,29 +1,23 @@
 import React from "react";
-import { cookies } from "next/headers";
 import { db } from "@/db/client";
-import { portfolio } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { sql } from "drizzle-orm";
-import { PortfolioTableClient } from "@/components/portfolio/PortfolioTableClient";
+import { watchlist } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
+import { WatchlistTableClient } from "@/components/watchlist/WatchlistTableClient";
 import type { ScreenerCompany } from "@/types/screener";
+import { getUserIdFromCookies } from "@/lib/auth/user";
 
-async function fetchPortfolioData() {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("portfolio_session_id")?.value || "";
+async function fetchWatchlistData() {
+  const userId = await getUserIdFromCookies();
 
-  // 세션이 없으면 빈 배열 반환
-  if (!sessionId) {
+  if (!userId) {
     return { symbols: [], data: [], tradeDate: null };
   }
 
-  // 데이터베이스에서 해당 세션의 포트폴리오 조회
   const items = await db
-    .select({
-      symbol: portfolio.symbol,
-    })
-    .from(portfolio)
-    .where(eq(portfolio.sessionId, sessionId))
-    .orderBy(portfolio.addedAt);
+    .select({ symbol: watchlist.symbol })
+    .from(watchlist)
+    .where(eq(watchlist.userId, userId))
+    .orderBy(watchlist.addedAt);
 
   const symbols = items.map((item) => item.symbol);
 
@@ -31,8 +25,7 @@ async function fetchPortfolioData() {
     return { symbols: [], data: [], tradeDate: null };
   }
 
-  // 포트폴리오 심볼들에 대한 재무 데이터 조회
-  const portfolioData = await db.execute(sql`
+  const watchlistData = await db.execute(sql`
     WITH last_d AS (
       SELECT MAX(date)::date AS d
       FROM daily_prices
@@ -44,7 +37,10 @@ async function fetchPortfolioData() {
         date::date AS trade_date,
         rs_score
       FROM daily_prices
-      WHERE symbol = ANY(ARRAY[${sql.join(symbols.map(s => sql`${s}`), sql`, `)}])
+      WHERE symbol = ANY(ARRAY[${sql.join(
+        symbols.map((s) => sql`${s}`),
+        sql`, `
+      )}])
         AND date::date = (SELECT d FROM last_d)
     )
     SELECT
@@ -246,7 +242,7 @@ async function fetchPortfolioData() {
     peg_ratio: number | string | null;
   };
 
-  const results = portfolioData.rows as QueryResult[];
+  const results = watchlistData.rows as QueryResult[];
   const tradeDate = results.length > 0 ? results[0].trade_date : null;
 
   const data: ScreenerCompany[] = results.map((r) => ({
@@ -255,9 +251,7 @@ async function fetchPortfolioData() {
     sector: r.sector ?? null,
     last_close: r.last_close.toString(),
     rs_score:
-      r.rs_score === null || r.rs_score === undefined
-        ? null
-        : Number(r.rs_score),
+      r.rs_score === null || r.rs_score === undefined ? null : Number(r.rs_score),
     quarterly_financials: r.quarterly_data || [],
     profitability_status:
       r.latest_eps !== null && r.latest_eps > 0
@@ -292,14 +286,12 @@ async function fetchPortfolioData() {
   return { symbols, data, tradeDate };
 }
 
-export async function PortfolioDataWrapper() {
-  const { symbols, data, tradeDate } = await fetchPortfolioData();
+export async function WatchlistDataWrapper() {
+  const { symbols, data, tradeDate } = await fetchWatchlistData();
 
   return (
-    <PortfolioTableClient
-      symbols={symbols}
-      data={data}
-      tradeDate={tradeDate}
-    />
+    <WatchlistTableClient symbols={symbols} data={data} tradeDate={tradeDate} />
   );
 }
+
+

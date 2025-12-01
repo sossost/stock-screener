@@ -1,45 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
-import { portfolio } from "@/db/schema";
+import { watchlist } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-import { getOrCreateSessionId, createSessionCookie } from "@/lib/session";
 import { handleApiError } from "@/lib/errors";
-import type { AddPortfolioRequest, PortfolioResponse } from "@/types/portfolio";
+import { getUserIdFromRequest } from "@/lib/auth/user";
+import type { AddWatchlistRequest, WatchlistResponse } from "@/types/watchlist";
 import type { ScreenerCompany } from "@/types/screener";
 
 // 캐싱 설정: 60초 동안 캐시
 export const revalidate = 60;
 
 /**
- * GET: 세션별 포트폴리오 종목 목록 조회
+ * GET: 사용자별 관심종목(워치리스트) 목록 조회
  * 쿼리 파라미터: includeData=true 시 재무 데이터도 함께 반환
  */
 export async function GET(request: NextRequest) {
   try {
-    const sessionId = getOrCreateSessionId(request);
+    const userId = getUserIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const includeData = searchParams.get("includeData") === "true";
 
-    // 데이터베이스에서 해당 세션의 포트폴리오 조회
+    // 데이터베이스에서 해당 사용자의 관심종목(워치리스트) 조회
     const items = await db
       .select({
-        symbol: portfolio.symbol,
+        symbol: watchlist.symbol,
       })
-      .from(portfolio)
-      .where(eq(portfolio.sessionId, sessionId))
-      .orderBy(portfolio.addedAt);
+      .from(watchlist)
+      .where(eq(watchlist.userId, userId))
+      .orderBy(watchlist.addedAt);
 
     const symbols = items.map((item) => item.symbol);
 
-    const responseData: PortfolioResponse = {
+    const responseData: WatchlistResponse = {
       symbols,
     };
 
     // 재무 데이터가 필요한 경우
     if (includeData && symbols.length > 0) {
-      // 포트폴리오 심볼들에 대한 재무 데이터 조회 (최적화된 쿼리)
-      const portfolioData = await db.execute(sql`
+      // 관심종목 심볼들에 대한 재무 데이터 조회 (최적화된 쿼리)
+      const watchlistData = await db.execute(sql`
         WITH last_d AS (
           SELECT MAX(date)::date AS d
           FROM daily_prices
@@ -241,8 +241,8 @@ export async function GET(request: NextRequest) {
 
       // 데이터 변환 (골든크로스 API와 동일한 형식)
       const tradeDate =
-        portfolioData.rows.length > 0
-          ? (portfolioData.rows[0] as any).trade_date
+        watchlistData.rows.length > 0
+          ? (watchlistData.rows[0] as any).trade_date
           : null;
 
       const parseRatio = (val: any): number | null => {
@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
         return isNaN(num) || !isFinite(num) ? null : num;
       };
 
-      const data: ScreenerCompany[] = portfolioData.rows.map((r: any) => ({
+      const data: ScreenerCompany[] = watchlistData.rows.map((r: any) => ({
         symbol: r.symbol,
         market_cap: r.market_cap?.toString() || null,
         sector: r.sector ?? null,
@@ -284,18 +284,13 @@ export async function GET(request: NextRequest) {
       responseData.trade_date = tradeDate;
     }
 
-    const response = NextResponse.json<PortfolioResponse>(responseData);
+    const response = NextResponse.json<WatchlistResponse>(responseData);
 
     // 캐싱 헤더 추가
     response.headers.set(
       "Cache-Control",
       "public, s-maxage=60, stale-while-revalidate=120"
     );
-
-    // 세션 ID가 없었던 경우 쿠키 설정
-    if (!request.cookies.get("portfolio_session_id")) {
-      response.headers.set("Set-Cookie", createSessionCookie(sessionId));
-    }
 
     return response;
   } catch (error) {
@@ -311,12 +306,12 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST: 포트폴리오에 종목 추가
+ * POST: 관심종목(워치리스트)에 종목 추가
  */
 export async function POST(request: NextRequest) {
-  let body: AddPortfolioRequest | null = null;
+  let body: AddWatchlistRequest | null = null;
   try {
-    const sessionId = getOrCreateSessionId(request);
+    const userId = getUserIdFromRequest(request);
     body = await request.json();
 
     if (!body || !body.symbol || typeof body.symbol !== "string") {
@@ -326,67 +321,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 중복 확인
+    // 중복 확인 (같은 사용자 기준)
     const existing = await db
       .select()
-      .from(portfolio)
+      .from(watchlist)
       .where(
         and(
-          eq(portfolio.sessionId, sessionId),
-          eq(portfolio.symbol, body.symbol)
+          eq(watchlist.userId, userId),
+          eq(watchlist.symbol, body.symbol)
         )
       )
       .limit(1);
 
     if (existing.length > 0) {
       // 이미 존재하는 경우 200 반환
-      const response = NextResponse.json(
-        { message: "Symbol already in portfolio", symbol: body.symbol },
+      return NextResponse.json(
+        { message: "Symbol already in watchlist", symbol: body.symbol },
         { status: 200 }
       );
-
-      if (!request.cookies.get("portfolio_session_id")) {
-        response.headers.set("Set-Cookie", createSessionCookie(sessionId));
-      }
-
-      return response;
     }
 
-    // 포트폴리오에 추가
-    await db.insert(portfolio).values({
-      sessionId,
+    // 관심종목에 추가 (사용자 기준)
+    await db.insert(watchlist).values({
+      userId,
       symbol: body.symbol,
     });
 
-    const response = NextResponse.json(
-      { message: "Symbol added to portfolio", symbol: body.symbol },
+    return NextResponse.json(
+      { message: "Symbol added to watchlist", symbol: body.symbol },
       { status: 201 }
     );
-
-    if (!request.cookies.get("portfolio_session_id")) {
-      response.headers.set("Set-Cookie", createSessionCookie(sessionId));
-    }
-
-    return response;
   } catch (error) {
     // Unique 제약조건 위반 시 중복으로 처리
     if (
       error instanceof Error &&
-      (error.message.includes("uq_portfolio_session_symbol") ||
+      (error.message.includes("uq_watchlist_user_symbol") ||
         error.message.includes("duplicate key")) &&
       body
     ) {
-      const sessionId = getOrCreateSessionId(request);
-      const response = NextResponse.json(
-        { message: "Symbol already in portfolio", symbol: body.symbol },
+      return NextResponse.json(
+        { message: "Symbol already in watchlist", symbol: body.symbol },
         { status: 200 }
       );
-
-      if (!request.cookies.get("portfolio_session_id")) {
-        response.headers.set("Set-Cookie", createSessionCookie(sessionId));
-      }
-
-      return response;
     }
 
     const apiError = handleApiError(error);
@@ -401,11 +377,11 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * DELETE: 포트폴리오에서 종목 제거
+ * DELETE: 관심종목(워치리스트)에서 종목 제거
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionId = getOrCreateSessionId(request);
+    const userId = getUserIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get("symbol");
 
@@ -416,31 +392,25 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 해당 세션의 종목만 삭제 가능 (보안)
+    // 해당 사용자의 종목만 삭제 가능 (보안)
     const result = await db
-      .delete(portfolio)
+      .delete(watchlist)
       .where(
-        and(eq(portfolio.sessionId, sessionId), eq(portfolio.symbol, symbol))
+        and(eq(watchlist.userId, userId), eq(watchlist.symbol, symbol))
       )
       .returning();
 
     if (result.length === 0) {
       return NextResponse.json(
-        { error: "Symbol not found in portfolio" },
+        { error: "Symbol not found in watchlist" },
         { status: 404 }
       );
     }
 
-    const response = NextResponse.json(
-      { message: "Symbol removed from portfolio", symbol },
+    return NextResponse.json(
+      { message: "Symbol removed from watchlist", symbol },
       { status: 200 }
     );
-
-    if (!request.cookies.get("portfolio_session_id")) {
-      response.headers.set("Set-Cookie", createSessionCookie(sessionId));
-    }
-
-    return response;
   } catch (error) {
     const apiError = handleApiError(error);
     return NextResponse.json(
@@ -452,3 +422,4 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+

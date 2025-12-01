@@ -1,6 +1,6 @@
 "use client";
 
-import { usePortfolio } from "@/hooks/usePortfolio";
+import { useWatchlist } from "@/hooks/useWatchlist";
 import { Button } from "@/components/ui/button";
 import { Star, ArrowLeft, ExternalLink, TrendingUp } from "lucide-react";
 import TradeForm from "@/components/trades/forms/TradeForm";
@@ -12,7 +12,7 @@ import type {
   StockMAStatus,
   StockRatios,
 } from "@/types/stock-detail";
-import Link from "next/link";
+// TODO: Link가 필요해지면 다시 사용, 현재는 미사용이라 제거
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MAStatusBadge } from "./MAStatusBadge";
@@ -63,7 +63,7 @@ export function StockHeader({
   ratios,
 }: StockHeaderProps) {
   const router = useRouter();
-  const { isInPortfolio, togglePortfolio, refresh } = usePortfolio(false);
+  const { isInWatchlist, toggleWatchlist, refresh } = useWatchlist(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [showTradeForm, setShowTradeForm] = useState(false);
 
@@ -85,17 +85,17 @@ export function StockHeader({
     };
   }, [hasLoaded, refresh]);
 
-  const handleTogglePortfolio = async () => {
+  const handleToggleWatchlist = async () => {
     try {
-      await togglePortfolio(basic.symbol);
+      await toggleWatchlist(basic.symbol);
     } catch (err) {
-      console.error("[StockHeader] togglePortfolio error:", err);
+      console.error("[StockHeader] toggleWatchlist error:", err);
     }
   };
 
   const sectorDisplay = formatSector(basic.sector).display;
   const industryDisplay = formatIndustry(basic.industry).display;
-  const inPortfolio = isInPortfolio(basic.symbol);
+  const inWatchlist = isInWatchlist(basic.symbol);
 
   return (
     <div className="space-y-3">
@@ -116,19 +116,19 @@ export function StockHeader({
             매매 시작
           </Button>
           <Button
-            variant={inPortfolio ? "default" : "outline"}
+            variant={inWatchlist ? "default" : "outline"}
             size="sm"
-            onClick={handleTogglePortfolio}
+            onClick={handleToggleWatchlist}
             className={`h-8 gap-1 text-xs ${
-              inPortfolio
+              inWatchlist
                 ? "bg-amber-500 hover:bg-amber-600 border-amber-500"
                 : ""
             }`}
           >
             <Star
-              className={`h-3.5 w-3.5 ${inPortfolio ? "fill-current" : ""}`}
+              className={`h-3.5 w-3.5 ${inWatchlist ? "fill-current" : ""}`}
             />
-            {inPortfolio ? "저장됨" : "저장"}
+            {inWatchlist ? "저장됨" : "저장"}
           </Button>
           <Button
             variant="outline"

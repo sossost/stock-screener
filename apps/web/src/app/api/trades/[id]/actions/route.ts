@@ -26,7 +26,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     const userId = getUserIdFromRequest(request);
-    const userId = getUserIdFromRequest(request);
 
     // 매매 소유권 확인
     const [trade] = await db
@@ -70,6 +69,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
+    const userId = getUserIdFromRequest(request);
+
     const body: CreateActionRequest = await request.json();
 
     // 입력 검증
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // 매매 존재 및 상태 확인
+    // 매매 존재 및 상태 확인 (소유권 포함)
     const [trade] = await db
       .select()
       .from(trades)

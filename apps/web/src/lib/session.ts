@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { randomUUID, randomBytes } from "crypto";
 
-const SESSION_COOKIE_NAME = "portfolio_session_id";
+const SESSION_COOKIE_NAME = "watchlist_session_id";
 const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1년
 
 /**

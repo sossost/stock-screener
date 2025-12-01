@@ -1,13 +1,13 @@
 /**
- * 포트폴리오 관련 타입 정의
+ * 관심종목(워치리스트) 관련 타입 정의
  */
 
 import type { ScreenerCompany } from "@/types/screener";
 
 /**
- * 포트폴리오에 추가된 종목 항목
+ * 관심종목에 추가된 종목 항목
  */
-export interface PortfolioItem {
+export interface WatchlistItem {
   id: number;
   sessionId: string;
   symbol: string;
@@ -15,18 +15,19 @@ export interface PortfolioItem {
 }
 
 /**
- * 포트폴리오 API 응답 타입
+ * 관심종목 API 응답 타입
  */
-export interface PortfolioResponse {
+export interface WatchlistResponse {
   symbols: string[];
   data?: ScreenerCompany[]; // 재무 데이터가 포함된 경우
   trade_date?: string | null;
 }
 
 /**
- * 포트폴리오 추가 요청 타입
+ * 관심종목 추가 요청 타입
  */
-export interface AddPortfolioRequest {
+export interface AddWatchlistRequest {
   symbol: string;
 }
+
 
