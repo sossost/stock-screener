@@ -58,7 +58,7 @@ export function useWatchlist(autoFetch: boolean = false) {
         body: JSON.stringify({ symbol }),
       });
 
-      if (!response.ok && response.status !== 200) {
+      if (!response.ok) {
         throw new Error("Failed to add symbol to watchlist");
       }
 
