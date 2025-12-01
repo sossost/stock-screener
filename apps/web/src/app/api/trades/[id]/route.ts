@@ -4,8 +4,7 @@ import { trades, tradeActions, symbols, dailyPrices } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { calculateTradeMetrics } from "@/lib/trades/calculations";
 import { UpdateTradeRequest, TradeWithDetails } from "@/lib/trades/types";
-
-const DEFAULT_USER_ID = "0";
+import { getUserIdFromRequest } from "@/lib/auth/user";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -26,6 +25,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
+    const userId = getUserIdFromRequest(request);
+
     // 매매 조회
     const [tradeResult] = await db
       .select({
@@ -35,9 +36,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       })
       .from(trades)
       .leftJoin(symbols, eq(trades.symbol, symbols.symbol))
-      .where(
-        and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID))
-      );
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
     if (!tradeResult) {
       return NextResponse.json(
@@ -112,14 +111,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const body: UpdateTradeRequest = await request.json();
+    const userId = getUserIdFromRequest(request);
 
     // 매매 존재 확인
     const [existingTrade] = await db
       .select()
       .from(trades)
-      .where(
-        and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID))
-      );
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
     if (!existingTrade) {
       return NextResponse.json(

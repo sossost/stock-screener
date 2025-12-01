@@ -2,19 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { portfolioSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-const DEFAULT_USER_ID = "0";
+import { getUserIdFromRequest } from "@/lib/auth/user";
 
 /**
  * GET /api/trades/settings
  * 포트폴리오 설정 조회
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const userId = getUserIdFromRequest(request);
     const [settings] = await db
       .select()
       .from(portfolioSettings)
-      .where(eq(portfolioSettings.userId, DEFAULT_USER_ID));
+      .where(eq(portfolioSettings.userId, userId));
 
     if (!settings) {
       return NextResponse.json({ cashBalance: 0 });
@@ -48,11 +48,13 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const userId = getUserIdFromRequest(request);
+
     // upsert
     await db
       .insert(portfolioSettings)
       .values({
-        userId: DEFAULT_USER_ID,
+        userId,
         cashBalance: cashBalance.toString(),
       })
       .onConflictDoUpdate({

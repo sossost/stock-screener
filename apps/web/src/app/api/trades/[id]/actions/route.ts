@@ -4,8 +4,7 @@ import { trades, tradeActions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { canSellQuantity } from "@/lib/trades/calculations";
 import { CreateActionRequest } from "@/lib/trades/types";
-
-const DEFAULT_USER_ID = "0";
+import { getUserIdFromRequest } from "@/lib/auth/user";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -26,11 +25,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
+    const userId = getUserIdFromRequest(request);
+    const userId = getUserIdFromRequest(request);
+
     // 매매 소유권 확인
     const [trade] = await db
       .select()
       .from(trades)
-      .where(and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID)));
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
     if (!trade) {
       return NextResponse.json(
@@ -96,7 +98,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const [trade] = await db
       .select()
       .from(trades)
-      .where(and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID)));
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
     if (!trade) {
       return NextResponse.json(

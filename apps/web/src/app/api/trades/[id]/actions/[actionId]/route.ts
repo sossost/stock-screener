@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { trades, tradeActions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-
-const DEFAULT_USER_ID = "0";
+import { getUserIdFromRequest } from "@/lib/auth/user";
 
 type RouteContext = {
   params: Promise<{ id: string; actionId: string }>;
@@ -28,11 +27,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const { price, quantity, actionDate, note } = body;
 
+    const userId = getUserIdFromRequest(request);
+
     // 매매 소유권 확인
     const [trade] = await db
       .select()
       .from(trades)
-      .where(and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID)));
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
     if (!trade) {
       return NextResponse.json(
@@ -130,11 +131,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
+    const userId = await getUserIdFromRequest(request);
+
     // 매매 소유권 및 상태 확인
     const [trade] = await db
       .select()
       .from(trades)
-      .where(and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID)));
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
     if (!trade) {
       return NextResponse.json(

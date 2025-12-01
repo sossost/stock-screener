@@ -368,3 +368,18 @@ export const portfolioSettings = pgTable("portfolio_settings", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * 접근 코드 ↔ 사용자 ID 매핑 테이블
+ * - 코드: 배포 전에 수동으로 등록
+ * - userId: 각 코드에 대응되는 실제 사용자 ID
+ */
+export const accessCodes = pgTable("access_codes", {
+  code: text("code").primaryKey(),
+  userId: text("user_id").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+

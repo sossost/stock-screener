@@ -11,9 +11,9 @@ import {
   TradeListFilter,
   TradeListItem,
 } from "@/lib/trades/types";
+import { getUserIdFromRequest } from "@/lib/auth/user";
 
 const SYMBOL_REGEX = /^[A-Z]{1,5}$/;
-const DEFAULT_USER_ID = "0";
 
 /**
  * GET /api/trades - 매매 목록 조회
@@ -24,8 +24,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") as TradeListFilter["status"];
     const symbol = searchParams.get("symbol");
 
+    const userId = getUserIdFromRequest(request);
+
     // 필터 조건 구성
-    const conditions = [eq(trades.userId, DEFAULT_USER_ID)];
+    const conditions = [eq(trades.userId, userId)];
     if (status) {
       conditions.push(eq(trades.status, status));
     }
@@ -116,6 +118,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateTradeRequest = await request.json();
+    const userId = getUserIdFromRequest(request);
 
     // 입력 검증
     if (!body.symbol) {
@@ -172,7 +175,7 @@ export async function POST(request: NextRequest) {
       const [newTrade] = await tx
         .insert(trades)
         .values({
-          userId: DEFAULT_USER_ID,
+          userId,
           symbol: body.symbol,
           status: "OPEN",
           strategy: body.strategy || null,

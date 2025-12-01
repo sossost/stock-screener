@@ -101,13 +101,10 @@ export function StockHeader({
     <div className="space-y-3">
       {/* 상단 네비게이션 */}
       <div className="flex items-center justify-between">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-        >
+        <Button onClick={() => window.close()} variant="ghost" size="sm">
           <ArrowLeft className="h-4 w-4" />
-          뒤로가기
-        </Link>
+          스크리너로 돌아가기
+        </Button>
         <div className="flex items-center gap-2">
           <Button
             variant="default"
