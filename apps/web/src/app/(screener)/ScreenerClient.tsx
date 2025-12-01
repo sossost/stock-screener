@@ -33,28 +33,26 @@ export function ScreenerClient() {
   );
 
   // 필터 상태를 정규화하여 하위 컴포넌트에 전달
-  const normalizedFilterState = React.useMemo<FilterState>(
-    () => ({
-      ordered: filterState.ordered ?? undefined,
-      goldenCross: filterState.goldenCross ?? undefined,
-      justTurned: filterState.justTurned ?? undefined,
-      lookbackDays: filterState.lookbackDays ?? undefined,
-      profitability: filterState.profitability,
-      turnAround: filterState.turnAround ?? undefined,
-      revenueGrowth: filterState.revenueGrowth ?? undefined,
-      revenueGrowthQuarters: filterState.revenueGrowthQuarters,
-      revenueGrowthRate: filterState.revenueGrowthRate ?? null,
-      incomeGrowth: filterState.incomeGrowth ?? undefined,
-      incomeGrowthQuarters: filterState.incomeGrowthQuarters,
-      incomeGrowthRate: filterState.incomeGrowthRate ?? null,
-      pegFilter: filterState.pegFilter ?? undefined,
-      ma20Above: filterState.ma20Above ?? undefined,
-      ma50Above: filterState.ma50Above ?? undefined,
-      ma100Above: filterState.ma100Above ?? undefined,
-      ma200Above: filterState.ma200Above ?? undefined,
-    }),
-    [filterState]
-  );
+  // 계산 비용이 크지 않으므로 useMemo 없이 매 렌더마다 생성
+  const normalizedFilterState: FilterState = {
+    ordered: filterState.ordered ?? undefined,
+    goldenCross: filterState.goldenCross ?? undefined,
+    justTurned: filterState.justTurned ?? undefined,
+    lookbackDays: filterState.lookbackDays ?? undefined,
+    profitability: filterState.profitability,
+    turnAround: filterState.turnAround ?? undefined,
+    revenueGrowth: filterState.revenueGrowth ?? undefined,
+    revenueGrowthQuarters: filterState.revenueGrowthQuarters,
+    revenueGrowthRate: filterState.revenueGrowthRate ?? null,
+    incomeGrowth: filterState.incomeGrowth ?? undefined,
+    incomeGrowthQuarters: filterState.incomeGrowthQuarters,
+    incomeGrowthRate: filterState.incomeGrowthRate ?? null,
+    pegFilter: filterState.pegFilter ?? undefined,
+    ma20Above: filterState.ma20Above ?? undefined,
+    ma50Above: filterState.ma50Above ?? undefined,
+    ma100Above: filterState.ma100Above ?? undefined,
+    ma200Above: filterState.ma200Above ?? undefined,
+  };
 
   const [screenerData, setScreenerData] = React.useState<ScreenerCompany[]>([]);
   const {

@@ -61,6 +61,7 @@ export function FilterView({
             value={tickerSearchInput}
             onChange={(e) => onTickerSearchChange(e.target.value)}
             className="pl-9 w-[200px] h-12"
+            aria-label="티커 검색"
           />
         </div>
       </div>
