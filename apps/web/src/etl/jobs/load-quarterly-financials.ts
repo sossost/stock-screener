@@ -32,8 +32,15 @@ async function upsertQuarter(sym: string, row: any) {
       operatingCashFlow: toStrNum(row.operatingCashFlow),
       freeCashFlow: toStrNum(row.freeCashFlow),
 
-      epsDiluted: toStrNum(row.eps),
-      epsBasic: null,
+      // Non-GAAP Diluted EPS 우선 사용 (없으면 GAAP Diluted EPS 사용)
+      epsDiluted: toStrNum(
+        row.epsDilutedNonGAAP ?? row.adjustedEPS ?? row.epsDiluted ?? row.eps
+      ),
+      // Non-GAAP Basic EPS 우선 사용 (없으면 GAAP Basic EPS 사용, 둘 다 없으면 null)
+      epsBasic:
+        row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.eps
+          ? toStrNum(row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.eps)
+          : null,
     })
     .onConflictDoUpdate({
       target: [quarterlyFinancials.symbol, quarterlyFinancials.periodEndDate],
@@ -46,8 +53,15 @@ async function upsertQuarter(sym: string, row: any) {
         grossProfit: toStrNum(row.grossProfit),
         operatingCashFlow: toStrNum(row.operatingCashFlow),
         freeCashFlow: toStrNum(row.freeCashFlow),
-        epsDiluted: toStrNum(row.eps),
-        epsBasic: null,
+        // Non-GAAP Diluted EPS 우선 사용 (없으면 GAAP Diluted EPS 사용)
+        epsDiluted: toStrNum(
+          row.epsDilutedNonGAAP ?? row.adjustedEPS ?? row.epsDiluted ?? row.eps
+        ),
+        // Non-GAAP Basic EPS 우선 사용 (없으면 GAAP Basic EPS 사용, 둘 다 없으면 null)
+        epsBasic:
+          row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.eps
+            ? toStrNum(row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.eps)
+            : null,
       },
     });
 }
