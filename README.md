@@ -262,16 +262,16 @@ yarn workspace mobile android # Android 에뮬레이터/디바이스
 3. **구현 순서** → 백엔드 → 프론트엔드 → 타입
 4. **셀프 리뷰** → 작성 코드를 "PR 리뷰어 관점"으로 검토
 5. **테스트** → 단위 → API → 컴포넌트 (`yarn test`, `yarn test:all`)
-6. **문서화** → README/AGENTS/spec/plan/tasks 동시 업데이트
+6. **문서화** → README/spec/plan/tasks 동시 업데이트
 7. **빌드 테스트** → `yarn build` (또는 `yarn test:all`)
 
 **추가 가이드**:
 
 - [`docs/FEATURE_DEVELOPMENT_WORKFLOW.md`](./docs/FEATURE_DEVELOPMENT_WORKFLOW.md) - 피쳐 개발 워크플로우 및 3단계 검증 프로세스
-- [`docs/CODE_REVIEW_CHECKLIST.md`](./docs/CODE_REVIEW_CHECKLIST.md) - 코드 리뷰 체크리스트
+- [`docs/CODE_REVIEW_CHECKLIST.md`](./docs/CODE_REVIEW_CHECKLIST.md) - 코드 리뷰 체크리스트 (리팩토링 체크리스트 포함)
 - [`docs/TESTING.md`](./docs/TESTING.md) - 테스트 가이드
-- [`docs/REFACTORING_REVIEW.md`](./docs/REFACTORING_REVIEW.md) - 리팩토링 리뷰 가이드
 - [`docs/FRONTEND_PRACTICES.md`](./docs/FRONTEND_PRACTICES.md) - 프론트엔드 품질 원칙
+- [`docs/AI_AGENT_GUIDE.md`](./docs/AI_AGENT_GUIDE.md) - **AI 에이전트 가이드: 프로젝트 분석 & 비즈니스 이해**
 
 ## 📁 폴더 구조
 
