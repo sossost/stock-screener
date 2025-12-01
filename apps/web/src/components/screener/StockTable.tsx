@@ -27,6 +27,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { formatSector } from "@/utils/sector";
 import Link from "next/link";
 import { INFINITE_SCROLL } from "@/lib/filters/constants";
+import { loadSortState, saveSortState, type SortState as StoredSortState } from "@/utils/sort-storage";
 
 interface StockTableProps {
   data: ScreenerCompany[];
@@ -38,10 +39,7 @@ interface StockTableProps {
   onSymbolToggle?: (symbol: string) => void;
 }
 
-type SortState = {
-  key: SortKey;
-  direction: "asc" | "desc";
-};
+// SortState는 utils/sort-storage.ts에서 import하므로 여기서는 제거
 
 function SortHeader({
   label,
@@ -189,10 +187,19 @@ export function StockTable({
     }
   }, [togglePortfolio, onSymbolToggle]);
 
-  const [sort, setSort] = React.useState<SortState>({
-    key: defaultSort.key,
-    direction: defaultSort.direction,
+  // localStorage에서 정렬 상태 로드 (마운트 시 한 번만)
+  const [sort, setSort] = React.useState<StoredSortState>(() => {
+    const saved = loadSortState();
+    return saved ?? {
+      key: defaultSort.key,
+      direction: defaultSort.direction,
+    };
   });
+
+  // 정렬 상태 변경 시 localStorage에 저장
+  React.useEffect(() => {
+    saveSortState(sort);
+  }, [sort]);
 
   const sortedData = React.useMemo(() => {
     const toNum = (value: string | number | null | undefined) => {
