@@ -41,7 +41,7 @@ export function loadSortState(): SortState | null {
     }
 
     const parsed = JSON.parse(stored) as SortState;
-    
+
     // 유효성 검증
     if (
       parsed &&
@@ -51,7 +51,7 @@ export function loadSortState(): SortState | null {
     ) {
       return parsed;
     }
-    
+
     // 유효하지 않은 데이터는 삭제
     localStorage.removeItem(STORAGE_KEY);
     return null;
@@ -81,4 +81,3 @@ export function clearSortState(): void {
     console.error("Failed to clear sort state from localStorage:", error);
   }
 }
-

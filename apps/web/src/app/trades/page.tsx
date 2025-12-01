@@ -13,8 +13,10 @@ interface PageProps {
 
 export default async function TradesPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const status = (params.status === "CLOSED" ? "CLOSED" : "OPEN") as TradeStatus;
-  
+  const status = (
+    params.status === "CLOSED" ? "CLOSED" : "OPEN"
+  ) as TradeStatus;
+
   // 병렬 fetch
   const [trades, cashBalance] = await Promise.all([
     getTradesList(status),

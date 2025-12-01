@@ -5,7 +5,13 @@ import { API_BASE_URL } from "@/lib/config/constants";
 import { LogEntry } from "@/types/etl";
 import { StateMessage } from "@/components/common/StateMessage";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface LogsResponse {
   success: boolean;
@@ -122,7 +128,13 @@ export function ETLLogs() {
   }
 
   if (error) {
-    return <StateMessage variant="error" title="로그를 불러오지 못했습니다" description={error} />;
+    return (
+      <StateMessage
+        variant="error"
+        title="로그를 불러오지 못했습니다"
+        description={error}
+      />
+    );
   }
 
   return (
@@ -187,7 +199,10 @@ export function ETLLogs() {
       {/* 로그 목록 */}
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {logs.length === 0 ? (
-          <StateMessage title="로그가 없습니다" description="필터를 변경하거나 나중에 다시 확인해 주세요." />
+          <StateMessage
+            title="로그가 없습니다"
+            description="필터를 변경하거나 나중에 다시 확인해 주세요."
+          />
         ) : (
           logs.map((log, index) => (
             <div
@@ -241,7 +256,9 @@ export function ETLLogs() {
                 setError(null);
               } else {
                 setLogs([]);
-                setError("로그를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+                setError(
+                  "로그를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+                );
               }
               setLoading(false);
             });

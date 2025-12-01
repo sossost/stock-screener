@@ -17,9 +17,13 @@ export function PriceCard({ price, maStatus, marketCap }: PriceCardProps) {
       {/* 현재가 */}
       <div className="rounded-lg border bg-white p-4 shadow-sm">
         <p className="text-sm font-medium text-muted-foreground">현재가</p>
-        <p className="mt-1 text-2xl font-bold">{formatPrice(price.lastClose)}</p>
+        <p className="mt-1 text-2xl font-bold">
+          {formatPrice(price.lastClose)}
+        </p>
         {price.date && (
-          <p className="mt-1 text-xs text-muted-foreground">기준일: {price.date}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            기준일: {price.date}
+          </p>
         )}
       </div>
 

@@ -11,4 +11,3 @@ export const STOCK_COLORS = [
 ] as const;
 
 export const CASH_COLOR = "#cbd5e1"; // slate-300
-

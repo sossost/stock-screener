@@ -25,7 +25,10 @@ function StatsSkeleton() {
         {/* 요약 카드 스켈레톤 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-xl border p-4 animate-pulse">
+            <div
+              key={i}
+              className="bg-white rounded-xl border p-4 animate-pulse"
+            >
               <div className="h-5 w-16 bg-gray-100 rounded mb-2" />
               <div className="h-8 w-20 bg-gray-200 rounded mb-1" />
               <div className="h-4 w-24 bg-gray-100 rounded" />
@@ -204,9 +207,13 @@ export default function StatsClient() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
               <p className="text-sm text-gray-500 mb-1">Profit Factor</p>
-              <p className={`text-xl font-bold ${
-                stats.profitFactor && stats.profitFactor >= 1 ? "text-green-600" : "text-red-600"
-              }`}>
+              <p
+                className={`text-xl font-bold ${
+                  stats.profitFactor && stats.profitFactor >= 1
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
                 {stats.profitFactor ? formatRatio(stats.profitFactor) : "-"}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">총이익/총손실</p>
@@ -214,7 +221,9 @@ export default function StatsClient() {
             <div>
               <p className="text-sm text-gray-500 mb-1">평균 보유기간</p>
               <p className="text-xl font-bold">
-                {stats.avgHoldingDays ? `${Math.round(stats.avgHoldingDays)}일` : "-"}
+                {stats.avgHoldingDays
+                  ? `${Math.round(stats.avgHoldingDays)}일`
+                  : "-"}
               </p>
             </div>
             <div>
@@ -238,20 +247,35 @@ export default function StatsClient() {
             <h2 className="font-semibold mb-4">🎯 전략별 성과</h2>
             <div className="space-y-3">
               {stats.strategyStats.map((s) => (
-                <div key={s.strategy} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div
+                  key={s.strategy}
+                  className="flex items-center justify-between py-2 border-b last:border-0"
+                >
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{s.strategy}</span>
                     <span className="text-sm text-gray-500">{s.trades}건</span>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
-                    <span className={s.winRate >= 50 ? "text-green-600" : "text-red-600"}>
+                    <span
+                      className={
+                        s.winRate >= 50 ? "text-green-600" : "text-red-600"
+                      }
+                    >
                       승률 {formatPercent(s.winRate, 0)}
                     </span>
-                    <span className={s.totalPnl >= 0 ? "text-green-600" : "text-red-600"}>
+                    <span
+                      className={
+                        s.totalPnl >= 0 ? "text-green-600" : "text-red-600"
+                      }
+                    >
                       {formatPnl(s.totalPnl)}
                     </span>
                     {s.avgR !== null && (
-                      <span className={s.avgR >= 0 ? "text-green-600" : "text-red-600"}>
+                      <span
+                        className={
+                          s.avgR >= 0 ? "text-green-600" : "text-red-600"
+                        }
+                      >
                         {formatRatio(s.avgR)}R
                       </span>
                     )}
@@ -273,9 +297,7 @@ export default function StatsClient() {
             <div className="space-y-3">
               {mistakeEntries.map(([tag, count]) => {
                 const percentage =
-                  stats.totalTrades > 0
-                    ? (count / stats.totalTrades) * 100
-                    : 0;
+                  stats.totalTrades > 0 ? (count / stats.totalTrades) * 100 : 0;
                 const isSuccess = tag === "원칙준수";
 
                 return (
@@ -322,4 +344,3 @@ export default function StatsClient() {
     </div>
   );
 }
-

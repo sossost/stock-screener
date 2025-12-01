@@ -95,4 +95,3 @@ export type GrowthStatus = "growing" | "not_growing" | "unknown";
 
 // 수익성 상태 타입
 export type ProfitabilityStatus = "profitable" | "unprofitable" | "unknown";
-

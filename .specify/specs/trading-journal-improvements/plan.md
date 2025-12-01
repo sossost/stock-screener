@@ -168,3 +168,4 @@ Phase 4 (버그/품질)
 - [ ] `yarn lint` 통과 확인
 - [ ] 브랜치 생성: `git checkout -b feature/trading-journal-improvements`
 
+

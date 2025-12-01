@@ -130,7 +130,6 @@ export default function AssetFlowChart({
     }
   };
 
-
   // 빈 상태
   if (chartData.length === 0 && !loading) {
     return (

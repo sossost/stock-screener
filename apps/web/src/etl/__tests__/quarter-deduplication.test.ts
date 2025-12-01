@@ -83,9 +83,22 @@ describe("deduplicateByQuarter", () => {
   });
 
   it("should preserve all row properties", () => {
-    const map = new Map<string, { date: string; revenue: number; netIncome: number; eps: number }>();
-    map.set("2025-06-28", { date: "2025-06-28", revenue: 425200000, netIncome: 10000000, eps: 0.5 });
-    map.set("2025-06-30", { date: "2025-06-30", revenue: 480700000, netIncome: 15000000, eps: 0.75 });
+    const map = new Map<
+      string,
+      { date: string; revenue: number; netIncome: number; eps: number }
+    >();
+    map.set("2025-06-28", {
+      date: "2025-06-28",
+      revenue: 425200000,
+      netIncome: 10000000,
+      eps: 0.5,
+    });
+    map.set("2025-06-30", {
+      date: "2025-06-30",
+      revenue: 480700000,
+      netIncome: 15000000,
+      eps: 0.75,
+    });
 
     const result = deduplicateByQuarter(map);
 
@@ -101,7 +114,10 @@ describe("deduplicateByQuarter", () => {
     const map = new Map<string, { date: string; revenue: number }>();
     map.set("2025-06-30", { date: "2025-06-30", revenue: 480700000 });
     map.set("invalid", { date: "", revenue: 100000000 }); // 빈 문자열
-    map.set("null-date", { date: null as unknown as string, revenue: 200000000 }); // null
+    map.set("null-date", {
+      date: null as unknown as string,
+      revenue: 200000000,
+    }); // null
 
     const result = deduplicateByQuarter(map);
 
@@ -123,4 +139,3 @@ describe("deduplicateByQuarter", () => {
     expect(result.get("2025Q2")?.date).toBe("2025-06-30");
   });
 });
-

@@ -56,8 +56,10 @@ describe("filter-storage", () => {
     });
 
     it("should handle localStorage access failure gracefully", () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       // localStorage.setItem을 throw하도록 모킹
       const originalSetItem = localStorageMock.setItem;
       localStorageMock.setItem = vi.fn(() => {
@@ -117,8 +119,10 @@ describe("filter-storage", () => {
     });
 
     it("should return null and remove invalid JSON from localStorage", () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       // 잘못된 JSON 저장
       localStorageMock.setItem(STORAGE_KEY, "invalid json{");
 
@@ -135,8 +139,10 @@ describe("filter-storage", () => {
     });
 
     it("should handle localStorage.getItem failure gracefully", () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       // localStorage.getItem을 throw하도록 모킹
       const originalGetItem = localStorageMock.getItem;
       localStorageMock.getItem = vi.fn(() => {
@@ -178,8 +184,10 @@ describe("filter-storage", () => {
     });
 
     it("should handle localStorage.removeItem failure gracefully", () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       // localStorage.removeItem을 throw하도록 모킹
       const originalRemoveItem = localStorageMock.removeItem;
       localStorageMock.removeItem = vi.fn(() => {
@@ -301,4 +309,3 @@ describe("filter-storage", () => {
     });
   });
 });
-

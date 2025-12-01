@@ -113,13 +113,13 @@ export const QuarterlyBarChart = React.memo(function QuarterlyBarChart({
         const barHeight = isZero
           ? CHART_CONFIG.ZERO_BAR_HEIGHT
           : item.value
-          ? Math.max(
-              (Math.abs(item.value) / maxValue) *
-                height *
-                CHART_CONFIG.HEIGHT_MULTIPLIER,
-              CHART_CONFIG.MIN_BAR_HEIGHT
-            )
-          : CHART_CONFIG.MIN_BAR_HEIGHT;
+            ? Math.max(
+                (Math.abs(item.value) / maxValue) *
+                  height *
+                  CHART_CONFIG.HEIGHT_MULTIPLIER,
+                CHART_CONFIG.MIN_BAR_HEIGHT
+              )
+            : CHART_CONFIG.MIN_BAR_HEIGHT;
         const color = getBarColor(item.value);
 
         return (

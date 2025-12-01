@@ -25,12 +25,11 @@ export default function AssetFlowTooltip({
 
   const left = Math.min(
     position.x + margin,
-    typeof window !== "undefined" ? window.innerWidth - tooltipWidth - margin : position.x + margin
+    typeof window !== "undefined"
+      ? window.innerWidth - tooltipWidth - margin
+      : position.x + margin
   );
-  const top = Math.max(
-    position.y - tooltipHeight - margin,
-    margin
-  );
+  const top = Math.max(position.y - tooltipHeight - margin, margin);
 
   return (
     <div
@@ -48,4 +47,3 @@ export default function AssetFlowTooltip({
     </div>
   );
 }
-

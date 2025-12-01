@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { TradeWithDetails, PlanTarget, StrategyTag, MistakeTag, UpdateTradeRequest } from "@/lib/trades/types";
+import {
+  TradeWithDetails,
+  PlanTarget,
+  StrategyTag,
+  MistakeTag,
+  UpdateTradeRequest,
+} from "@/lib/trades/types";
 import { STRATEGY_TAGS, MISTAKE_TAGS } from "@/db/schema";
 
 interface TradeEditModalProps {
@@ -12,34 +18,50 @@ interface TradeEditModalProps {
   onUpdated: () => void;
 }
 
-export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditModalProps) {
+export default function TradeEditModal({
+  trade,
+  onClose,
+  onUpdated,
+}: TradeEditModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 폼 상태
-  const [strategy, setStrategy] = useState<StrategyTag | "">((trade.strategy as StrategyTag) || "");
-  const [planEntryPrice, setPlanEntryPrice] = useState(trade.planEntryPrice || "");
+  const [strategy, setStrategy] = useState<StrategyTag | "">(
+    (trade.strategy as StrategyTag) || ""
+  );
+  const [planEntryPrice, setPlanEntryPrice] = useState(
+    trade.planEntryPrice || ""
+  );
   const [planStopLoss, setPlanStopLoss] = useState(trade.planStopLoss || "");
   const [entryReason, setEntryReason] = useState(trade.entryReason || "");
-  const [commissionRate, setCommissionRate] = useState(trade.commissionRate || "0.07");
+  const [commissionRate, setCommissionRate] = useState(
+    trade.commissionRate || "0.07"
+  );
 
   // n차 목표가
-  const initialTargets: PlanTarget[] = trade.planTargets && trade.planTargets.length > 0
-    ? trade.planTargets
-    : trade.planTargetPrice
-      ? [{ price: parseFloat(trade.planTargetPrice), weight: 100 }]
-      : [{ price: 0, weight: 100 }];
+  const initialTargets: PlanTarget[] =
+    trade.planTargets && trade.planTargets.length > 0
+      ? trade.planTargets
+      : trade.planTargetPrice
+        ? [{ price: parseFloat(trade.planTargetPrice), weight: 100 }]
+        : [{ price: 0, weight: 100 }];
   const [targets, setTargets] = useState<PlanTarget[]>(initialTargets);
 
   // 복기 (CLOSED인 경우)
-  const [mistakeType, setMistakeType] = useState<MistakeTag | "">((trade.mistakeType as MistakeTag) || "");
+  const [mistakeType, setMistakeType] = useState<MistakeTag | "">(
+    (trade.mistakeType as MistakeTag) || ""
+  );
   const [reviewNote, setReviewNote] = useState(trade.reviewNote || "");
 
   const isOpen = trade.status === "OPEN";
 
   const handleAddTarget = () => {
     const remainingWeight = 100 - targets.reduce((sum, t) => sum + t.weight, 0);
-    setTargets([...targets, { price: 0, weight: Math.max(0, remainingWeight) }]);
+    setTargets([
+      ...targets,
+      { price: 0, weight: Math.max(0, remainingWeight) },
+    ]);
   };
 
   const handleRemoveTarget = (index: number) => {
@@ -47,7 +69,11 @@ export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditM
     setTargets(targets.filter((_, i) => i !== index));
   };
 
-  const handleTargetChange = (index: number, field: "price" | "weight", value: string) => {
+  const handleTargetChange = (
+    index: number,
+    field: "price" | "weight",
+    value: string
+  ) => {
     const newTargets = [...targets];
     newTargets[index] = {
       ...newTargets[index],
@@ -64,11 +90,17 @@ export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditM
     try {
       const body: UpdateTradeRequest = {
         strategy: strategy || undefined,
-        planEntryPrice: planEntryPrice ? parseFloat(String(planEntryPrice)) : undefined,
-        planStopLoss: planStopLoss ? parseFloat(String(planStopLoss)) : undefined,
+        planEntryPrice: planEntryPrice
+          ? parseFloat(String(planEntryPrice))
+          : undefined,
+        planStopLoss: planStopLoss
+          ? parseFloat(String(planStopLoss))
+          : undefined,
         planTargets: targets.filter((t) => t.price > 0),
         entryReason: entryReason || undefined,
-        commissionRate: commissionRate ? parseFloat(String(commissionRate)) : undefined,
+        commissionRate: commissionRate
+          ? parseFloat(String(commissionRate))
+          : undefined,
       };
 
       // CLOSED인 경우 복기 정보 추가
@@ -133,7 +165,9 @@ export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditM
             >
               <option value="">선택</option>
               {STRATEGY_TAGS.map((tag) => (
-                <option key={tag} value={tag}>{tag}</option>
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
               ))}
             </select>
           </div>
@@ -171,7 +205,9 @@ export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditM
           {/* n차 목표가 */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">목표가</label>
+              <label className="text-sm font-medium text-gray-700">
+                목표가
+              </label>
               <Button
                 type="button"
                 variant="ghost"
@@ -185,19 +221,25 @@ export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditM
             <div className="space-y-2">
               {targets.map((target, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 w-8">{index + 1}차</span>
+                  <span className="text-xs text-gray-500 w-8">
+                    {index + 1}차
+                  </span>
                   <input
                     type="number"
                     step="0.01"
                     value={target.price || ""}
-                    onChange={(e) => handleTargetChange(index, "price", e.target.value)}
+                    onChange={(e) =>
+                      handleTargetChange(index, "price", e.target.value)
+                    }
                     className="flex-1 border rounded-md px-3 py-2 text-sm"
                     placeholder="가격"
                   />
                   <input
                     type="number"
                     value={target.weight || ""}
-                    onChange={(e) => handleTargetChange(index, "weight", e.target.value)}
+                    onChange={(e) =>
+                      handleTargetChange(index, "weight", e.target.value)
+                    }
                     className="w-20 border rounded-md px-3 py-2 text-sm"
                     placeholder="%"
                   />
@@ -251,8 +293,10 @@ export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditM
           {!isOpen && (
             <>
               <div className="border-t pt-5">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">📝 매매 복기</h3>
-                
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  📝 매매 복기
+                </h3>
+
                 {/* 실수 태그 */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -260,12 +304,16 @@ export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditM
                   </label>
                   <select
                     value={mistakeType}
-                    onChange={(e) => setMistakeType(e.target.value as MistakeTag)}
+                    onChange={(e) =>
+                      setMistakeType(e.target.value as MistakeTag)
+                    }
                     className="w-full border rounded-md px-3 py-2 text-sm"
                   >
                     <option value="">선택</option>
                     {MISTAKE_TAGS.map((tag) => (
-                      <option key={tag} value={tag}>{tag}</option>
+                      <option key={tag} value={tag}>
+                        {tag}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -306,4 +354,3 @@ export default function TradeEditModal({ trade, onClose, onUpdated }: TradeEditM
     </div>
   );
 }
-

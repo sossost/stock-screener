@@ -17,8 +17,7 @@ export function StateMessage({
   onAction,
 }: StateMessageProps) {
   const Icon = variant === "error" ? AlertTriangle : Info;
-  const iconColor =
-    variant === "error" ? "text-red-500" : "text-blue-500";
+  const iconColor = variant === "error" ? "text-red-500" : "text-blue-500";
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">

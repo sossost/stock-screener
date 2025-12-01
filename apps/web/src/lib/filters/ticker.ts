@@ -44,4 +44,3 @@ export function filterTickerData<T extends { symbol: string }>(
     item.symbol.toUpperCase().includes(normalizedQuery)
   );
 }
-

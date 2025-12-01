@@ -424,15 +424,15 @@ function buildWhereFilters(params: ScreenerParams): SQL {
       revenueGrowth && revenueGrowthRate !== null
         ? sql`AND qf.revenue_growth_quarters >= ${revenueGrowthQuarters} AND qf.revenue_avg_growth_rate IS NOT NULL AND qf.revenue_avg_growth_rate >= ${revenueGrowthRate}`
         : revenueGrowth
-        ? sql`AND qf.revenue_growth_quarters >= ${revenueGrowthQuarters}`
-        : sql``
+          ? sql`AND qf.revenue_growth_quarters >= ${revenueGrowthQuarters}`
+          : sql``
     }
     ${
       incomeGrowth && incomeGrowthRate !== null
         ? sql`AND qf.income_growth_quarters >= ${incomeGrowthQuarters} AND qf.income_avg_growth_rate IS NOT NULL AND qf.income_avg_growth_rate >= ${incomeGrowthRate}`
         : incomeGrowth
-        ? sql`AND qf.income_growth_quarters >= ${incomeGrowthQuarters}`
-        : sql``
+          ? sql`AND qf.income_growth_quarters >= ${incomeGrowthQuarters}`
+          : sql``
     }
     ${
       pegFilter
@@ -482,7 +482,7 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
 
   // justTurned 필터가 필요할 때만 prev_ma와 prev_status CTE 포함
   if (needPrevStatus) {
-  return sql`
+    return sql`
     WITH last_d AS (
       ${buildLastDateCTE(requireMA)}
     ),

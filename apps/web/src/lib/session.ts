@@ -16,7 +16,7 @@ function generateSessionId(): string {
     const bytes = randomBytes(16);
     bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
     bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10
-    
+
     return [
       bytes.toString("hex", 0, 4),
       bytes.toString("hex", 4, 6),
@@ -52,6 +52,6 @@ export function createSessionCookie(sessionId: string): string {
   // 프로덕션 환경에서는 Secure 플래그 추가 (HTTPS 전용)
   const isProduction = process.env.NODE_ENV === "production";
   const secureFlag = isProduction ? "; Secure" : "";
-  
+
   return `${SESSION_COOKIE_NAME}=${sessionId}; Path=/; Max-Age=${SESSION_COOKIE_MAX_AGE}; HttpOnly; SameSite=Lax${secureFlag}`;
 }

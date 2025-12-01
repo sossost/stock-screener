@@ -43,7 +43,7 @@ describe("quarterlyFinancials 매핑", () => {
       { asOfQ: "Q3 2024", periodEndDate: "2024-09-30" },
       { asOfQ: "Q2 2024", periodEndDate: "2024-06-30" },
     ];
-    
+
     const result = mockData.reverse();
     expect(result[0].asOfQ).toBe("Q2 2024"); // 오래된 것이 먼저
     expect(result[result.length - 1].asOfQ).toBe("Q4 2024"); // 최신이 마지막

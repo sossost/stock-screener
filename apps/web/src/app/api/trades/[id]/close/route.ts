@@ -99,10 +99,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     console.error("[Trades API] close error:", error);
-    return NextResponse.json(
-      { error: "매매 종료 실패" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "매매 종료 실패" }, { status: 500 });
   }
 }
-

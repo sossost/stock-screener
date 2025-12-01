@@ -17,5 +17,3 @@ export function WatchlistClientWrapper() {
 
   return null;
 }
-
-

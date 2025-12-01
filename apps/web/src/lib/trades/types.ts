@@ -207,4 +207,3 @@ export interface TradeStats {
   /** 전략별 통계 */
   strategyStats?: StrategyStats[];
 }
-

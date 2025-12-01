@@ -167,11 +167,7 @@ export default function PositionCalculator({
               </div>
 
               {onApply && calculation.quantity > 0 && (
-                <Button
-                  onClick={handleApply}
-                  size="sm"
-                  className="w-full mt-2"
-                >
+                <Button onClick={handleApply} size="sm" className="w-full mt-2">
                   매매에 적용
                 </Button>
               )}
@@ -182,4 +178,3 @@ export default function PositionCalculator({
     </div>
   );
 }
-

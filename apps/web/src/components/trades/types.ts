@@ -7,4 +7,3 @@ export interface Segment {
   weight: number;
   color: string;
 }
-

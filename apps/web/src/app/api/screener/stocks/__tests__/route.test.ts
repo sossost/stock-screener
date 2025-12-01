@@ -130,7 +130,9 @@ describe("GET /api/screener/stocks", () => {
     const response = await GET(request);
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toContain("revenueGrowthRate must be between 0 and 1000");
+    expect(data.error).toContain(
+      "revenueGrowthRate must be between 0 and 1000"
+    );
   });
 
   it("잘못된 incomeGrowthRate 범위 검증", async () => {
@@ -214,4 +216,3 @@ describe("GET /api/screener/stocks", () => {
     expect(data.error).toContain("revenueGrowthRate must be a valid number");
   });
 });
-

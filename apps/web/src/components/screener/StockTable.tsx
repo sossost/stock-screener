@@ -170,7 +170,11 @@ export function StockTable({
 }: StockTableProps) {
   // 관심종목은 마운트 시 한 번만 로드하여 상태 표시
   // 관심종목 자동 로드 (초기 로드 시 상태 표시를 위해)
-  const { isInWatchlist, toggleWatchlist, isLoading: isWatchlistLoading } = useWatchlist(true);
+  const {
+    isInWatchlist,
+    toggleWatchlist,
+    isLoading: isWatchlistLoading,
+  } = useWatchlist(true);
 
   // 관심종목 버튼 클릭 핸들러 (메모이제이션)
   const handleToggleWatchlist = React.useCallback(
@@ -397,8 +401,8 @@ export function StockTable({
                 col.align === "right"
                   ? "text-right"
                   : col.align === "center"
-                  ? "text-center"
-                  : "",
+                    ? "text-center"
+                    : "",
                 sortable ? "cursor-pointer select-none" : "",
               ]
                 .filter(Boolean)
@@ -493,8 +497,8 @@ const StockTableRow = React.memo(function StockTableRow({
           col.align === "right"
             ? "text-right"
             : col.align === "center"
-            ? "text-center"
-            : "";
+              ? "text-center"
+              : "";
         const widthClass = col.width ?? "";
 
         switch (col.key) {

@@ -120,8 +120,8 @@ function transformResults(
       r.latest_eps !== null && r.latest_eps > 0
         ? "profitable"
         : r.latest_eps !== null && r.latest_eps < 0
-        ? "unprofitable"
-        : "unknown",
+          ? "unprofitable"
+          : "unknown",
     turned_profitable:
       r.turned_profitable === null || r.turned_profitable === undefined
         ? null

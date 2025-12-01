@@ -251,14 +251,16 @@ async function fetchWatchlistData() {
     sector: r.sector ?? null,
     last_close: r.last_close.toString(),
     rs_score:
-      r.rs_score === null || r.rs_score === undefined ? null : Number(r.rs_score),
+      r.rs_score === null || r.rs_score === undefined
+        ? null
+        : Number(r.rs_score),
     quarterly_financials: r.quarterly_data || [],
     profitability_status:
       r.latest_eps !== null && r.latest_eps > 0
         ? "profitable"
         : r.latest_eps !== null && r.latest_eps < 0
-        ? "unprofitable"
-        : "unknown",
+          ? "unprofitable"
+          : "unknown",
     revenue_growth_quarters: r.revenue_growth_quarters || 0,
     income_growth_quarters: r.income_growth_quarters || 0,
     revenue_avg_growth_rate: r.revenue_avg_growth_rate,
@@ -293,5 +295,3 @@ export async function WatchlistDataWrapper() {
     <WatchlistTableClient symbols={symbols} data={data} tradeDate={tradeDate} />
   );
 }
-
-

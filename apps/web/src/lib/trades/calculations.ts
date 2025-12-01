@@ -128,7 +128,9 @@ export interface StrategyStats {
 /**
  * 여러 매매의 통계 계산
  */
-export function calculateTradeStats(trades: (Trade & { actions: TradeAction[] })[]) {
+export function calculateTradeStats(
+  trades: (Trade & { actions: TradeAction[] })[]
+) {
   const closedTrades = trades.filter((t) => t.status === "CLOSED");
 
   if (closedTrades.length === 0) {
@@ -173,13 +175,16 @@ export function calculateTradeStats(trades: (Trade & { actions: TradeAction[] })
   let lastResult: "win" | "loss" | null = null;
 
   // 전략별 통계
-  const strategyMap = new Map<string, {
-    trades: number;
-    wins: number;
-    losses: number;
-    totalPnl: number;
-    rValues: number[];
-  }>();
+  const strategyMap = new Map<
+    string,
+    {
+      trades: number;
+      wins: number;
+      losses: number;
+      totalPnl: number;
+      rValues: number[];
+    }
+  >();
 
   // 날짜순 정렬 (endDate 우선, 없으면 createdAt 사용)
   const sortedTrades = [...closedTrades].sort((a, b) => {
@@ -380,4 +385,3 @@ export function calculateUnrealizedPnl(
 
   return { unrealizedPnl, unrealizedRoi };
 }
-

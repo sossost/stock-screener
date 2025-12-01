@@ -18,7 +18,9 @@ import { calculateMAStatus } from "./ma-status";
 /**
  * 문자열을 숫자로 파싱, NaN이면 null 반환
  */
-export function parseNumericOrNull(value: string | null | undefined): number | null {
+export function parseNumericOrNull(
+  value: string | null | undefined
+): number | null {
   if (!value) return null;
   const parsed = parseFloat(value);
   return isNaN(parsed) ? null : parsed;

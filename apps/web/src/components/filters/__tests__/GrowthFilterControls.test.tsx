@@ -226,4 +226,3 @@ describe("GrowthFilterControls", () => {
     expect(setIncomeGrowth).toHaveBeenCalledWith(true);
   });
 });
-

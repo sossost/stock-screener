@@ -29,5 +29,3 @@ export interface WatchlistResponse {
 export interface AddWatchlistRequest {
   symbol: string;
 }
-
-
