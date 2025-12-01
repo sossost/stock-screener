@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { quarterlyFinancials } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { asQuarter, fetchJson, sleep, toStrNum, ensureSymbol } from "../utils";
+import { deduplicateByQuarter } from "../utils/quarter-deduplication";
 
 const API = process.env.DATA_API! + "/stable";
 const KEY = process.env.FMP_API_KEY!;
@@ -76,14 +77,7 @@ async function loadOne(symbol: string) {
   }
 
   // 같은 분기(asOfQ)에 대해 가장 최신 날짜만 유지
-  const quarterMap = new Map<string, any>();
-  for (const [, row] of map) {
-    const asQ = asQuarter(row.date);
-    const existing = quarterMap.get(asQ);
-    if (!existing || row.date > existing.date) {
-      quarterMap.set(asQ, row);
-    }
-  }
+  const quarterMap = deduplicateByQuarter(map);
 
   await ensureSymbol(symbol);
 
