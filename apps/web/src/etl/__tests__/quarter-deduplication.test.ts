@@ -96,5 +96,31 @@ describe("deduplicateByQuarter", () => {
     expect(selected?.netIncome).toBe(15000000);
     expect(selected?.eps).toBe(0.75);
   });
+
+  it("should skip rows with invalid date", () => {
+    const map = new Map<string, { date: string; revenue: number }>();
+    map.set("2025-06-30", { date: "2025-06-30", revenue: 480700000 });
+    map.set("invalid", { date: "", revenue: 100000000 }); // 빈 문자열
+    map.set("null-date", { date: null as unknown as string, revenue: 200000000 }); // null
+
+    const result = deduplicateByQuarter(map);
+
+    // 유효한 날짜만 처리됨
+    expect(result.size).toBe(1);
+    expect(result.get("2025Q2")?.date).toBe("2025-06-30");
+  });
+
+  it("should handle rows with missing date property gracefully", () => {
+    const map = new Map<string, { date: string; revenue: number }>();
+    map.set("2025-06-30", { date: "2025-06-30", revenue: 480700000 });
+    // @ts-expect-error - 테스트를 위해 의도적으로 date 누락
+    map.set("no-date", { revenue: 100000000 });
+
+    const result = deduplicateByQuarter(map);
+
+    // 유효한 날짜만 처리됨
+    expect(result.size).toBe(1);
+    expect(result.get("2025Q2")?.date).toBe("2025-06-30");
+  });
 });
 
