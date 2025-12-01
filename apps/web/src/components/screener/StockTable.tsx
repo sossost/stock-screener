@@ -169,15 +169,8 @@ export function StockTable({
   onSymbolToggle,
 }: StockTableProps) {
   // 관심종목은 마운트 시 한 번만 로드하여 상태 표시
-  const { isInWatchlist, toggleWatchlist, refresh } = useWatchlist(false);
-  const [hasLoaded, setHasLoaded] = React.useState(false);
-
-  // 마운트 시 한 번만 관심종목 로드 (상태 표시를 위해)
-  React.useEffect(() => {
-    if (!hasLoaded) {
-      refresh().then(() => setHasLoaded(true));
-    }
-  }, [hasLoaded, refresh]);
+  // 관심종목 자동 로드 (초기 로드 시 상태 표시를 위해)
+  const { isInWatchlist, toggleWatchlist, isLoading: isWatchlistLoading } = useWatchlist(true);
 
   // 관심종목 버튼 클릭 핸들러 (메모이제이션)
   const handleToggleWatchlist = React.useCallback(
@@ -273,13 +266,18 @@ export function StockTable({
   }, [data, sort]);
 
   // 관심종목 상태 맵 생성 (5000번 호출 방지) - sortedData 이후에 선언
+  // 관심종목 맵 생성 (로딩 중이면 빈 맵 반환하여 별표 표시 안 함)
   const watchlistMap = React.useMemo(() => {
     const map = new Map<string, boolean>();
+    // 관심종목 로딩 중이면 빈 맵 반환 (별표 표시 안 함)
+    if (isWatchlistLoading) {
+      return map;
+    }
     sortedData.forEach((c) => {
       map.set(c.symbol, isInWatchlist(c.symbol));
     });
     return map;
-  }, [sortedData, isInWatchlist]);
+  }, [sortedData, isInWatchlist, isWatchlistLoading]);
 
   // 무한 스크롤을 위한 상태
   const [visibleCount, setVisibleCount] = React.useState<number>(
