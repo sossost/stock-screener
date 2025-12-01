@@ -1,23 +1,40 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense } from "react";
 import { useFilterState } from "@/hooks/useFilterState";
-import { useTickerSearch } from "@/hooks/useTickerSearch";
+import { useSortState } from "@/hooks/useSortState";
+import { useFilterInitialization } from "@/hooks/useFilterInitialization";
 import { useFilterActions } from "@/hooks/useFilterActions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CategoryFilterBox } from "@/components/filters/CategoryFilterBox";
-import { CategoryFilterDialog } from "@/components/filters/CategoryFilterDialog";
-import type { FilterState, FilterCategory } from "@/lib/filters/summary";
-import type { ScreenerClientProps } from "@/types/screener";
-import { StockTable } from "@/components/screener/StockTable";
+import { useTickerSearch } from "@/hooks/useTickerSearch";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { TableSkeleton } from "./TableSkeleton";
+import type { FilterState } from "@/lib/filters/summary";
+import type { ScreenerCompany } from "@/types/screener";
+import { ScreenerDataWrapper } from "./ScreenerDataWrapper";
+import { FilterView } from "./FilterView";
 
 /**
- * useFilterState 반환값을 FilterState 타입으로 정규화
+ * 필터 및 검색 상태, 액션, UI를 모두 관리하는 레이어
+ * 데이터 페칭은 하위 컴포넌트에서 처리
  */
-function normalizeFilterState(
-  filterState: ReturnType<typeof useFilterState>
-): FilterState {
-  return {
+export function ScreenerClient() {
+  const filterState = useFilterState();
+  const sortState = useSortState();
+
+  // 필터 초기화 (localStorage에서 로드하여 URL에 적용)
+  // 정렬 상태도 함께 초기화
+  const isFilterInitialized = useFilterInitialization(filterState, sortState);
+
+  // 필터 액션 관리 (적용, 리셋)
+  // 정렬 상태도 함께 전달하여 필터 저장 시 정렬 상태 포함
+  const { handleFilterApply, handleFilterReset, isPending } = useFilterActions(
+    filterState,
+    sortState
+  );
+
+  // 필터 상태를 정규화하여 하위 컴포넌트에 전달
+  // 계산 비용이 크지 않으므로 useMemo 없이 매 렌더마다 생성
+  const normalizedFilterState: FilterState = {
     ordered: filterState.ordered ?? undefined,
     goldenCross: filterState.goldenCross ?? undefined,
     justTurned: filterState.justTurned ?? undefined,
@@ -36,145 +53,42 @@ function normalizeFilterState(
     ma100Above: filterState.ma100Above ?? undefined,
     ma200Above: filterState.ma200Above ?? undefined,
   };
-}
-import { TableSkeleton } from "./TableSkeleton";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { StateMessage } from "@/components/common/StateMessage";
 
-export default function ScreenerClient({
-  data,
-  tradeDate,
-  error,
-}: ScreenerClientProps) {
-  // 필터 상태 관리 훅
-  const filterState = useFilterState();
-
-  // 초기 로드 시 goldenCross가 URL에 없으면 true로 설정 (성능 최적화)
-  useEffect(() => {
-    // goldenCross가 null이면 URL에 파라미터가 없는 것이므로 기본값 true 설정
-    if (filterState.goldenCross === null) {
-      filterState.setGoldenCross(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 마운트 시 한 번만 실행
-
-  // 필터 팝업 상태 (카테고리별)
-  const [openCategory, setOpenCategory] = useState<FilterCategory | null>(null);
-
-  // 티커 검색 훅
+  const [screenerData, setScreenerData] = React.useState<ScreenerCompany[]>([]);
   const {
     tickerSearchInput,
     setTickerSearchInput,
     tickerSearch,
     filteredData,
     isSearching,
-  } = useTickerSearch(data);
-
-  // 필터 액션 훅
-  const { handleFilterApply, handleFilterReset, isPending } =
-    useFilterActions(filterState);
-
-  // 현재 필터 상태 (정규화)
-  const currentFilterState = React.useMemo(
-    () => normalizeFilterState(filterState),
-    [filterState]
-  );
-
-  if (error) {
-    return (
-      <Card className="px-4 pb-4">
-        <CardHeader className="pt-4 px-4">
-          <CardTitle className="text-xl font-bold"></CardTitle>
-        </CardHeader>
-        <CardContent className="px-4">
-          <StateMessage
-            variant="error"
-            title="데이터를 불러오지 못했습니다"
-            description={error}
-          />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const noData = !isPending && !isSearching && filteredData.length === 0;
+  } = useTickerSearch(screenerData);
 
   return (
     <Card className="px-4 pb-4">
       <CardHeader className="pt-4 px-4">
-        <CardTitle className="text-xl font-bold"></CardTitle>
-        <div className="flex items-stretch gap-3 flex-wrap">
-          {/* 이평선 필터박스 */}
-          <CategoryFilterBox
-            category="ma"
-            filterState={currentFilterState}
-            onClick={() => setOpenCategory("ma")}
-            disabled={isPending}
-          />
-
-          {/* 성장성 필터박스 */}
-          <CategoryFilterBox
-            category="growth"
-            filterState={currentFilterState}
-            onClick={() => setOpenCategory("growth")}
-            disabled={isPending}
-          />
-
-          {/* 수익성 필터박스 */}
-          <CategoryFilterBox
-            category="profitability"
-            filterState={currentFilterState}
-            onClick={() => setOpenCategory("profitability")}
-            disabled={isPending}
-          />
-
-          {/* 티커 검색 인풋 - 필터 라인 오른쪽 끝 */}
-          <div className="relative ml-auto">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="티커 검색..."
-              value={tickerSearchInput}
-              onChange={(e) => setTickerSearchInput(e.target.value)}
-              className="pl-9 w-[200px] h-12"
-            />
-          </div>
-        </div>
-
-        {/* 카테고리별 필터 설정 팝업 */}
-        {openCategory && (
-          <CategoryFilterDialog
-            category={openCategory}
-            open={true}
-            onOpenChange={(open) => {
-              if (!open) {
-                setOpenCategory(null);
-              }
-            }}
-            filterState={currentFilterState}
-            onApply={handleFilterApply}
-            onReset={() => handleFilterReset(openCategory)}
-            disabled={isPending}
-          />
-        )}
+        <FilterView
+          filterState={normalizedFilterState}
+          isPending={isPending}
+          onFilterApply={handleFilterApply}
+          onFilterReset={handleFilterReset}
+          tickerSearchInput={tickerSearchInput}
+          onTickerSearchChange={setTickerSearchInput}
+        />
       </CardHeader>
       <CardContent className="px-4">
-        {(isPending && !isSearching) || (data.length === 0 && !error) ? (
-          <TableSkeleton />
-        ) : noData ? (
-          <StateMessage
-            title="표시할 데이터가 없습니다"
-            description="필터 조건을 완화하거나 다른 티커를 검색해 보세요."
-          />
+        {isFilterInitialized ? (
+          <Suspense fallback={<TableSkeleton />}>
+            {/* 데이터 페칭 및 렌더링 */}
+            <ScreenerDataWrapper
+              filterState={normalizedFilterState}
+              filteredData={filteredData}
+              tickerSearch={tickerSearch}
+              isSearching={isSearching}
+              onDataLoad={setScreenerData}
+            />
+          </Suspense>
         ) : (
-          <StockTable
-            data={filteredData}
-            filterState={currentFilterState}
-            tickerSearch={tickerSearch}
-            tradeDate={tradeDate}
-            totalCount={data.length}
-          />
+          <TableSkeleton />
         )}
       </CardContent>
     </Card>

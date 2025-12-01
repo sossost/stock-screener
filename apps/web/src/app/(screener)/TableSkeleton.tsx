@@ -27,11 +27,11 @@ export function TableSkeleton({ rows = 10 }: TableSkeletonProps) {
         </div>
       </div>
       <Table>
-          <TableCaption>
+        <TableCaption>
             <Skeleton className="h-4 w-64 inline-block" />
-          </TableCaption>
-          <TableHeader>
-            <TableRow>
+        </TableCaption>
+        <TableHeader>
+          <TableRow>
               {screenerColumns.map((col) => {
                 const className = [
                   col.width ?? "",
@@ -46,41 +46,41 @@ export function TableSkeleton({ rows = 10 }: TableSkeletonProps) {
 
                 return (
                   <TableHead key={col.key} className={className}>
-                    {col.label}
-                  </TableHead>
+                {col.label}
+              </TableHead>
                 );
               })}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: rows }).map((_, idx) => (
-              <TableRow key={idx}>
-                {screenerColumns.map((col) => {
-                  const alignClass =
-                    col.align === "right"
-                      ? "text-right"
-                      : col.align === "center"
-                      ? "text-center"
-                      : "";
-                  const widthClass = col.width ?? "";
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: rows }).map((_, idx) => (
+            <TableRow key={idx}>
+              {screenerColumns.map((col) => {
+                const alignClass =
+                  col.align === "right"
+                    ? "text-right"
+                    : col.align === "center"
+                    ? "text-center"
+                    : "";
+                const widthClass = col.width ?? "";
 
-                  if (col.type === "chart") {
+                if (col.type === "chart") {
                     // 차트: height={28}, width={160}, 오른쪽 정렬
-                    return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                  return (
+                    <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
                         <Skeleton className="h-7 w-[160px] ml-auto" />
-                      </TableCell>
-                    );
-                  }
+                    </TableCell>
+                  );
+                }
 
-                  if (col.type === "action") {
+                if (col.type === "action") {
                     // 액션: 중앙 정렬, h-5 w-5 아이콘
-                    return (
-                      <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
+                  return (
+                    <TableCell key={col.key} className={`${alignClass} ${widthClass}`}>
                         <Skeleton className="h-5 w-5 mx-auto rounded" />
-                      </TableCell>
-                    );
-                  }
+                    </TableCell>
+                  );
+                }
 
                   // 각 셀을 실제 구조와 정확히 일치시킴
                   switch (col.key) {
@@ -166,24 +166,24 @@ export function TableSkeleton({ rows = 10 }: TableSkeletonProps) {
                     
                     default:
                       // 기본 셀
-                      return (
-                        <TableCell
-                          key={col.key}
-                          className={`${alignClass} ${widthClass}`}
-                        >
+                return (
+                  <TableCell
+                    key={col.key}
+                    className={`${alignClass} ${widthClass}`}
+                  >
                           {col.align === "right" ? (
                             <Skeleton className="h-4 w-16 ml-auto" />
                           ) : (
                             <Skeleton className="h-4 w-16" />
                           )}
-                        </TableCell>
-                      );
+                  </TableCell>
+                );
                   }
-                })}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </>
   );
 }

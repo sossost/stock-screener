@@ -9,11 +9,11 @@ export const profitabilityOptions = [
 export const profitabilityValues = profitabilityOptions.map((opt) => opt.value);
 
 export const filterDefaults = {
-  ordered: false, // URL 파라미터에 명시적으로 값이 있어야만 적용
-  goldenCross: false, // URL 파라미터에 명시적으로 값이 있어야만 적용
+  ordered: true, // URL 파라미터에 명시적으로 값이 있어야만 적용
+  goldenCross: true, // URL 파라미터에 명시적으로 값이 있어야만 적용
   justTurned: false,
   lookbackDays: 10,
-  profitability: "all" as (typeof profitabilityValues)[number],
+  profitability: "profitable" as (typeof profitabilityValues)[number],
   turnAround: false,
   revenueGrowth: false,
   incomeGrowth: false,
@@ -29,18 +29,22 @@ export const filterDefaults = {
 };
 
 // 문자열 "true"/"false"를 boolean으로 변환하는 커스텀 스키마
-const booleanString = z.union([
-  z.literal("true").transform(() => true),
-  z.literal("false").transform(() => false),
-  z.boolean(),
-]).optional();
+const booleanString = z
+  .union([
+    z.literal("true").transform(() => true),
+    z.literal("false").transform(() => false),
+    z.boolean(),
+  ])
+  .optional();
 
 export const filterSchema = z.object({
   ordered: booleanString.default(filterDefaults.ordered),
   goldenCross: booleanString.default(filterDefaults.goldenCross),
   justTurned: booleanString.default(filterDefaults.justTurned),
   lookbackDays: z.coerce.number().default(filterDefaults.lookbackDays),
-  profitability: z.enum(profitabilityValues).default(filterDefaults.profitability),
+  profitability: z
+    .enum(profitabilityValues)
+    .default(filterDefaults.profitability),
   turnAround: booleanString.default(filterDefaults.turnAround),
   revenueGrowth: booleanString.default(filterDefaults.revenueGrowth),
   incomeGrowth: booleanString.default(filterDefaults.incomeGrowth),
@@ -121,7 +125,7 @@ export function parseFilters(
 
 export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
   const params = new URLSearchParams();
-  
+
   // 이평선 필터는 true일 때만 쿼리 파라미터에 포함 (URL 파라미터에 명시적으로 값이 있어야만 적용)
   if (filters.ordered === true) {
     params.set("ordered", "true");
@@ -131,12 +135,15 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
   if (filters.justTurned === true) {
     params.set("justTurned", "true");
   }
-  if (filters.justTurned === true && filters.lookbackDays !== filterDefaults.lookbackDays) {
-  params.set("lookbackDays", String(filters.lookbackDays));
+  if (
+    filters.justTurned === true &&
+    filters.lookbackDays !== filterDefaults.lookbackDays
+  ) {
+    params.set("lookbackDays", String(filters.lookbackDays));
   }
-  
+
   params.set("profitability", filters.profitability);
-  
+
   if (filters.turnAround === true) {
     params.set("turnAround", "true");
   }
@@ -146,19 +153,22 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
   if (filters.incomeGrowth === true) {
     params.set("incomeGrowth", "true");
   }
-  if (filters.revenueGrowth === true && filters.revenueGrowthQuarters !== filterDefaults.revenueGrowthQuarters) {
-  params.set(
-    "revenueGrowthQuarters",
-    String(filters.revenueGrowthQuarters)
-  );
+  if (
+    filters.revenueGrowth === true &&
+    filters.revenueGrowthQuarters !== filterDefaults.revenueGrowthQuarters
+  ) {
+    params.set("revenueGrowthQuarters", String(filters.revenueGrowthQuarters));
   }
-  if (filters.incomeGrowth === true && filters.incomeGrowthQuarters !== filterDefaults.incomeGrowthQuarters) {
-  params.set("incomeGrowthQuarters", String(filters.incomeGrowthQuarters));
+  if (
+    filters.incomeGrowth === true &&
+    filters.incomeGrowthQuarters !== filterDefaults.incomeGrowthQuarters
+  ) {
+    params.set("incomeGrowthQuarters", String(filters.incomeGrowthQuarters));
   }
   if (filters.pegFilter === true) {
     params.set("pegFilter", "true");
   }
-  
+
   // 이평선 위 필터는 true일 때만 쿼리 파라미터에 포함
   if (filters.ma20Above === true) {
     params.set("ma20Above", "true");
@@ -173,10 +183,16 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
     params.set("ma200Above", "true");
   }
 
-  if (filters.revenueGrowthRate !== null && filters.revenueGrowthRate !== undefined) {
+  if (
+    filters.revenueGrowthRate !== null &&
+    filters.revenueGrowthRate !== undefined
+  ) {
     params.set("revenueGrowthRate", String(filters.revenueGrowthRate));
   }
-  if (filters.incomeGrowthRate !== null && filters.incomeGrowthRate !== undefined) {
+  if (
+    filters.incomeGrowthRate !== null &&
+    filters.incomeGrowthRate !== undefined
+  ) {
     params.set("incomeGrowthRate", String(filters.incomeGrowthRate));
   }
 
@@ -184,5 +200,15 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
 }
 
 export function buildCacheTag(filters: ParsedFilters): string {
-  return `golden-cross-${filters.ordered}-${filters.goldenCross}-${filters.justTurned}-${filters.lookbackDays}-${filters.profitability}-${filters.revenueGrowth}-${filters.revenueGrowthQuarters}-${filters.revenueGrowthRate ?? ""}-${filters.incomeGrowth}-${filters.incomeGrowthQuarters}-${filters.incomeGrowthRate ?? ""}-${filters.pegFilter}-${filters.turnAround}-${filters.ma20Above}-${filters.ma50Above}-${filters.ma100Above}-${filters.ma200Above}`;
+  return `golden-cross-${filters.ordered}-${filters.goldenCross}-${
+    filters.justTurned
+  }-${filters.lookbackDays}-${filters.profitability}-${filters.revenueGrowth}-${
+    filters.revenueGrowthQuarters
+  }-${filters.revenueGrowthRate ?? ""}-${filters.incomeGrowth}-${
+    filters.incomeGrowthQuarters
+  }-${filters.incomeGrowthRate ?? ""}-${filters.pegFilter}-${
+    filters.turnAround
+  }-${filters.ma20Above}-${filters.ma50Above}-${filters.ma100Above}-${
+    filters.ma200Above
+  }`;
 }

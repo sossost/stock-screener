@@ -27,7 +27,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { formatSector } from "@/utils/sector";
 import Link from "next/link";
 import { INFINITE_SCROLL } from "@/lib/filters/constants";
-import { loadSortState, saveSortState, type SortState as StoredSortState } from "@/utils/sort-storage";
+import { useSortState } from "@/hooks/useSortState";
 
 interface StockTableProps {
   data: ScreenerCompany[];
@@ -180,26 +180,18 @@ export function StockTable({
   }, [hasLoaded, refresh]);
 
   // 포트폴리오 버튼 클릭 핸들러 (메모이제이션)
-  const handleTogglePortfolio = React.useCallback(async (symbol: string) => {
-    const success = await togglePortfolio(symbol);
-    if (success && onSymbolToggle) {
-      onSymbolToggle(symbol);
-    }
-  }, [togglePortfolio, onSymbolToggle]);
+  const handleTogglePortfolio = React.useCallback(
+    async (symbol: string) => {
+      const success = await togglePortfolio(symbol);
+      if (success && onSymbolToggle) {
+        onSymbolToggle(symbol);
+      }
+    },
+    [togglePortfolio, onSymbolToggle]
+  );
 
-  // localStorage에서 정렬 상태 로드 (마운트 시 한 번만)
-  const [sort, setSort] = React.useState<StoredSortState>(() => {
-    const saved = loadSortState();
-    return saved ?? {
-      key: defaultSort.key,
-      direction: defaultSort.direction,
-    };
-  });
-
-  // 정렬 상태 변경 시 localStorage에 저장
-  React.useEffect(() => {
-    saveSortState(sort);
-  }, [sort]);
+  // 정렬 상태를 URL로 관리
+  const { sort, setSort } = useSortState();
 
   const sortedData = React.useMemo(() => {
     const toNum = (value: string | number | null | undefined) => {
@@ -335,13 +327,19 @@ export function StockTable({
     setVisibleCount(INFINITE_SCROLL.INITIAL_LOAD_COUNT);
   }, [data]); // data.length 대신 data 전체로 변경 감지
 
-  const handleSort = React.useCallback((key: SortKey) => {
-    setSort((prev) =>
-      prev.key === key
-        ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { key, direction: "desc" }
-    );
-  }, []);
+  const handleSort = React.useCallback(
+    async (key: SortKey) => {
+      const newSort: { key: SortKey; direction: "asc" | "desc" } =
+        sort.key === key
+          ? {
+              key,
+              direction: sort.direction === "asc" ? "desc" : "asc",
+            }
+          : { key, direction: "desc" };
+      await setSort(newSort);
+    },
+    [sort, setSort]
+  );
 
   if (sortedData.length === 0 && tickerSearch) {
     return (
@@ -443,7 +441,10 @@ export function StockTable({
           ))}
           {visibleCount < sortedData.length && (
             <TableRow ref={loadMoreRef}>
-              <TableCell colSpan={screenerColumns.length} className="text-center py-4">
+              <TableCell
+                colSpan={screenerColumns.length}
+                className="text-center py-4"
+              >
                 <div className="text-sm text-muted-foreground">로딩 중...</div>
               </TableCell>
             </TableRow>
@@ -455,7 +456,10 @@ export function StockTable({
 }
 
 // 차트 데이터를 메모이제이션하는 헬퍼 함수
-const getChartData = (financials: ScreenerCompany["quarterly_financials"], type: "revenue" | "eps") => {
+const getChartData = (
+  financials: ScreenerCompany["quarterly_financials"],
+  type: "revenue" | "eps"
+) => {
   return prepareChartData(financials, type);
 };
 
@@ -482,168 +486,163 @@ const StockTableRow = React.memo(function StockTableRow({
   );
 
   // 섹터 포맷팅 메모이제이션
-  const sectorDisplay = React.useMemo(
-    () => formatSector(c.sector),
-    [c.sector]
-  );
+  const sectorDisplay = React.useMemo(() => formatSector(c.sector), [c.sector]);
 
   return (
     <TableRow style={{ display: "table-row", width: "100%" }}>
-              {screenerColumns.map((col) => {
-                const alignClass =
-                  col.align === "right"
-                    ? "text-right"
-                    : col.align === "center"
-                    ? "text-center"
-                    : "";
-                const widthClass = col.width ?? "";
+      {screenerColumns.map((col) => {
+        const alignClass =
+          col.align === "right"
+            ? "text-right"
+            : col.align === "center"
+            ? "text-center"
+            : "";
+        const widthClass = col.width ?? "";
 
-                switch (col.key) {
-                  case "index":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass} text-sm text-muted-foreground`}
-                      >
-                        {idx + 1}
-                      </TableCell>
-                    );
-                  case "symbol":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass} font-semibold`}
-                      >
-                        <Link
-                          href={`/stock/${c.symbol}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {c.symbol}
-                        </Link>
-                      </TableCell>
-                    );
-                  case "market_cap":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass} font-medium`}
-                      >
-                        {c.market_cap ? formatNumber(c.market_cap) : "-"}
-                      </TableCell>
-                    );
-                  case "last_close":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass}`}
-                      >
-                        {formatPrice(c.last_close)}
-                      </TableCell>
-                    );
-                  case "sector":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass}`}
-                        title={
-                          c.sector && sectorDisplay.display !== c.sector
-                            ? c.sector
-                            : undefined
-                        }
-                      >
-                        <span className="block w-full truncate text-right">
-                          {sectorDisplay.display}
-                        </span>
-                      </TableCell>
-                    );
-                  case "rs_score":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass} font-semibold`}
-                      >
-                        {c.rs_score ?? "-"}
-                      </TableCell>
-                    );
-                  case "pe_ratio":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass}`}
-                      >
-                        {formatRatio(c.pe_ratio)}
-                      </TableCell>
-                    );
-                  case "peg_ratio":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass}`}
-                      >
-                        {formatRatio(c.peg_ratio)}
-                      </TableCell>
-                    );
-                  case "revenue":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass}`}
-                      >
-                        <QuarterlyBarChart
-                          data={revenueChartData}
-                          type="revenue"
-                          height={28}
-                          width={160}
-                        />
-                      </TableCell>
-                    );
-                  case "eps":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass}`}
-                      >
-                        <QuarterlyBarChart
-                          data={epsChartData}
-                          type="eps"
-                          height={28}
-                          width={160}
-                        />
-                      </TableCell>
-                    );
-                  case "actions":
-                    return (
-                      <TableCell
-                        key={col.key}
-                        className={`${alignClass} ${widthClass}`}
-                      >
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => onTogglePortfolio(c.symbol)}
-                          className="cursor-pointer"
-                          aria-label={
-                            isInPortfolio
-                              ? "포트폴리오에서 제거"
-                              : "포트폴리오에 추가"
-                          }
-                        >
-                          <Star
-                            className={`h-5 w-5 ${
-                              isInPortfolio
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-400"
-                            }`}
-                          />
-                        </Button>
-                      </TableCell>
-                    );
-                  default:
-                    return null;
+        switch (col.key) {
+          case "index":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass} text-sm text-muted-foreground`}
+              >
+                {idx + 1}
+              </TableCell>
+            );
+          case "symbol":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass} font-semibold`}
+              >
+                <Link
+                  href={`/stock/${c.symbol}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  {c.symbol}
+                </Link>
+              </TableCell>
+            );
+          case "market_cap":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass} font-medium`}
+              >
+                {c.market_cap ? formatNumber(c.market_cap) : "-"}
+              </TableCell>
+            );
+          case "last_close":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass}`}
+              >
+                {formatPrice(c.last_close)}
+              </TableCell>
+            );
+          case "sector":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass}`}
+                title={
+                  c.sector && sectorDisplay.display !== c.sector
+                    ? c.sector
+                    : undefined
                 }
-              })}
-            </TableRow>
+              >
+                <span className="block w-full truncate text-right">
+                  {sectorDisplay.display}
+                </span>
+              </TableCell>
+            );
+          case "rs_score":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass} font-semibold`}
+              >
+                {c.rs_score ?? "-"}
+              </TableCell>
+            );
+          case "pe_ratio":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass}`}
+              >
+                {formatRatio(c.pe_ratio)}
+              </TableCell>
+            );
+          case "peg_ratio":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass}`}
+              >
+                {formatRatio(c.peg_ratio)}
+              </TableCell>
+            );
+          case "revenue":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass}`}
+              >
+                <QuarterlyBarChart
+                  data={revenueChartData}
+                  type="revenue"
+                  height={28}
+                  width={160}
+                />
+              </TableCell>
+            );
+          case "eps":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass}`}
+              >
+                <QuarterlyBarChart
+                  data={epsChartData}
+                  type="eps"
+                  height={28}
+                  width={160}
+                />
+              </TableCell>
+            );
+          case "actions":
+            return (
+              <TableCell
+                key={col.key}
+                className={`${alignClass} ${widthClass}`}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => onTogglePortfolio(c.symbol)}
+                  className="cursor-pointer"
+                  aria-label={
+                    isInPortfolio ? "포트폴리오에서 제거" : "포트폴리오에 추가"
+                  }
+                >
+                  <Star
+                    className={`h-5 w-5 ${
+                      isInPortfolio
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-400"
+                    }`}
+                  />
+                </Button>
+              </TableCell>
+            );
+          default:
+            return null;
+        }
+      })}
+    </TableRow>
   );
 });

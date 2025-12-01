@@ -9,6 +9,16 @@ export type SortKey =
   | "peg_ratio"
   | "rs_score";
 
+export const SORT_KEY_VALUES: SortKey[] = [
+  "symbol",
+  "sector",
+  "market_cap",
+  "last_close",
+  "pe_ratio",
+  "peg_ratio",
+  "rs_score",
+];
+
 export type ScreenerColumn = {
   key:
     | "index"
@@ -33,7 +43,14 @@ export type ScreenerColumn = {
 };
 
 export const screenerColumns: ScreenerColumn[] = [
-  { key: "index", label: "#", width: "w-[48px]", align: "center", type: "text", skeletonWidth: "w-6" },
+  {
+    key: "index",
+    label: "#",
+    width: "w-[48px]",
+    align: "center",
+    type: "text",
+    skeletonWidth: "w-6",
+  },
   {
     key: "symbol",
     label: "종목",
@@ -50,8 +67,7 @@ export const screenerColumns: ScreenerColumn[] = [
     align: "right",
     sortable: true,
     sortKey: "sector",
-    tooltip:
-      "섹터명으로 정렬합니다. 값이 없는 종목은 항상 뒤에 표시됩니다.",
+    tooltip: "섹터명으로 정렬합니다. 값이 없는 종목은 항상 뒤에 표시됩니다.",
     type: "text",
     skeletonWidth: "w-20",
   },
@@ -125,11 +141,17 @@ export const screenerColumns: ScreenerColumn[] = [
     align: "right",
     type: "chart",
   },
-  { key: "actions", label: "", width: "w-[80px]", align: "center", type: "action" },
+  {
+    key: "actions",
+    label: "",
+    width: "w-[80px]",
+    align: "center",
+    type: "action",
+  },
 ];
 
 export const defaultSort: { key: SortKey; direction: "asc" | "desc" } = {
-  key: "market_cap",
+  key: "rs_score",
   direction: "desc",
 };
 

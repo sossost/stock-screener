@@ -1,19 +1,36 @@
 import type { FilterState } from "@/lib/filters/summary";
 import { filterDefaults } from "@/lib/filters/schema";
+import type { SortState } from "@/hooks/useSortState";
 
 const STORAGE_KEY = "screener_default_filters";
 
 /**
- * 필터 상태를 localStorage에 저장
- * @param filterState 저장할 필터 상태
+ * 필터 상태와 정렬 상태를 함께 저장하는 타입
  */
-export function saveDefaultFilters(filterState: FilterState): void {
+export type SavedFilterState = Partial<FilterState> & {
+  sortState?: SortState;
+};
+
+/**
+ * 필터 상태를 localStorage에 저장 (정렬 상태도 함께 저장)
+ * @param filterState 저장할 필터 상태 (Partial도 허용)
+ * @param sortState 저장할 정렬 상태 (선택적)
+ */
+export function saveDefaultFilters(
+  filterState: FilterState | Partial<FilterState>,
+  sortState?: SortState
+): void {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
-    const json = JSON.stringify(filterState);
+    const savedState: SavedFilterState = {
+      ...filterState,
+      ...(sortState && { sortState }),
+    };
+
+    const json = JSON.stringify(savedState);
     localStorage.setItem(STORAGE_KEY, json);
   } catch (error) {
     // localStorage 접근 실패 시 에러 로그만 출력 (사용자 경험 방해하지 않음)
@@ -36,8 +53,11 @@ export function loadDefaultFilters(): Partial<FilterState> | null {
       return null;
     }
 
-    const parsed = JSON.parse(stored) as Partial<FilterState>;
-    return parsed;
+    const parsed = JSON.parse(stored) as SavedFilterState;
+    // sortState는 필터 상태가 아니므로 제외
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { sortState, ...filterState } = parsed;
+    return filterState;
   } catch (error) {
     // JSON 파싱 실패 시 localStorage 값 삭제하고 null 반환
     console.error("Failed to parse filters from localStorage:", error);
@@ -46,6 +66,29 @@ export function loadDefaultFilters(): Partial<FilterState> | null {
     } catch (removeError) {
       console.error("Failed to remove invalid filter data:", removeError);
     }
+    return null;
+  }
+}
+
+/**
+ * localStorage에서 정렬 상태 읽기 (필터 저장 시 함께 저장된 정렬 상태)
+ * @returns 저장된 정렬 상태 또는 null
+ */
+export function loadSavedSortState(): SortState | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return null;
+    }
+
+    const parsed = JSON.parse(stored) as SavedFilterState;
+    return parsed.sortState ?? null;
+  } catch (error) {
+    console.error("Failed to parse sort state from localStorage:", error);
     return null;
   }
 }
@@ -90,4 +133,3 @@ export function mergeFilters(
 
   return merged;
 }
-

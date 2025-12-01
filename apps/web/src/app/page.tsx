@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { DataWrapper } from "@/app/(screener)/DataWrapper";
+import { ScreenerClient } from "@/app/(screener)/ScreenerClient";
 import { Navigation } from "@/components/navigation";
 import { TableSkeleton } from "@/app/(screener)/TableSkeleton";
 
@@ -14,7 +14,7 @@ export default function Home() {
       <Navigation showPortfolioButton={true} />
       <div className="container mx-auto px-4 py-8">
         <Suspense fallback={<TableSkeleton />}>
-          <DataWrapper />
+          <ScreenerClient />
         </Suspense>
       </div>
     </div>
