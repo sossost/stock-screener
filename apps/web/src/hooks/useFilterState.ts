@@ -11,9 +11,7 @@ import { filterDefaults, profitabilityValues } from "@/lib/filters/schema";
  * 모든 필터 상태를 URL 쿼리 파라미터로 관리
  */
 export function useFilterState() {
-  // 이평선 필터
   const [ordered, setOrdered] = useQueryState("ordered", parseAsBoolean);
-  // goldenCross는 ScreenerClient에서 초기 로드 시 기본값 true로 URL 설정
   const [goldenCross, setGoldenCross] = useQueryState(
     "goldenCross",
     parseAsBoolean
@@ -27,7 +25,6 @@ export function useFilterState() {
     parseAsInteger
   );
 
-  // 수익성 필터
   const [profitability, setProfitability] = useQueryState(
     "profitability",
     parseAsStringLiteral(
@@ -39,7 +36,6 @@ export function useFilterState() {
     parseAsBoolean.withDefault(filterDefaults.turnAround)
   );
 
-  // 성장성 필터
   const [revenueGrowth, setRevenueGrowth] = useQueryState(
     "revenueGrowth",
     parseAsBoolean.withDefault(filterDefaults.revenueGrowth)
@@ -65,13 +61,11 @@ export function useFilterState() {
     parseAsInteger
   );
 
-  // PEG 필터
   const [pegFilter, setPegFilter] = useQueryState(
     "pegFilter",
     parseAsBoolean.withDefault(false)
   );
 
-  // 이평선 위 필터 (URL 파라미터에 명시적으로 값이 있어야만 적용)
   const [ma20Above, setMa20Above] = useQueryState("ma20Above", parseAsBoolean);
   const [ma50Above, setMa50Above] = useQueryState("ma50Above", parseAsBoolean);
   const [ma100Above, setMa100Above] = useQueryState(
@@ -84,7 +78,6 @@ export function useFilterState() {
   );
 
   return {
-    // 이평선 필터
     ordered,
     setOrdered,
     goldenCross,
@@ -93,12 +86,10 @@ export function useFilterState() {
     setJustTurned,
     lookbackDays,
     setLookbackDays,
-    // 수익성 필터
     profitability,
     setProfitability,
     turnAround,
     setTurnAround,
-    // 성장성 필터
     revenueGrowth,
     setRevenueGrowth,
     incomeGrowth,
@@ -111,10 +102,8 @@ export function useFilterState() {
     setRevenueGrowthRate,
     incomeGrowthRate,
     setIncomeGrowthRate,
-    // PEG 필터
     pegFilter,
     setPegFilter,
-    // 이평선 위 필터
     ma20Above,
     setMa20Above,
     ma50Above,

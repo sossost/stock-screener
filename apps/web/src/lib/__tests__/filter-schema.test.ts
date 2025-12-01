@@ -8,7 +8,18 @@ import {
 
 describe("parseFilters", () => {
   it("returns defaults when no params are provided", () => {
-    expect(parseFilters({})).toEqual(filterDefaults);
+    const result = parseFilters({});
+    // URL 파라미터가 없으면 MA 필터는 false로 설정됨 (명시적으로 true일 때만 적용)
+    expect(result).toEqual({
+      ...filterDefaults,
+      ordered: false,
+      goldenCross: false,
+      justTurned: false,
+      ma20Above: false,
+      ma50Above: false,
+      ma100Above: false,
+      ma200Above: false,
+    });
   });
 
   it("falls back to defaults when numeric params are invalid", () => {

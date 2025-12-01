@@ -28,3 +28,6 @@ export const QUERY_CONSTANTS = {
   MAX_RN_OFFSET: 1, // 현재일 포함
 } as const;
 
+// 필터 초기화 지연 시간 (ms)
+export const FILTER_INIT_DELAY_MS = 100;
+

@@ -1,13 +1,16 @@
 import { useRouter } from "next/navigation";
 import { useTransition, useRef, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import type { FilterState, FilterCategory } from "@/lib/filters/summary";
 import { useFilterState } from "@/hooks/useFilterState";
+import type { useSortState } from "@/hooks/useSortState";
 import { buildCacheTag } from "@/lib/filters/schema";
 import { FILTER_DEFAULTS } from "@/lib/filters/constants";
 import {
   saveDefaultFilters,
   clearDefaultFilters,
 } from "@/utils/filter-storage";
+import { isValidSortKey, isValidSortDirection } from "@/utils/type-guards";
 
 /**
  * 필터 액션(변경, 적용, 초기화)을 관리하는 커스텀 훅
@@ -24,31 +27,60 @@ async function setBooleanFilter(
 }
 
 export function useFilterActions(
-  filterState: ReturnType<typeof useFilterState>
+  filterState: ReturnType<typeof useFilterState>,
+  sortState?: ReturnType<typeof useSortState>
 ) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
 
   // debounce로 localStorage에 필터 저장 (500ms)
   // 컴포넌트가 언마운트된 경우 저장하지 않음
-  const debouncedSaveFilters = useCallback((filters: FilterState) => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(() => {
-      // 컴포넌트가 언마운트된 경우 저장하지 않음
-      if (!isMountedRef.current) {
-        return;
+  // 정렬 상태도 함께 저장
+  const debouncedSaveFilters = useCallback(
+    (filters: FilterState) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
-      try {
-        saveDefaultFilters(filters);
-      } catch (error) {
-        console.error("필터 저장 실패:", error);
-      }
-    }, 500);
-  }, []);
+      saveTimeoutRef.current = setTimeout(() => {
+        // 컴포넌트가 언마운트된 경우 저장하지 않음
+        if (!isMountedRef.current) {
+          return;
+        }
+        try {
+          // 정렬 상태는 sortState 훅에서 가져오거나 URL에서 읽어서 함께 저장
+          if (sortState?.sort) {
+            saveDefaultFilters(filters, sortState.sort);
+          } else {
+            // sortState가 없으면 URL에서 읽기 (SSR 호환)
+            const sortKey = searchParams.get("sortKey");
+            const sortDirection = searchParams.get("sortDirection");
+
+            if (sortKey && sortDirection) {
+              if (
+                isValidSortKey(sortKey) &&
+                isValidSortDirection(sortDirection)
+              ) {
+                saveDefaultFilters(filters, {
+                  key: sortKey,
+                  direction: sortDirection,
+                });
+              } else {
+                saveDefaultFilters(filters);
+              }
+            } else {
+              saveDefaultFilters(filters);
+            }
+          }
+        } catch (error) {
+          console.error("필터 저장 실패:", error);
+        }
+      }, 500);
+    },
+    [sortState, searchParams]
+  );
 
   // cleanup: 컴포넌트 언마운트 시 타이머 정리 및 마운트 상태 업데이트
   useEffect(() => {
@@ -208,7 +240,7 @@ export function useFilterActions(
     } catch (error) {
       // 에러 발생 시 상태 롤백
       console.error("필터 적용 실패:", error);
-      
+
       // pending 중인 localStorage 저장 취소 (잘못된 상태 저장 방지)
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
