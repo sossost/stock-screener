@@ -7,7 +7,7 @@
 3. **구현 순서**: 백엔드 → 프론트엔드 → 타입
 4. **셀프 리뷰**: 작성 코드를 "PR 리뷰어 관점"으로 검토
 5. **테스트**: 단위 → API → 컴포넌트 (`yarn test`, `yarn test:all`)
-6. **문서화**: README/AGENTS/spec/plan/tasks 동시 업데이트
+6. **문서화**: README/spec/plan/tasks 동시 업데이트
 7. **빌드 테스트**: `yarn build` (또는 `yarn test:all`)
 
 ## 구현 체크리스트 (코드 작성 시 필수)

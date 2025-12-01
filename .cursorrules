@@ -214,7 +214,7 @@
 
 ## 문서
 
-- 가이드: `docs/FEATURE_DEVELOPMENT_WORKFLOW.md`, `docs/TESTING.md`, `docs/REFACTORING_REVIEW.md`, `docs/FRONTEND_PRACTICES.md`
+- 가이드: `docs/FEATURE_DEVELOPMENT_WORKFLOW.md`, `docs/TESTING.md`, `docs/CODE_REVIEW_CHECKLIST.md` (리팩토링 체크리스트 포함), `docs/FRONTEND_PRACTICES.md`
 - **품질 보증**: `docs/CODE_REVIEW_CHECKLIST.md` (코드 리뷰 필수), `docs/FEATURE_DEVELOPMENT_WORKFLOW.md` (3단계 검증 프로세스 포함)
 - 스펙/플랜/태스크: `.specify/specs/<feature>/` (통합 템플릿은 필요 시 별도 관리)
 
