@@ -75,10 +75,20 @@ async function loadOne(symbol: string) {
     map.set(r.date, { ...cur, ...r }); // operatingCashFlow/freeCashFlow 등 합치기
   }
 
+  // 같은 분기(asOfQ)에 대해 가장 최신 날짜만 유지
+  const quarterMap = new Map<string, any>();
+  for (const [, row] of map) {
+    const asQ = asQuarter(row.date);
+    const existing = quarterMap.get(asQ);
+    if (!existing || row.date > existing.date) {
+      quarterMap.set(asQ, row);
+    }
+  }
+
   await ensureSymbol(symbol);
 
   // 최신부터 LIMIT_Q개 업서트
-  for (const [, row] of map) {
+  for (const [, row] of quarterMap) {
     await upsertQuarter(symbol, row);
   }
 }
