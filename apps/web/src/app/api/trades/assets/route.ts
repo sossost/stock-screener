@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { assetSnapshots } from "@/db/schema";
 import { eq, and, gte } from "drizzle-orm";
-
-const DEFAULT_USER_ID = "0";
+import { getUserIdFromRequest } from "@/lib/auth/user";
 
 /**
  * GET /api/trades/assets
@@ -36,7 +35,8 @@ export async function GET(request: NextRequest) {
         startDate = null;
     }
 
-    const conditions = [eq(assetSnapshots.userId, DEFAULT_USER_ID)];
+    const userId = getUserIdFromRequest(request);
+    const conditions = [eq(assetSnapshots.userId, userId)];
     if (startDate) {
       conditions.push(gte(assetSnapshots.date, startDate));
     }
@@ -88,11 +88,13 @@ export async function POST(request: NextRequest) {
     const snapshotDate = new Date(date);
     snapshotDate.setHours(0, 0, 0, 0);
 
+    const userId = getUserIdFromRequest(request);
+
     // upsert
     await db
       .insert(assetSnapshots)
       .values({
-        userId: DEFAULT_USER_ID,
+        userId,
         date: snapshotDate,
         totalAssets: totalAssets.toString(),
         cash: cash.toString(),

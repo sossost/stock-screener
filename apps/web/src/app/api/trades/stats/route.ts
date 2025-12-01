@@ -3,8 +3,7 @@ import { db } from "@/db/client";
 import { trades, tradeActions } from "@/db/schema";
 import { eq, and, gte, lte, inArray, count } from "drizzle-orm";
 import { calculateTradeStats } from "@/lib/trades/calculations";
-
-const DEFAULT_USER_ID = "0";
+import { getUserIdFromRequest } from "@/lib/auth/user";
 
 /**
  * GET /api/trades/stats - 매매 통계 조회
@@ -39,11 +38,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const userId = getUserIdFromRequest(request);
+
     // DB WHERE 절에서 직접 필터링
-    const conditions = [
-      eq(trades.userId, DEFAULT_USER_ID),
-      eq(trades.status, "CLOSED"),
-    ];
+    const conditions = [eq(trades.userId, userId), eq(trades.status, "CLOSED")];
 
     if (startDate) {
       conditions.push(gte(trades.endDate, startDate));
@@ -87,9 +85,7 @@ export async function GET(request: NextRequest) {
     const [openTradesResult] = await db
       .select({ count: count() })
       .from(trades)
-      .where(
-        and(eq(trades.userId, DEFAULT_USER_ID), eq(trades.status, "OPEN"))
-      );
+      .where(and(eq(trades.userId, userId), eq(trades.status, "OPEN")));
 
     return NextResponse.json({
       ...stats,

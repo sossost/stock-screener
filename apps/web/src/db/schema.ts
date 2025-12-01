@@ -205,19 +205,19 @@ export const dailyRatios = pgTable(
   })
 );
 
-export const portfolio = pgTable(
-  "portfolio",
+export const watchlist = pgTable(
+  "watchlist",
   {
     id: serial("id").primaryKey(),
-    sessionId: text("session_id").notNull(),
+    userId: text("user_id").notNull(),
     symbol: text("symbol")
       .notNull()
       .references(() => symbols.symbol, { onDelete: "cascade" }),
     addedAt: timestamp("added_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
-    uq: unique("uq_portfolio_session_symbol").on(t.sessionId, t.symbol),
-    idx_session: index("idx_portfolio_session").on(t.sessionId),
+    uq: unique("uq_watchlist_user_symbol").on(t.userId, t.symbol),
+    idx_user: index("idx_watchlist_user").on(t.userId),
   })
 );
 
@@ -365,6 +365,20 @@ export const portfolioSettings = pgTable("portfolio_settings", {
   userId: text("user_id").notNull().unique().default("0"),
   cashBalance: numeric("cash_balance").notNull().default("0"),
   updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * 접근 코드 ↔ 사용자 ID 매핑 테이블
+ * - 코드: 배포 전에 수동으로 등록
+ * - userId: 각 코드에 대응되는 실제 사용자 ID
+ */
+export const accessCodes = pgTable("access_codes", {
+  code: text("code").primaryKey(),
+  userId: text("user_id").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });

@@ -6,9 +6,13 @@ import { Button } from "@/components/ui/button";
 
 interface NavigationProps {
   showPortfolioButton?: boolean;
+  showTradesButton?: boolean;
 }
 
-export function Navigation({ showPortfolioButton = true }: NavigationProps) {
+export function Navigation({
+  showPortfolioButton = true,
+  showTradesButton = true,
+}: NavigationProps) {
   return (
     <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
@@ -20,14 +24,16 @@ export function Navigation({ showPortfolioButton = true }: NavigationProps) {
           </Link>
 
           <div className="flex items-center gap-2">
-            <Link href="/trades">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <BookOpen className="h-4 w-4" />
-                매매일지
-              </Button>
-            </Link>
+            {showTradesButton && (
+              <Link href="/trades">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  매매일지
+                </Button>
+              </Link>
+            )}
             <Link
-              href="/portfolio"
+              href="/watchlist"
               className={
                 showPortfolioButton ? "" : "invisible pointer-events-none"
               }

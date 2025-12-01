@@ -4,8 +4,7 @@ import { trades, tradeActions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { calculateFinalResults, isFullySold } from "@/lib/trades/calculations";
 import { CloseTradeRequest } from "@/lib/trades/types";
-
-const DEFAULT_USER_ID = "0";
+import { getUserIdFromRequest } from "@/lib/auth/user";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -27,14 +26,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const body: CloseTradeRequest = await request.json();
+    const userId = getUserIdFromRequest(request);
 
     // 매매 존재 및 상태 확인
     const [trade] = await db
       .select()
       .from(trades)
-      .where(
-        and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID))
-      );
+      .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
     if (!trade) {
       return NextResponse.json(

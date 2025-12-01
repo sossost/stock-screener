@@ -20,7 +20,7 @@ import {
 import { formatNumber, formatRatio, formatPrice } from "@/utils/format";
 import { prepareChartData } from "@/utils/chart-data";
 import { QuarterlyBarChart } from "@/components/charts/QuarterlyBarChart";
-import { usePortfolio } from "@/hooks/usePortfolio";
+import { useWatchlist } from "@/hooks/useWatchlist";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -35,7 +35,7 @@ interface StockTableProps {
   tickerSearch?: string;
   tradeDate?: string | null;
   totalCount?: number;
-  /** 포트폴리오 토글 후 부모에게 알리는 콜백 (상태 동기화용) */
+  /** 관심종목 토글 후 부모에게 알리는 콜백 (상태 동기화용) */
   onSymbolToggle?: (symbol: string) => void;
 }
 
@@ -168,26 +168,26 @@ export function StockTable({
   totalCount,
   onSymbolToggle,
 }: StockTableProps) {
-  // 포트폴리오는 마운트 시 한 번만 로드하여 포트폴리오 상태 표시
-  const { isInPortfolio, togglePortfolio, refresh } = usePortfolio(false);
+  // 관심종목은 마운트 시 한 번만 로드하여 상태 표시
+  const { isInWatchlist, toggleWatchlist, refresh } = useWatchlist(false);
   const [hasLoaded, setHasLoaded] = React.useState(false);
 
-  // 마운트 시 한 번만 포트폴리오 로드 (포트폴리오 상태 표시를 위해)
+  // 마운트 시 한 번만 관심종목 로드 (상태 표시를 위해)
   React.useEffect(() => {
     if (!hasLoaded) {
       refresh().then(() => setHasLoaded(true));
     }
   }, [hasLoaded, refresh]);
 
-  // 포트폴리오 버튼 클릭 핸들러 (메모이제이션)
-  const handleTogglePortfolio = React.useCallback(
+  // 관심종목 버튼 클릭 핸들러 (메모이제이션)
+  const handleToggleWatchlist = React.useCallback(
     async (symbol: string) => {
-      const success = await togglePortfolio(symbol);
+      const success = await toggleWatchlist(symbol);
       if (success && onSymbolToggle) {
         onSymbolToggle(symbol);
       }
     },
-    [togglePortfolio, onSymbolToggle]
+    [toggleWatchlist, onSymbolToggle]
   );
 
   // 정렬 상태를 URL로 관리
@@ -272,14 +272,14 @@ export function StockTable({
     return arr;
   }, [data, sort]);
 
-  // 포트폴리오 상태 맵 생성 (5000번 호출 방지) - sortedData 이후에 선언
-  const portfolioMap = React.useMemo(() => {
+  // 관심종목 상태 맵 생성 (5000번 호출 방지) - sortedData 이후에 선언
+  const watchlistMap = React.useMemo(() => {
     const map = new Map<string, boolean>();
     sortedData.forEach((c) => {
-      map.set(c.symbol, isInPortfolio(c.symbol));
+      map.set(c.symbol, isInWatchlist(c.symbol));
     });
     return map;
-  }, [sortedData, isInPortfolio]);
+  }, [sortedData, isInWatchlist]);
 
   // 무한 스크롤을 위한 상태
   const [visibleCount, setVisibleCount] = React.useState<number>(
@@ -435,8 +435,8 @@ export function StockTable({
               key={`${c.symbol}-${idx}`}
               company={c}
               index={idx}
-              isInPortfolio={portfolioMap.get(c.symbol) ?? false}
-              onTogglePortfolio={handleTogglePortfolio}
+              isInWatchlist={watchlistMap.get(c.symbol) ?? false}
+              onToggleWatchlist={handleToggleWatchlist}
             />
           ))}
           {visibleCount < sortedData.length && (
@@ -467,13 +467,13 @@ const getChartData = (
 const StockTableRow = React.memo(function StockTableRow({
   company: c,
   index: idx,
-  isInPortfolio,
-  onTogglePortfolio,
+  isInWatchlist,
+  onToggleWatchlist,
 }: {
   company: ScreenerCompany;
   index: number;
-  isInPortfolio: boolean;
-  onTogglePortfolio: (symbol: string) => void;
+  isInWatchlist: boolean;
+  onToggleWatchlist: (symbol: string) => void;
 }) {
   // 차트 데이터를 메모이제이션
   const revenueChartData = React.useMemo(
@@ -623,15 +623,15 @@ const StockTableRow = React.memo(function StockTableRow({
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => onTogglePortfolio(c.symbol)}
+                  onClick={() => onToggleWatchlist(c.symbol)}
                   className="cursor-pointer"
                   aria-label={
-                    isInPortfolio ? "포트폴리오에서 제거" : "포트폴리오에 추가"
+                    isInWatchlist ? "관심종목에서 제거" : "관심종목에 추가"
                   }
                 >
                   <Star
                     className={`h-5 w-5 ${
-                      isInPortfolio
+                      isInWatchlist
                         ? "fill-yellow-400 text-yellow-400"
                         : "text-gray-400"
                     }`}

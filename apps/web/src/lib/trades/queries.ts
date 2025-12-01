@@ -7,6 +7,7 @@ import {
   portfolioSettings,
 } from "@/db/schema";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
+import { getUserIdFromCookies } from "@/lib/auth/user";
 import {
   calculateTradeMetrics,
   calculateHoldingDays,
@@ -17,8 +18,6 @@ import {
   TradeWithDetails,
 } from "@/lib/trades/types";
 
-const DEFAULT_USER_ID = "0";
-
 /**
  * 매매 목록 조회 (서버 컴포넌트용)
  * N+1 쿼리 방지: 배치 조회 후 메모리에서 그룹핑
@@ -27,7 +26,8 @@ export async function getTradesList(
   status?: TradeStatus,
   symbol?: string
 ): Promise<TradeListItem[]> {
-  const conditions = [eq(trades.userId, DEFAULT_USER_ID)];
+  const userId = await getUserIdFromCookies();
+  const conditions = [eq(trades.userId, userId)];
   if (status) {
     conditions.push(eq(trades.status, status));
   }
@@ -139,6 +139,8 @@ export async function getTradesList(
 export async function getTradeDetail(
   tradeId: number
 ): Promise<TradeWithDetails | null> {
+  const userId = await getUserIdFromCookies();
+
   const [tradeResult] = await db
     .select({
       trade: trades,
@@ -147,7 +149,7 @@ export async function getTradeDetail(
     })
     .from(trades)
     .leftJoin(symbols, eq(trades.symbol, symbols.symbol))
-    .where(and(eq(trades.id, tradeId), eq(trades.userId, DEFAULT_USER_ID)));
+    .where(and(eq(trades.id, tradeId), eq(trades.userId, userId)));
 
   if (!tradeResult) {
     return null;
@@ -195,10 +197,11 @@ export async function getTradeDetail(
  * 현금 보유량 조회 (서버 컴포넌트용)
  */
 export async function getCashBalance(): Promise<number> {
+  const userId = await getUserIdFromCookies();
   const [settings] = await db
     .select({ cashBalance: portfolioSettings.cashBalance })
     .from(portfolioSettings)
-    .where(eq(portfolioSettings.userId, DEFAULT_USER_ID))
+    .where(eq(portfolioSettings.userId, userId))
     .limit(1);
 
   return settings?.cashBalance ? parseFloat(settings.cashBalance) : 0;
