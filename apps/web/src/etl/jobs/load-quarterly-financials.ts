@@ -12,9 +12,55 @@ const CONCURRENCY = 4;
 const PAUSE_MS = 150;
 const LIMIT_Q = 12;
 
+/**
+ * EPS 계산 헬퍼 함수
+ * API에서 EPS가 0이거나 없을 때 netIncome과 shares로 계산
+ */
+function calculateEPS(
+  netIncome: number | null | undefined,
+  shares: number | null | undefined
+): number | null {
+  if (!netIncome || !shares || shares === 0) {
+    return null;
+  }
+  const eps = netIncome / shares;
+  return Number.isFinite(eps) ? eps : null;
+}
+
 async function upsertQuarter(sym: string, row: any) {
   const date = row.date as string;
   const asQ = asQuarter(date);
+
+  // EPS 계산: API 값이 0이거나 없으면 netIncome과 shares로 계산
+  const netIncomeNum = row.netIncome ? Number(row.netIncome) : null;
+  const sharesOut = row.weightedAverageShsOut
+    ? Number(row.weightedAverageShsOut)
+    : null;
+  const sharesOutDil = row.weightedAverageShsOutDil
+    ? Number(row.weightedAverageShsOutDil)
+    : null;
+
+  // Diluted EPS: API 값 우선, 없거나 0이면 계산
+  let epsDilutedValue: number | null = null;
+  const apiEpsDiluted =
+    row.epsDilutedNonGAAP ?? row.adjustedEPS ?? row.epsDiluted ?? row.eps;
+  if (apiEpsDiluted && Number(apiEpsDiluted) !== 0) {
+    epsDilutedValue = Number(apiEpsDiluted);
+  } else if (netIncomeNum && sharesOutDil) {
+    // API 값이 0이거나 없으면 계산
+    epsDilutedValue = calculateEPS(netIncomeNum, sharesOutDil);
+  }
+
+  // Basic EPS: API 값 우선, 없거나 0이면 계산
+  let epsBasicValue: number | null = null;
+  const apiEpsBasic =
+    row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.epsBasic ?? row.eps;
+  if (apiEpsBasic && Number(apiEpsBasic) !== 0) {
+    epsBasicValue = Number(apiEpsBasic);
+  } else if (netIncomeNum && sharesOut) {
+    // API 값이 0이거나 없으면 계산
+    epsBasicValue = calculateEPS(netIncomeNum, sharesOut);
+  }
 
   await db
     .insert(quarterlyFinancials)
@@ -32,15 +78,9 @@ async function upsertQuarter(sym: string, row: any) {
       operatingCashFlow: toStrNum(row.operatingCashFlow),
       freeCashFlow: toStrNum(row.freeCashFlow),
 
-      // Non-GAAP Diluted EPS 우선 사용 (없으면 GAAP Diluted EPS 사용)
-      epsDiluted: toStrNum(
-        row.epsDilutedNonGAAP ?? row.adjustedEPS ?? row.epsDiluted ?? row.eps
-      ),
-      // Non-GAAP Basic EPS 우선 사용 (없으면 GAAP Basic EPS 사용, 둘 다 없으면 null)
-      epsBasic:
-        row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.eps
-          ? toStrNum(row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.eps)
-          : null,
+      // 계산된 EPS 사용 (API 값이 0이면 계산값 사용)
+      epsDiluted: epsDilutedValue !== null ? String(epsDilutedValue) : null,
+      epsBasic: epsBasicValue !== null ? String(epsBasicValue) : null,
     })
     .onConflictDoUpdate({
       target: [quarterlyFinancials.symbol, quarterlyFinancials.periodEndDate],
@@ -53,15 +93,9 @@ async function upsertQuarter(sym: string, row: any) {
         grossProfit: toStrNum(row.grossProfit),
         operatingCashFlow: toStrNum(row.operatingCashFlow),
         freeCashFlow: toStrNum(row.freeCashFlow),
-        // Non-GAAP Diluted EPS 우선 사용 (없으면 GAAP Diluted EPS 사용)
-        epsDiluted: toStrNum(
-          row.epsDilutedNonGAAP ?? row.adjustedEPS ?? row.epsDiluted ?? row.eps
-        ),
-        // Non-GAAP Basic EPS 우선 사용 (없으면 GAAP Basic EPS 사용, 둘 다 없으면 null)
-        epsBasic:
-          row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.eps
-            ? toStrNum(row.epsNonGAAP ?? row.epsBasicNonGAAP ?? row.eps)
-            : null,
+        // 계산된 EPS 사용 (API 값이 0이면 계산값 사용)
+        epsDiluted: epsDilutedValue !== null ? String(epsDilutedValue) : null,
+        epsBasic: epsBasicValue !== null ? String(epsBasicValue) : null,
       },
     });
 }
