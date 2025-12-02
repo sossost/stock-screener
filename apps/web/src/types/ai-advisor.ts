@@ -43,4 +43,3 @@ export interface AIAdvisorResponse {
   analysis?: string; // 마크다운 형식의 분석 결과
   error?: string;
 }
-

@@ -116,12 +116,8 @@
           "name": "quarterly_financials_symbol_symbols_symbol_fk",
           "tableFrom": "quarterly_financials",
           "tableTo": "symbols",
-          "columnsFrom": [
-            "symbol"
-          ],
-          "columnsTo": [
-            "symbol"
-          ],
+          "columnsFrom": ["symbol"],
+          "columnsTo": ["symbol"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -131,10 +127,7 @@
         "uq_quarterly_financials_symbol_period": {
           "name": "uq_quarterly_financials_symbol_period",
           "nullsNotDistinct": false,
-          "columns": [
-            "symbol",
-            "period_end_date"
-          ]
+          "columns": ["symbol", "period_end_date"]
         }
       },
       "policies": {},
@@ -291,12 +284,8 @@
           "name": "quarterly_ratios_symbol_symbols_symbol_fk",
           "tableFrom": "quarterly_ratios",
           "tableTo": "symbols",
-          "columnsFrom": [
-            "symbol"
-          ],
-          "columnsTo": [
-            "symbol"
-          ],
+          "columnsFrom": ["symbol"],
+          "columnsTo": ["symbol"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -306,10 +295,7 @@
         "uq_quarterly_ratios_symbol_period": {
           "name": "uq_quarterly_ratios_symbol_period",
           "nullsNotDistinct": false,
-          "columns": [
-            "symbol",
-            "period_end_date"
-          ]
+          "columns": ["symbol", "period_end_date"]
         }
       },
       "policies": {},

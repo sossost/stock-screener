@@ -1,7 +1,7 @@
 /**
  * AI Trading Advisor API
  * POST /api/ai-advisor
- * 
+ *
  * Vercel Pro 플랜의 경우 maxDuration을 60초로 설정 가능
  * Hobby 플랜의 경우 기본 10초 제한 (런타임 설정 불가)
  */

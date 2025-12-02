@@ -111,8 +111,8 @@ export function AIAdvisor({ symbol, data, isLoading, error }: AIAdvisorProps) {
                 {parsed.riskCheck.warnings.length > 0
                   ? "주의"
                   : parsed.signal.type === "NO_TRADE"
-                  ? "높음"
-                  : "낮음"}
+                    ? "높음"
+                    : "낮음"}
               </span>
             </div>
             {parsed.signal.headline && (

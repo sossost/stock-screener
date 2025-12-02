@@ -111,7 +111,10 @@ export function loadAIAdvisorCache(
       const cacheKey = getCacheKey(symbol, date);
       localStorage.removeItem(cacheKey);
     } catch (removeError) {
-      console.error("[AIAdvisorCache] Failed to remove invalid cache:", removeError);
+      console.error(
+        "[AIAdvisorCache] Failed to remove invalid cache:",
+        removeError
+      );
     }
     return null;
   }
@@ -197,4 +200,3 @@ export function cleanupOldAIAdvisorCache(): void {
     console.error("[AIAdvisorCache] Failed to cleanup old cache:", error);
   }
 }
-

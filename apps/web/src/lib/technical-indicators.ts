@@ -311,8 +311,7 @@ export function calculateATR(
   }
 
   // 첫 번째 ATR: True Range의 SMA
-  let atr =
-    trueRanges.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  let atr = trueRanges.slice(0, period).reduce((a, b) => a + b, 0) / period;
 
   // 이후 ATR: Wilder's Smoothing Method
   for (let i = period; i < trueRanges.length; i++) {

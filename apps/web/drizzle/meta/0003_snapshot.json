@@ -86,12 +86,8 @@
           "name": "daily_ma_symbol_symbols_symbol_fk",
           "tableFrom": "daily_ma",
           "tableTo": "symbols",
-          "columnsFrom": [
-            "symbol"
-          ],
-          "columnsTo": [
-            "symbol"
-          ],
+          "columnsFrom": ["symbol"],
+          "columnsTo": ["symbol"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -101,10 +97,7 @@
         "uq_daily_ma_symbol_date": {
           "name": "uq_daily_ma_symbol_date",
           "nullsNotDistinct": false,
-          "columns": [
-            "symbol",
-            "date"
-          ]
+          "columns": ["symbol", "date"]
         }
       },
       "policies": {},
@@ -199,12 +192,8 @@
           "name": "daily_prices_symbol_symbols_symbol_fk",
           "tableFrom": "daily_prices",
           "tableTo": "symbols",
-          "columnsFrom": [
-            "symbol"
-          ],
-          "columnsTo": [
-            "symbol"
-          ],
+          "columnsFrom": ["symbol"],
+          "columnsTo": ["symbol"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -214,10 +203,7 @@
         "uq_daily_prices_symbol_date": {
           "name": "uq_daily_prices_symbol_date",
           "nullsNotDistinct": false,
-          "columns": [
-            "symbol",
-            "date"
-          ]
+          "columns": ["symbol", "date"]
         }
       },
       "policies": {},
@@ -276,12 +262,8 @@
           "name": "portfolio_symbol_symbols_symbol_fk",
           "tableFrom": "portfolio",
           "tableTo": "symbols",
-          "columnsFrom": [
-            "symbol"
-          ],
-          "columnsTo": [
-            "symbol"
-          ],
+          "columnsFrom": ["symbol"],
+          "columnsTo": ["symbol"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -291,10 +273,7 @@
         "uq_portfolio_session_symbol": {
           "name": "uq_portfolio_session_symbol",
           "nullsNotDistinct": false,
-          "columns": [
-            "session_id",
-            "symbol"
-          ]
+          "columns": ["session_id", "symbol"]
         }
       },
       "policies": {},
@@ -413,12 +392,8 @@
           "name": "quarterly_financials_symbol_symbols_symbol_fk",
           "tableFrom": "quarterly_financials",
           "tableTo": "symbols",
-          "columnsFrom": [
-            "symbol"
-          ],
-          "columnsTo": [
-            "symbol"
-          ],
+          "columnsFrom": ["symbol"],
+          "columnsTo": ["symbol"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -428,10 +403,7 @@
         "uq_quarterly_financials_symbol_period": {
           "name": "uq_quarterly_financials_symbol_period",
           "nullsNotDistinct": false,
-          "columns": [
-            "symbol",
-            "period_end_date"
-          ]
+          "columns": ["symbol", "period_end_date"]
         }
       },
       "policies": {},
@@ -588,12 +560,8 @@
           "name": "quarterly_ratios_symbol_symbols_symbol_fk",
           "tableFrom": "quarterly_ratios",
           "tableTo": "symbols",
-          "columnsFrom": [
-            "symbol"
-          ],
-          "columnsTo": [
-            "symbol"
-          ],
+          "columnsFrom": ["symbol"],
+          "columnsTo": ["symbol"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -603,10 +571,7 @@
         "uq_quarterly_ratios_symbol_period": {
           "name": "uq_quarterly_ratios_symbol_period",
           "nullsNotDistinct": false,
-          "columns": [
-            "symbol",
-            "period_end_date"
-          ]
+          "columns": ["symbol", "period_end_date"]
         }
       },
       "policies": {},
