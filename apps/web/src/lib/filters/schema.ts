@@ -103,20 +103,33 @@ export function parseFilters(
   const hasAnyParams = Object.keys(normalized).length > 0;
   const result = filterSchema.safeParse(normalized);
   if (result.success) {
-    // URL 파라미터가 없으면 MA 필터를 false로 설정 (명시적으로 true일 때만 적용)
-    if (!hasAnyParams) {
-      return {
-        ...result.data,
-        ordered: false,
-        goldenCross: false,
-        justTurned: false,
-        ma20Above: false,
-        ma50Above: false,
-        ma100Above: false,
-        ma200Above: false,
-      };
+    const data = result.data;
+
+    // MA 필터는 URL에 명시적으로 파라미터가 있을 때만 적용
+    // 파라미터가 없으면 false로 설정 (해제 상태)
+    if (!Object.prototype.hasOwnProperty.call(normalized, "ordered")) {
+      data.ordered = false;
     }
-    return result.data;
+    if (!Object.prototype.hasOwnProperty.call(normalized, "goldenCross")) {
+      data.goldenCross = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "justTurned")) {
+      data.justTurned = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "ma20Above")) {
+      data.ma20Above = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "ma50Above")) {
+      data.ma50Above = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "ma100Above")) {
+      data.ma100Above = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "ma200Above")) {
+      data.ma200Above = false;
+    }
+
+    return data;
   }
 
   // 잘못된 쿼리 값이 들어온 경우 기본값으로 대체해 서버 렌더링이 실패하지 않도록 방어
