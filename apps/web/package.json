@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "lint": "next lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "build": "next build",
     "start": "next start",
     "test": "vitest",

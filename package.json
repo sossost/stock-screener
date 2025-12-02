@@ -21,6 +21,8 @@
     "test:watch": "yarn workspace web test:watch",
     "test:run": "yarn workspace web test:run",
     "test:all": "yarn workspace web test:all",
+    "format": "yarn workspace web format",
+    "format:check": "yarn workspace web format:check",
     "feature:checklist": "yarn workspace web feature:checklist",
     "db:gen": "yarn workspace web db:gen",
     "db:push": "yarn workspace web db:push",
