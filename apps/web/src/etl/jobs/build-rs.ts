@@ -18,6 +18,20 @@ async function computeRsForDate(targetDate: string) {
   console.log(`📊 Computing RS for ${targetDate}...`);
 
   try {
+    // 날짜 계산: targetDate에서 LOOKBACK 일수만큼 빼기
+    const targetDateObj = new Date(targetDate);
+    const date12m = new Date(targetDateObj);
+    date12m.setDate(date12m.getDate() - LOOKBACK_12M);
+    const date12mStr = date12m.toISOString().split("T")[0];
+
+    const date6m = new Date(targetDateObj);
+    date6m.setDate(date6m.getDate() - LOOKBACK_6M);
+    const date6mStr = date6m.toISOString().split("T")[0];
+
+    const date3m = new Date(targetDateObj);
+    date3m.setDate(date3m.getDate() - LOOKBACK_3M);
+    const date3mStr = date3m.toISOString().split("T")[0];
+
     const result = (await db.execute(sql`
       WITH target AS (
         SELECT ${targetDate}::date AS d
@@ -29,28 +43,25 @@ async function computeRsForDate(targetDate: string) {
           (
             SELECT dp2.adj_close::numeric
             FROM daily_prices dp2
-            JOIN target t2 ON dp2.date::date <= t2.d
+            JOIN target t2 ON dp2.date::date <= ${date12mStr}::date
             WHERE dp2.symbol = dp.symbol
             ORDER BY dp2.date DESC
-            OFFSET ${LOOKBACK_12M}
             LIMIT 1
           ) AS lag_12m,
           (
             SELECT dp2.adj_close::numeric
             FROM daily_prices dp2
-            JOIN target t2 ON dp2.date::date <= t2.d
+            JOIN target t2 ON dp2.date::date <= ${date6mStr}::date
             WHERE dp2.symbol = dp.symbol
             ORDER BY dp2.date DESC
-            OFFSET ${LOOKBACK_6M}
             LIMIT 1
           ) AS lag_6m,
           (
             SELECT dp2.adj_close::numeric
             FROM daily_prices dp2
-            JOIN target t2 ON dp2.date::date <= t2.d
+            JOIN target t2 ON dp2.date::date <= ${date3mStr}::date
             WHERE dp2.symbol = dp.symbol
             ORDER BY dp2.date DESC
-            OFFSET ${LOOKBACK_3M}
             LIMIT 1
           ) AS lag_3m
         FROM daily_prices dp
