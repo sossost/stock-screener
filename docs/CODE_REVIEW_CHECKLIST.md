@@ -179,9 +179,18 @@
 
 ```bash
 yarn lint        # ESLint 검사
+yarn format:check # Prettier 포맷팅 검사
 yarn build       # 타입 체크 + 빌드
 yarn test        # 테스트 실행
 ```
+
+### Prettier 포맷팅 체크
+
+[ ] **코드 포맷팅**: Prettier 규칙에 맞게 포맷팅되었는가?
+
+- ✅ 해결: `yarn format:check` 실행하여 포맷팅 오류 확인
+- ❌ 금지: Prettier 설정과 다른 포맷팅 스타일
+- ✅ 해결: `yarn format` 실행하여 자동 포맷팅 적용
 
 ### 단계 2: 수동 체크리스트
 
