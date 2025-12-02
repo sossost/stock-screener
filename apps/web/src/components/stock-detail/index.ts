@@ -7,3 +7,4 @@ export {
   QuarterlyFinancialsCard,
 } from "./FundamentalsSection";
 export { QuarterlyCharts } from "./QuarterlyCharts";
+export { AIAdvisor } from "./AIAdvisor";
