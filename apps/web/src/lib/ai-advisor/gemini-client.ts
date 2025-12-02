@@ -12,7 +12,8 @@ import type { AIAdvisorRequest, AIAdvisorResponse } from "@/types/ai-advisor";
 const MODEL_NAME = "gemini-2.5-pro";
 
 // API 타임아웃 및 재시도 설정
-const API_TIMEOUT_MS = 10000;
+// 배포 환경에서 응답이 느릴 수 있으므로 타임아웃을 30초로 설정
+const API_TIMEOUT_MS = 30000;
 const MAX_RETRIES = 2;
 const INITIAL_BACKOFF_MS = 1000;
 
@@ -104,6 +105,13 @@ export async function generateTradingAnalysis(
 
     // 에러 타입별 처리
     if (error instanceof Error) {
+      // 타임아웃 에러 처리
+      if (error.name === "AbortError" || error.message.includes("timeout")) {
+        return {
+          success: false,
+          error: "API 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요",
+        };
+      }
       if (error.message.includes("API_KEY")) {
         return {
           success: false,
