@@ -56,7 +56,8 @@ export function useAIAdvisor({ symbol, currentPrice }: UseAIAdvisorOptions) {
     setIsLoading(true);
     setError(null);
 
-    const FETCH_TIMEOUT_MS = 15000;
+    // 배포 환경에서 Gemini API 응답이 느릴 수 있으므로 타임아웃을 60초로 설정
+    const FETCH_TIMEOUT_MS = 60000;
 
     try {
       const controller = new AbortController();
@@ -97,9 +98,16 @@ export function useAIAdvisor({ symbol, currentPrice }: UseAIAdvisorOptions) {
       saveAIAdvisorCache(symbol, currentPrice, result);
       setData(result);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다"
-      );
+      // 타임아웃 에러인 경우 명확한 메시지 제공
+      if (err instanceof Error && err.name === "AbortError") {
+        setError(
+          "요청 시간이 초과되었습니다. 네트워크 상태를 확인하고 잠시 후 다시 시도해주세요."
+        );
+      } else {
+        setError(
+          err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다"
+        );
+      }
       setData(null);
     } finally {
       setIsLoading(false);

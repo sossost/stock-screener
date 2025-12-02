@@ -1,6 +1,9 @@
 /**
  * AI Trading Advisor API
  * POST /api/ai-advisor
+ * 
+ * Vercel Pro 플랜의 경우 maxDuration을 60초로 설정 가능
+ * Hobby 플랜의 경우 기본 10초 제한 (런타임 설정 불가)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -8,6 +11,10 @@ import { z } from "zod";
 import { generateTradingAnalysis } from "@/lib/ai-advisor/gemini-client";
 import { collectAdvisorData } from "@/lib/ai-advisor/data-collector";
 import type { AIAdvisorResponse } from "@/types/ai-advisor";
+
+// Vercel Pro 플랜인 경우 최대 실행 시간 60초로 설정
+// Hobby 플랜의 경우 이 설정이 무시되고 기본 10초 제한 적용
+export const maxDuration = 60;
 
 const RequestSchema = z.object({
   symbol: z.string().min(1).max(10),
