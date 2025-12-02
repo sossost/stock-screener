@@ -107,7 +107,12 @@ export function AIAdvisor({ symbol, data, isLoading, error }: AIAdvisorProps) {
                 )}
               </div>
               <span className="text-xs text-muted-foreground whitespace-nowrap">
-                리스크: 낮음
+                리스크:{" "}
+                {parsed.riskCheck.warnings.length > 0
+                  ? "주의"
+                  : parsed.signal.type === "NO_TRADE"
+                  ? "높음"
+                  : "낮음"}
               </span>
             </div>
             {parsed.signal.headline && (

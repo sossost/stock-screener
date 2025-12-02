@@ -152,19 +152,29 @@ async function getUserPosition(symbol: string): Promise<UserPosition | null> {
 }
 
 /**
- * 금요일 여부 확인
+ * US Eastern Time 기준 현재 시간 반환
+ */
+function getUSEasternTime(): Date {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
+  );
+}
+
+/**
+ * 금요일 여부 확인 (US Eastern Time 기준)
  */
 function isFriday(): boolean {
-  const today = new Date();
+  const today = getUSEasternTime();
   return today.getDay() === 5; // 0 = 일요일, 5 = 금요일
 }
 
 /**
- * 시장 상태 판단 (간단한 구현)
+ * 시장 상태 판단 (US Eastern Time 기준)
  */
 function getMarketStatus(): "OPEN" | "CLOSED" | "PRE_MARKET" {
-  const now = new Date();
+  const now = getUSEasternTime();
   const hour = now.getHours();
+  const minutes = now.getMinutes();
   const day = now.getDay();
 
   // 주말
@@ -172,13 +182,13 @@ function getMarketStatus(): "OPEN" | "CLOSED" | "PRE_MARKET" {
     return "CLOSED";
   }
 
-  // 장 시작 전 (9:30 ET = 14:30 KST, 간단히 15시로 가정)
-  if (hour < 15) {
+  // Pre-market: before 9:30 AM ET
+  if (hour < 9 || (hour === 9 && minutes < 30)) {
     return "PRE_MARKET";
   }
 
-  // 장 마감 후 (16:00 ET = 21:00 KST)
-  if (hour >= 21) {
+  // After-hours: after 4:00 PM ET
+  if (hour >= 16) {
     return "CLOSED";
   }
 

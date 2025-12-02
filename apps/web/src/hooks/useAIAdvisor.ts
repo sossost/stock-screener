@@ -56,7 +56,12 @@ export function useAIAdvisor({ symbol, currentPrice }: UseAIAdvisorOptions) {
     setIsLoading(true);
     setError(null);
 
+    const FETCH_TIMEOUT_MS = 15000;
+
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
       const response = await fetch("/api/ai-advisor", {
         method: "POST",
         headers: {
@@ -66,11 +71,20 @@ export function useAIAdvisor({ symbol, currentPrice }: UseAIAdvisorOptions) {
           symbol,
           currentPrice,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "분석 요청에 실패했습니다");
+        let errorMessage = "분석 요청에 실패했습니다";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // JSON 파싱 실패 시 기본 메시지 사용
+        }
+        throw new Error(errorMessage);
       }
 
       const result: AIAdvisorResponse = await response.json();

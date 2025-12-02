@@ -11,6 +11,11 @@ import type { AIAdvisorRequest, AIAdvisorResponse } from "@/types/ai-advisor";
 // 대안: gemini-2.5-flash (더 빠르지만 성능 낮음), gemini-1.5-pro-latest
 const MODEL_NAME = "gemini-2.5-pro";
 
+// API 타임아웃 및 재시도 설정
+const API_TIMEOUT_MS = 10000;
+const MAX_RETRIES = 2;
+const INITIAL_BACKOFF_MS = 1000;
+
 /**
  * Gemini 클라이언트 초기화
  */
@@ -22,6 +27,42 @@ function createGeminiClient(): GoogleGenAI {
   }
 
   return new GoogleGenAI({ apiKey });
+}
+
+/**
+ * 재시도 로직이 포함된 API 호출 래퍼
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES
+): Promise<T> {
+  let lastError: Error | undefined;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+      try {
+        const result = await fn();
+        clearTimeout(timeoutId);
+        return result;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // 마지막 시도가 아니면 백오프 후 재시도
+      if (attempt < maxRetries) {
+        const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 /**
@@ -38,9 +79,11 @@ export async function generateTradingAnalysis(
     // System instruction과 user prompt를 결합
     const fullPrompt = `${systemInstruction}\n\n${userPrompt}`;
 
-    const response = await client.models.generateContent({
-      model: MODEL_NAME,
-      contents: fullPrompt,
+    const response = await withRetry(async () => {
+      return await client.models.generateContent({
+        model: MODEL_NAME,
+        contents: fullPrompt,
+      });
     });
 
     const analysis = response.text;

@@ -282,6 +282,11 @@ export function calculateATR(
   data: OHLCData[],
   period: number = 14
 ): number | null {
+  // period 유효성 검사
+  if (!Number.isFinite(period) || period <= 0) {
+    return null;
+  }
+
   if (data.length < period + 1) {
     return null;
   }
