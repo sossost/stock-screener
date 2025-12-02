@@ -270,3 +270,49 @@ export function calculateMAWithTime(
     value: sma[i],
   }));
 }
+
+/**
+ * ATR (Average True Range) 계산
+ * 변동성 측정 지표
+ * @param data OHLC 데이터
+ * @param period 기간 (기본값: 14)
+ * @returns ATR 값 (마지막 값만 반환)
+ */
+export function calculateATR(
+  data: OHLCData[],
+  period: number = 14
+): number | null {
+  if (data.length < period + 1) {
+    return null;
+  }
+
+  const trueRanges: number[] = [];
+
+  // True Range 계산
+  for (let i = 1; i < data.length; i++) {
+    const current = data[i];
+    const previous = data[i - 1];
+
+    const tr1 = current.high - current.low;
+    const tr2 = Math.abs(current.high - previous.close);
+    const tr3 = Math.abs(current.low - previous.close);
+
+    const trueRange = Math.max(tr1, tr2, tr3);
+    trueRanges.push(trueRange);
+  }
+
+  if (trueRanges.length < period) {
+    return null;
+  }
+
+  // 첫 번째 ATR: True Range의 SMA
+  let atr =
+    trueRanges.slice(0, period).reduce((a, b) => a + b, 0) / period;
+
+  // 이후 ATR: Wilder's Smoothing Method
+  for (let i = period; i < trueRanges.length; i++) {
+    atr = (atr * (period - 1) + trueRanges[i]) / period;
+  }
+
+  return atr;
+}

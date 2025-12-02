@@ -7,6 +7,8 @@ import {
   QuarterlyCharts,
 } from "@/components/stock-detail";
 import { TechnicalChart } from "@/components/stock-detail/TechnicalChart";
+import { AIAdvisorModal } from "@/components/stock-detail/AIAdvisorModal";
+import { useAIAdvisor } from "@/hooks/useAIAdvisor";
 
 interface StockDetailClientProps {
   data: StockDetail;
@@ -14,6 +16,19 @@ interface StockDetailClientProps {
 
 export function StockDetailClient({ data }: StockDetailClientProps) {
   const isEtf = data.basic.isEtf || data.basic.isFund;
+  const currentPrice = data.price.lastClose
+    ? parseFloat(data.price.lastClose)
+    : null;
+
+  const {
+    data: aiData,
+    isLoading: aiLoading,
+    error: aiError,
+    analyze,
+  } = useAIAdvisor({
+    symbol: data.basic.symbol,
+    currentPrice,
+  });
 
   return (
     <div className="space-y-4">
@@ -27,6 +42,18 @@ export function StockDetailClient({ data }: StockDetailClientProps) {
 
       {/* 주가 차트 */}
       <TechnicalChart symbol={data.basic.symbol} />
+
+      {/* AI 트레이딩 어드바이저 (플로팅 버튼 + 모달) */}
+      {currentPrice && (
+        <AIAdvisorModal
+          symbol={data.basic.symbol}
+          currentPrice={currentPrice}
+          data={aiData}
+          isLoading={aiLoading}
+          error={aiError}
+          onAnalyze={analyze}
+        />
+      )}
 
       {/* 분기 재무 (수익성/레버리지/배당) */}
       {!isEtf && data.ratios && (
