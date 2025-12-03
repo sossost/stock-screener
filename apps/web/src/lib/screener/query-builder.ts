@@ -240,6 +240,7 @@ function buildQuarterlyFinancialsCTE(
         json_build_object(
           'period_end_date', period_end_date,
           'revenue', revenue::numeric,
+          'net_income', net_income::numeric,
           'eps_diluted', eps_diluted::numeric
         ) ORDER BY period_end_date DESC
       ) as quarterly_data,
@@ -346,7 +347,7 @@ function buildQuarterlyFinancialsCTE(
         SELECT AVG(growth_rate)::numeric FROM income_growth_rates WHERE growth_rate IS NOT NULL
       ) as income_avg_growth_rate
     FROM (
-      SELECT period_end_date, revenue, eps_diluted, ROW_NUMBER() OVER (ORDER BY period_end_date DESC) as rn
+      SELECT period_end_date, revenue, net_income, eps_diluted, ROW_NUMBER() OVER (ORDER BY period_end_date DESC) as rn
       FROM quarterly_financials
       WHERE symbol = cand.symbol
       ORDER BY period_end_date DESC

@@ -235,3 +235,16 @@ export function formatPositionValue(value: number): string {
 export function formatPositionValueFull(value: number): string {
   return formatPrice(value);
 }
+
+/**
+ * 날짜 문자열을 요일과 함께 포맷팅 (예: "2025-12-03 (화)")
+ */
+export function formatDateWithWeekday(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  if (isNaN(date.getTime())) {
+    return dateStr; // 유효하지 않은 날짜면 원본 반환
+  }
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const weekday = weekdays[date.getDay()];
+  return `${dateStr} (${weekday})`;
+}

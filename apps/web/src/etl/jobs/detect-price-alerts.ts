@@ -11,10 +11,7 @@ import { ALERT_TYPES } from "@/lib/alerts/constants";
 import { validateDatabaseOnlyEnvironment } from "../utils/validation";
 import { sendEmailAlertBatch } from "@/lib/notifications/email";
 import { sendPushNotificationBatch } from "@/lib/notifications/push";
-
-// 중복 알림 방지를 위한 메모리 캐시 (초기 구현)
-// 키 형식: `${date}:${alertType}:${symbol}`
-const notifiedCache = new Set<string>();
+import { priceAlerts } from "@/db/schema";
 
 /**
  * 오늘 이미 알림을 보낸 종목 목록 조회
@@ -26,27 +23,13 @@ async function getNotifiedToday(
   date: string,
   alertType: string
 ): Promise<string[]> {
-  // 메모리 캐시에서 해당 날짜와 타입의 알림을 보낸 종목 조회
-  const notified: string[] = [];
-  const prefix = `${date}:${alertType}:`;
-
-  for (const key of notifiedCache) {
-    if (key.startsWith(prefix)) {
-      const symbol = key.replace(prefix, "");
-      notified.push(symbol);
-    }
-  }
-
-  return notified;
-
-  // 향후 price_alerts 테이블 사용으로 전환 가능:
-  // const result = await db.execute(sql`
-  //   SELECT symbol
-  //   FROM price_alerts
-  //   WHERE alert_date = ${date}
-  //     AND alert_type = ${alertType};
-  // `);
-  // return (result.rows as any[]).map((r) => r.symbol);
+  const result = await db.execute(sql`
+    SELECT symbol
+    FROM price_alerts
+    WHERE alert_date = ${date}
+      AND alert_type = ${alertType}
+  `);
+  return (result.rows as Array<{ symbol: string }>).map((r) => r.symbol);
 }
 
 /**
@@ -54,22 +37,27 @@ async function getNotifiedToday(
  * @param alert 알림 데이터
  */
 async function markAsNotified(alert: AlertData): Promise<void> {
-  // 메모리 캐시에 저장 (초기 구현)
-  const cacheKey = `${alert.date}:${alert.alertType}:${alert.symbol}`;
-  notifiedCache.add(cacheKey);
-
-  // 향후 price_alerts 테이블에 저장하도록 전환 가능:
-  // await db.insert(priceAlerts).values({
-  //   symbol: alert.symbol,
-  //   alertType: alert.alertType,
-  //   alertDate: alert.date,
-  //   conditionData: {
-  //     todayClose: alert.todayClose,
-  //     todayMa20: alert.todayMa20,
-  //     breakoutPercent: alert.breakoutPercent,
-  //   },
-  //   notificationChannels: ["email"],
-  // });
+  await db
+    .insert(priceAlerts)
+    .values({
+      symbol: alert.symbol,
+      alertType: alert.alertType,
+      alertDate: alert.date,
+      conditionData: {
+        todayClose: alert.todayClose,
+        todayMa20: alert.todayMa20,
+        todayMa50: alert.todayMa50,
+        todayMa100: alert.todayMa100,
+        todayMa200: alert.todayMa200,
+        prevClose: alert.prevClose,
+        prevMa20: alert.prevMa20,
+        breakoutPercent: alert.breakoutPercent,
+        priceChangePercent: alert.priceChangePercent,
+        volumeChangePercent: alert.volumeChangePercent,
+      },
+      notificationChannels: ["email"],
+    })
+    .onConflictDoNothing();
 }
 
 /**
