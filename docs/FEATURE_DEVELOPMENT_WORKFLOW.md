@@ -4,11 +4,54 @@
 
 1. **브랜치 생성**: `git checkout -b feature/<name>`
 2. **스펙/플랜/태스크 작성**: `.specify/specs/<feature>/spec.md` 또는 템플릿(`.specify/templates/feature-template.md`)을 사용
-3. **구현 순서**: 백엔드 → 프론트엔드 → 타입
-4. **셀프 리뷰**: 작성 코드를 "PR 리뷰어 관점"으로 검토
-5. **테스트**: 단위 → API → 컴포넌트 (`yarn test`, `yarn test:all`)
-6. **문서화**: README/spec/plan/tasks 동시 업데이트
-7. **빌드 테스트**: `yarn build` (또는 `yarn test:all`)
+3. **의사결정 문서화**: `.specify/specs/<feature>/decisions.md` 작성 (스펙 작성 단계부터 시작)
+4. **구현 순서**: 백엔드 → 프론트엔드 → 타입
+5. **의사결정 업데이트**: 구현 과정에서 내린 의사결정을 `decisions.md`에 추가
+6. **셀프 리뷰**: 작성 코드를 "PR 리뷰어 관점"으로 검토
+7. **테스트**: 단위 → API → 컴포넌트 (`yarn test`, `yarn test:all`)
+8. **문서화**: README/spec/plan/tasks 동시 업데이트
+9. **빌드 테스트**: `yarn build` (또는 `yarn test:all`)
+
+## 📝 의사결정 문서화 (필수)
+
+피쳐 개발 과정에서 내린 모든 주요 의사결정과 그 근거를 문서화합니다.
+
+### 문서 위치
+
+- **파일**: `.specify/specs/<feature>/decisions.md`
+- **형식**: ADR (Architecture Decision Record) 형식
+
+### 문서화 시점
+
+1. **스펙 작성 단계**: 설계 선택사항에 대한 의사결정
+   - 예: 알림 채널 선택 (이메일 vs 푸시)
+   - 예: 데이터 저장 방식 선택 (메모리 vs DB)
+   - 예: 피쳐 분리 여부
+
+2. **구현 단계**: 구현 방법에 대한 의사결정
+   - 예: 타입 안전성 개선 방법
+   - 예: 리소스 정리 패턴 선택
+   - 예: 에러 처리 전략
+
+### ADR 템플릿
+
+템플릿 파일: [`.specify/templates/decisions-template.md`](../../.specify/templates/decisions-template.md)
+
+새 피쳐 시작 시:
+1. `.specify/specs/<feature>/decisions.md` 파일 생성
+2. 템플릿 파일을 복사하여 사용
+3. 스펙 작성 단계부터 의사결정 기록 시작
+
+### 문서화 체크리스트
+
+스펙 작성 시:
+- [ ] 주요 설계 선택사항이 `decisions.md`에 기록되었는가?
+- [ ] 각 옵션의 장단점이 명확히 정리되었는가?
+- [ ] 선택한 옵션의 근거가 명확한가?
+
+구현 중:
+- [ ] 구현 과정에서 내린 의사결정이 `decisions.md`에 추가되었는가?
+- [ ] 코드 리뷰에서 제기된 의사결정이 문서화되었는가?
 
 ## 구현 체크리스트 (코드 작성 시 필수)
 
