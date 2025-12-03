@@ -343,7 +343,12 @@ describe("GET /api/alerts", () => {
   it("DB 에러 시 500 에러 반환", async () => {
     const { db } = await import("@/db/client");
 
-    vi.mocked(db.execute).mockRejectedValue(new Error("Database error"));
+    // zod 검증은 통과하고 DB 쿼리에서 에러 발생
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce({
+        rows: [{ alert_date: "2025-01-15" }],
+      } as unknown as never) // 날짜 목록 조회는 성공
+      .mockRejectedValueOnce(new Error("Database error")); // 전체 날짜 수 조회에서 에러
 
     const url = "http://localhost:3000/api/alerts";
     const request = new NextRequest(url);

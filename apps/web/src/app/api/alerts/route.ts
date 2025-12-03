@@ -2,27 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
 import { handleApiError, logError } from "@/lib/errors";
+import { alertsQuerySchema } from "@/lib/alerts/validators";
+import { buildAlertsQuery } from "@/lib/alerts/queries";
+import {
+  isQueryResult,
+  transformToScreenerCompany,
+} from "@/lib/alerts/transformers";
 import type { ScreenerCompany } from "@/types/screener";
-import { ALERT_TYPES } from "@/lib/alerts/constants";
-import { parseNumericValue } from "@/lib/screener/query-builder";
 
 // 캐싱 설정: 60초 동안 캐시
 export const revalidate = 60;
-
-/**
- * maxDates 파라미터를 안전하게 파싱
- * @param value 쿼리 파라미터 값
- * @param defaultValue 기본값 (기본: 5)
- * @returns 1 이상 100 이하의 정수
- */
-function parseMaxDates(value: string | null, defaultValue: number = 5): number {
-  if (!value) return defaultValue;
-  const parsed = parseInt(value, 10);
-  if (isNaN(parsed) || parsed < 1 || parsed > 100) {
-    return defaultValue;
-  }
-  return parsed;
-}
 
 /**
  * DateRow 타입 가드
@@ -71,287 +60,11 @@ async function getAlertsForDate(
     return [];
   }
 
-  const alertsData = await db.execute(sql`
-    WITH alert_prices AS (
-      SELECT DISTINCT ON (symbol)
-        symbol,
-        adj_close::numeric AS close,
-        date::date AS trade_date,
-        rs_score
-      FROM daily_prices
-      WHERE symbol = ANY(ARRAY[${sql.join(
-        symbols.map((s) => sql`${s}`),
-        sql`, `
-      )}])
-        AND date = ${date}
-    )
-    SELECT
-      ap.symbol,
-      ap.trade_date,
-      ap.close AS last_close,
-      ap.rs_score,
-      s.market_cap,
-      s.sector,
-      qf.quarterly_data,
-      qf.latest_eps,
-      qf.revenue_growth_quarters,
-      qf.income_growth_quarters,
-      qf.revenue_avg_growth_rate,
-      qf.income_avg_growth_rate,
-      qr.pe_ratio,
-      qr.peg_ratio,
-      dm.ma20,
-      dm.ma50,
-      dm.ma100,
-      dm.ma200
-    FROM alert_prices ap
-    LEFT JOIN symbols s ON s.symbol = ap.symbol
-    LEFT JOIN LATERAL (
-      SELECT
-        (
-          SELECT json_agg(
-            json_build_object(
-              'period_end_date', period_end_date,
-              'revenue', revenue::numeric,
-              'net_income', net_income::numeric,
-              'eps_diluted', eps_diluted::numeric
-            ) ORDER BY period_end_date DESC
-          )
-          FROM (
-            SELECT period_end_date, revenue, net_income, eps_diluted
-            FROM quarterly_financials
-            WHERE symbol = ap.symbol
-            ORDER BY period_end_date DESC
-            LIMIT 8
-          ) recent_quarters
-        ) as quarterly_data,
-        (
-          SELECT eps_diluted::numeric
-          FROM quarterly_financials
-          WHERE symbol = ap.symbol
-            AND eps_diluted IS NOT NULL
-          ORDER BY period_end_date DESC
-          LIMIT 1
-        ) as latest_eps,
-        (
-          WITH revenue_data AS (
-            SELECT 
-              revenue::numeric as rev, 
-              period_end_date,
-              ROW_NUMBER() OVER (ORDER BY period_end_date DESC) as rn
-            FROM quarterly_financials
-            WHERE symbol = ap.symbol
-              AND revenue IS NOT NULL
-            ORDER BY period_end_date DESC
-            LIMIT 8
-          ),
-          revenue_growth_check AS (
-            SELECT 
-              rev,
-              LAG(rev) OVER (ORDER BY period_end_date ASC) as prev_rev,
-              rn,
-              CASE WHEN rev > LAG(rev) OVER (ORDER BY period_end_date ASC) THEN 1 ELSE 0 END as is_growth
-            FROM revenue_data
-          )
-          SELECT COALESCE(
-            (
-              SELECT COUNT(*)
-              FROM revenue_growth_check
-              WHERE rn >= 1 
-                AND is_growth = 1
-                AND rn <= COALESCE(
-                  (SELECT MIN(rn) FROM revenue_growth_check WHERE rn >= 1 AND is_growth = 0),
-                  8
-                )
-            ), 
-            0
-          )
-        ) as revenue_growth_quarters,
-        (
-          WITH income_data AS (
-            SELECT 
-              eps_diluted::numeric as eps, 
-              period_end_date,
-              ROW_NUMBER() OVER (ORDER BY period_end_date DESC) as rn
-            FROM quarterly_financials
-            WHERE symbol = ap.symbol
-              AND eps_diluted IS NOT NULL
-            ORDER BY period_end_date DESC
-            LIMIT 8
-          ),
-          income_growth_check AS (
-            SELECT 
-              eps,
-              LAG(eps) OVER (ORDER BY period_end_date ASC) as prev_eps,
-              rn,
-              CASE WHEN eps > LAG(eps) OVER (ORDER BY period_end_date ASC) THEN 1 ELSE 0 END as is_growth
-            FROM income_data
-          )
-          SELECT COALESCE(
-            (
-              SELECT COUNT(*)
-              FROM income_growth_check
-              WHERE rn >= 1 
-                AND is_growth = 1
-                AND rn <= COALESCE(
-                  (SELECT MIN(rn) FROM income_growth_check WHERE rn >= 1 AND is_growth = 0),
-                  8
-                )
-            ), 
-            0
-          )
-        ) as income_growth_quarters,
-        (
-          WITH revenue_data AS (
-            SELECT 
-              revenue::numeric as rev, 
-              period_end_date,
-              ROW_NUMBER() OVER (ORDER BY period_end_date DESC) as rn
-            FROM quarterly_financials
-            WHERE symbol = ap.symbol
-              AND revenue IS NOT NULL
-            ORDER BY period_end_date DESC
-            LIMIT 8
-          ),
-          revenue_growth_rates AS (
-            SELECT 
-              rev,
-              LAG(rev) OVER (ORDER BY period_end_date ASC) as prev_rev,
-              CASE 
-                WHEN LAG(rev) OVER (ORDER BY period_end_date ASC) = 0 THEN NULL
-                WHEN LAG(rev) OVER (ORDER BY period_end_date ASC) IS NULL THEN NULL
-                ELSE ((rev - LAG(rev) OVER (ORDER BY period_end_date ASC)) / 
-                      NULLIF(LAG(rev) OVER (ORDER BY period_end_date ASC), 0)) * 100
-              END as growth_rate
-            FROM revenue_data
-          )
-          SELECT AVG(growth_rate)::numeric as avg_growth_rate
-          FROM revenue_growth_rates
-          WHERE growth_rate IS NOT NULL
-        ) as revenue_avg_growth_rate,
-        (
-          WITH income_data AS (
-            SELECT 
-              eps_diluted::numeric as eps, 
-              period_end_date,
-              ROW_NUMBER() OVER (ORDER BY period_end_date DESC) as rn
-            FROM quarterly_financials
-            WHERE symbol = ap.symbol
-              AND eps_diluted IS NOT NULL
-            ORDER BY period_end_date DESC
-            LIMIT 8
-          ),
-          income_growth_rates AS (
-            SELECT 
-              eps,
-              LAG(eps) OVER (ORDER BY period_end_date ASC) as prev_eps,
-              CASE 
-                WHEN LAG(eps) OVER (ORDER BY period_end_date ASC) = 0 THEN NULL
-                WHEN LAG(eps) OVER (ORDER BY period_end_date ASC) IS NULL THEN NULL
-                ELSE ((eps - LAG(eps) OVER (ORDER BY period_end_date ASC)) / 
-                      NULLIF(LAG(eps) OVER (ORDER BY period_end_date ASC), 0)) * 100
-              END as growth_rate
-            FROM income_data
-          )
-          SELECT AVG(growth_rate)::numeric as avg_growth_rate
-          FROM income_growth_rates
-          WHERE growth_rate IS NOT NULL
-        ) as income_avg_growth_rate
-    ) qf ON true
-    LEFT JOIN LATERAL (
-      SELECT
-        pe_ratio,
-        peg_ratio
-      FROM quarterly_ratios
-      WHERE symbol = ap.symbol
-      ORDER BY period_end_date DESC
-      LIMIT 1
-    ) qr ON true
-    LEFT JOIN daily_ma dm ON dm.symbol = ap.symbol AND dm.date = ${date}
-  `);
-
-  interface QueryResult {
-    symbol: string;
-    trade_date: string;
-    last_close: number;
-    rs_score: number | null;
-    market_cap: number | null;
-    sector: string | null;
-    quarterly_data: unknown;
-    latest_eps: number | null;
-    revenue_growth_quarters: number | null;
-    income_growth_quarters: number | null;
-    revenue_avg_growth_rate: number | null;
-    income_avg_growth_rate: number | null;
-    pe_ratio: number | string | null;
-    peg_ratio: number | string | null;
-    ma20: number | null;
-    ma50: number | null;
-    ma100: number | null;
-    ma200: number | null;
-    [key: string]: unknown;
-  }
-
-  /**
-   * QueryResult 타입 가드
-   * Drizzle의 반환 타입이 명시적이지 않아 타입 단언이 필요하지만,
-   * 런타임 검증을 통해 안전성 확보
-   */
-  function isQueryResult(row: unknown): row is QueryResult {
-    return (
-      typeof row === "object" &&
-      row !== null &&
-      "symbol" in row &&
-      "trade_date" in row &&
-      "last_close" in row
-    );
-  }
-
+  const query = buildAlertsQuery(date, symbols);
+  const alertsData = await db.execute(query);
   const results = alertsData.rows.filter(isQueryResult);
 
-  return results.map((r) => {
-    // 정배열 여부 계산
-    const ordered =
-      r.ma20 !== null &&
-      r.ma50 !== null &&
-      r.ma100 !== null &&
-      r.ma200 !== null &&
-      r.ma20 > r.ma50 &&
-      r.ma50 > r.ma100 &&
-      r.ma100 > r.ma200;
-
-    return {
-      symbol: r.symbol,
-      market_cap: r.market_cap?.toString() || null,
-      sector: r.sector ?? null,
-      last_close: r.last_close?.toString() || "0",
-      quarterly_financials:
-        (r.quarterly_data as Array<{
-          period_end_date: string;
-          revenue: number | null;
-          net_income: number | null;
-          eps_diluted: number | null;
-        }>) || [],
-      profitability_status:
-        r.latest_eps !== null && r.latest_eps > 0
-          ? "profitable"
-          : r.latest_eps !== null && r.latest_eps < 0
-            ? "unprofitable"
-            : "unknown",
-      revenue_growth_quarters: r.revenue_growth_quarters || 0,
-      income_growth_quarters: r.income_growth_quarters || 0,
-      revenue_avg_growth_rate: r.revenue_avg_growth_rate,
-      income_avg_growth_rate: r.income_avg_growth_rate,
-      ordered: ordered ?? false,
-      just_turned: false,
-      rs_score:
-        r.rs_score === null || r.rs_score === undefined
-          ? null
-          : Number(r.rs_score),
-      pe_ratio: parseNumericValue(r.pe_ratio),
-      peg_ratio: parseNumericValue(r.peg_ratio),
-    } satisfies ScreenerCompany;
-  });
+  return results.map(transformToScreenerCompany);
 }
 
 /**
@@ -361,9 +74,26 @@ async function getAlertsForDate(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const alertType =
-      searchParams.get("alertType") || ALERT_TYPES.MA20_BREAKOUT_ORDERED;
-    const maxDates = parseMaxDates(searchParams.get("maxDates"), 5);
+
+    // zod 스키마로 파라미터 검증
+    const validated = alertsQuerySchema.safeParse({
+      alertType: searchParams.get("alertType"),
+      maxDates: searchParams.get("maxDates"),
+    });
+
+    if (!validated.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid query parameters",
+          details: validated.error.issues.map(
+            (issue) => `${issue.path.join(".")}: ${issue.message}`
+          ),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { alertType, maxDates } = validated.data;
 
     // 최신 날짜부터 maxDates개의 날짜 조회
     const datesResult = await db.execute(sql`
