@@ -4,6 +4,11 @@ import type { AlertData } from "@/lib/alerts/types";
 import { ALERT_TYPES } from "@/lib/alerts/constants";
 import type { Resend } from "resend";
 
+// retryApiCall 모킹
+vi.mock("@/etl/utils/retry", () => ({
+  retryApiCall: vi.fn((fn: () => Promise<unknown>) => fn()),
+}));
+
 describe("sendEmailAlert", () => {
   const mockAlert: AlertData = {
     symbol: "AAPL",
@@ -149,7 +154,7 @@ describe("sendEmailAlert", () => {
     } as unknown as Resend;
 
     await expect(sendEmailAlert(mockAlert, mockResendInstance)).rejects.toThrow(
-      "Failed to send email: Invalid API key"
+      "Resend API error: Invalid API key"
     );
   });
 

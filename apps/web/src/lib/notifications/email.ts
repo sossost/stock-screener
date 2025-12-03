@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import type { AlertData } from "@/lib/alerts/types";
+import { retryApiCall } from "@/etl/utils/retry";
 
 // Resend 클라이언트 초기화 (lazy initialization for testing)
 let resendClient: Resend | null = null;
@@ -47,16 +48,49 @@ export async function sendEmailAlertBatch(
     email.trim()
   );
 
-  const result = await client.emails.send({
-    from: process.env.NOTIFICATION_EMAIL_FROM,
-    to: recipients,
-    subject,
-    html,
-  });
+  // 이메일 전송 타임아웃 (10초)
+  const EMAIL_SEND_TIMEOUT_MS = 10_000;
 
-  if (result.error) {
-    throw new Error(`Failed to send email: ${result.error.message}`);
+  // 재시도 설정
+  const EMAIL_RETRY_OPTIONS = {
+    maxAttempts: 3,
+    baseDelay: 1000, // 1초
+    maxDelay: 5000, // 5초
+    backoffMultiplier: 2, // 지수 백오프
+    jitter: true, // 지터 추가
+  };
+
+  // 타임아웃 및 재시도 로직이 포함된 이메일 전송
+  const emailFrom = process.env.NOTIFICATION_EMAIL_FROM;
+  if (!emailFrom) {
+    throw new Error("NOTIFICATION_EMAIL_FROM environment variable is not set");
   }
+
+  await retryApiCall(async () => {
+    // 타임아웃 래퍼
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error("Email send timeout")),
+        EMAIL_SEND_TIMEOUT_MS
+      );
+    });
+
+    const sendPromise = client.emails.send({
+      from: emailFrom,
+      to: recipients,
+      subject,
+      html,
+    });
+
+    const response = await Promise.race([sendPromise, timeoutPromise]);
+
+    // Resend API는 result.error로 에러를 반환하므로 확인 필요
+    if (response.error) {
+      throw new Error(`Resend API error: ${response.error.message}`);
+    }
+
+    return response;
+  }, EMAIL_RETRY_OPTIONS);
 }
 
 /**
@@ -196,8 +230,8 @@ function formatBatchEmailTemplate(alerts: AlertData[]): string {
       }', '_blank')">
         <td style="padding: 12px; text-align: left;">
           <a href="${baseUrl}/stock/${
-        alert.symbol
-      }" style="color: #2563eb; text-decoration: none; font-weight: 600;">
+            alert.symbol
+          }" style="color: #2563eb; text-decoration: none; font-weight: 600;">
             ${alert.symbol}
           </a>
         </td>
