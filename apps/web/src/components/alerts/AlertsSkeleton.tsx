@@ -23,7 +23,7 @@ export function AlertsSkeleton() {
         <Skeleton className="h-9 w-32 rounded-md" />
       </div>
 
-      {/* 날짜별 Card 스켈레톤 (최대 5개) */}
+      {/* 날짜별 Card 스켈레톤 (3개) */}
       {Array.from({ length: 3 }).map((_, dateIdx) => (
         <Card key={dateIdx} className="px-4 pb-4">
           <CardContent className="px-4 pt-4">

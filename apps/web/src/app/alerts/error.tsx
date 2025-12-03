@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { StateMessage } from "@/components/common/StateMessage";
 import { Button } from "@/components/ui/button";
 
-export default function Error({
+export default function AlertsError({
   error,
   reset,
 }: {

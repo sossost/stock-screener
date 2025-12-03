@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { handleApiError, logError } from "@/lib/errors";
 import type { ScreenerCompany } from "@/types/screener";
 import { ALERT_TYPES } from "@/lib/alerts/constants";
+import { parseNumericValue } from "@/lib/screener/query-builder";
 
 // 캐싱 설정: 60초 동안 캐시
 export const revalidate = 60;
@@ -57,17 +58,6 @@ interface AlertsResponse {
   alertsByDate: AlertsByDate[];
   totalDates: number;
   alertType: string;
-}
-
-/**
- * 숫자/문자열 값을 안전하게 파싱
- */
-function parseNumericValue(val: unknown): number | null {
-  if (val === null || val === undefined || val === "") return null;
-  const str = String(val).trim();
-  if (str === "" || str === "null" || str === "undefined") return null;
-  const num = parseFloat(str);
-  return isNaN(num) || !isFinite(num) ? null : num;
 }
 
 /**

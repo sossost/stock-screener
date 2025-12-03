@@ -50,7 +50,7 @@ export function AlertsClient() {
     ALERT_TYPES.MA20_BREAKOUT_ORDERED
   );
 
-  const { data, error } = useSuspenseQuery({
+  const { data } = useSuspenseQuery({
     queryKey: ["alerts", selectedAlertType],
     queryFn: () => fetchAlerts(selectedAlertType),
   });
@@ -59,20 +59,6 @@ export function AlertsClient() {
     value: type,
     label: ALERT_TYPE_LABELS[type],
   }));
-
-  if (error) {
-    return (
-      <StateMessage
-        variant="error"
-        title="알림을 불러오지 못했습니다"
-        description={
-          error instanceof Error
-            ? error.message
-            : "알 수 없는 오류가 발생했습니다"
-        }
-      />
-    );
-  }
 
   return (
     <div className="space-y-4">
