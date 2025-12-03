@@ -10,6 +10,7 @@ import type { AlertData } from "@/lib/alerts/types";
 import { ALERT_TYPES } from "@/lib/alerts/constants";
 import { validateDatabaseOnlyEnvironment } from "../utils/validation";
 import { sendEmailAlertBatch } from "@/lib/notifications/email";
+import { sendPushNotificationBatch } from "@/lib/notifications/push";
 
 // 중복 알림 방지를 위한 메모리 캐시 (초기 구현)
 // 키 형식: `${date}:${alertType}:${symbol}`
@@ -273,8 +274,9 @@ async function main() {
       );
     }
 
-    // 4. 종합 이메일 전송
+    // 4. 알림 전송 (이메일 및 푸시)
     if (newAlerts.length > 0) {
+      // 이메일 전송
       try {
         // 환경 변수 확인
         if (
@@ -297,7 +299,22 @@ async function main() {
             error instanceof Error ? error.message : String(error)
           }`
         );
-        // 이메일 전송 실패해도 알림은 보낸 것으로 표시 (중복 방지)
+        // 이메일 전송 실패해도 계속 진행
+      }
+
+      // 푸시 알림 전송 (DB에 등록된 활성 디바이스 토큰으로 전송)
+      try {
+        await sendPushNotificationBatch(newAlerts);
+        console.log(
+          `\n📱 Push notifications sent successfully (${newAlerts.length} alerts to all devices)`
+        );
+      } catch (error) {
+        console.error(
+          `\n❌ Failed to send push notifications: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        // 푸시 알림 전송 실패해도 계속 진행
       }
     }
 

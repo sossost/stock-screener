@@ -95,12 +95,29 @@
   - 관심종목 페이지에서 저장된 종목의 재무 데이터 확인
   - 서버 사이드 렌더링으로 빠른 로딩
 
+### 🔔 가격 알림 시스템 (Price Alerts)
+
+- **자동 알림 감지**: ETL 실행 시 특정 기술적 조건을 만족하는 종목을 자동으로 감지
+  - **알림 조건**: 정배열 상태에서 20일선 돌파 감지
+    - 정배열 조건: MA20 > MA50 > MA100 > MA200
+    - 돌파 조건: 전일 종가 < MA20, 오늘 종가 > MA20
+  - **중복 방지**: 같은 종목, 같은 날짜에 대해 하루 1회만 알림
+- **이메일 알림**: 감지된 종목을 종합 이메일로 전송
+  - 종목별 상세 정보 (티커, 회사명, 섹터, 시가총액, 돌파율 등)
+  - 클릭 가능한 링크로 종목 상세 페이지 이동
+- **모바일 푸시 알림**: 모바일 앱으로 푸시 알림 전송
+  - 종합 알림 형식 (여러 종목 → 1개 알림)
+  - 앱에서 상세 정보 확인 가능
+- **자동 실행**: GitHub Actions에서 일일 ETL 완료 후 자동으로 알림 감지 및 전송
+
 ## 🛠️ 뭘 썼나요?
 
 - **Next.js 15** + **React 19** + **TypeScript**
 - **Tailwind CSS** + **Shadcn/ui** (UI가 예쁘게 나오게)
 - **PostgreSQL** + **Drizzle ORM** (데이터 저장)
 - **FMP API** (주식 데이터 가져오기)
+- **Resend** (이메일 알림 전송)
+- **Expo Push Notification Service** (모바일 푸시 알림)
 - **Vercel** (배포)
 
 ## 📊 데이터는 어떻게?
@@ -129,6 +146,13 @@ yarn install
 FMP_API_KEY=your_fmp_api_key_here
 DATABASE_URL=postgresql://username:password@localhost:5432/screener
 DATA_API=https://financialmodelingprep.com/
+
+# 가격 알림 (선택사항)
+RESEND_API_KEY=re_xxxxx                    # 이메일 알림 (Resend)
+NOTIFICATION_EMAIL_FROM=noreply@example.com
+NOTIFICATION_EMAIL_TO=user@example.com
+# 참고: 푸시 알림 토큰은 DB의 device_tokens 테이블에서 관리됩니다
+# Expo Push Notification Service는 기본 서비스로 토큰 불필요
 ```
 
 ### 3. 데이터베이스 설정
@@ -233,10 +257,11 @@ yarn test:all
 ### 데이터 업데이트
 
 - 데이터는 매일 업데이트 (수동: `yarn etl:daily-prices`)
-- GitHub Actions 스케줄: 23:30 UTC(= KST 08:30) 단일 스케줄로 prices → MA/RS → ratios 순차 실행
+- GitHub Actions 스케줄: 23:30 UTC(= KST 08:30) 단일 스케줄로 prices → MA/RS → ratios → alerts 순차 실행
 - 분기별 재무 데이터는 `yarn etl:quarterly-financials` 실행
 - RS 점수는 가격 데이터 기반으로 `yarn etl:rs`(최신일) 또는 `yarn etl:rs-backfill`(최근 1년) 실행
 - 일일 밸류에이션(PER/PEG 등)은 `yarn etl:daily-ratios` 실행 (FMP TTM API 사용)
+- 가격 알림 감지: `yarn etl:detect-alerts` 실행 (일일 가격/이동평균 ETL 완료 후 자동 실행)
 
 ## 🔧 유용한 명령어들
 
@@ -252,6 +277,7 @@ yarn etl:cleanup-invalid-symbols  # 비정상 종목 정리
 yarn etl:rs                 # RS(12M/6M/3M 가중) 계산
 yarn etl:rs-backfill        # RS 최근 1년치 백필
 yarn etl:daily-ratios       # 일일 밸류에이션 (PER/PEG 등)
+yarn etl:detect-alerts      # 가격 알림 감지 및 전송
 # 모바일(Expo) 개발
 yarn dev:mobile             # Expo dev 서버
 yarn workspace mobile ios   # iOS (Xcode 필요)
