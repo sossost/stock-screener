@@ -70,6 +70,19 @@ export function calculateProfitabilityStatus(
 }
 
 /**
+ * quarterly_data를 안전하게 파싱
+ */
+function parseQuarterlyData(data: unknown): Array<{
+  period_end_date: string;
+  revenue: number | null;
+  net_income: number | null;
+  eps_diluted: number | null;
+}> {
+  if (!Array.isArray(data)) return [];
+  return data;
+}
+
+/**
  * QueryResult를 ScreenerCompany로 변환
  */
 export function transformToScreenerCompany(r: QueryResult): ScreenerCompany {
@@ -78,13 +91,7 @@ export function transformToScreenerCompany(r: QueryResult): ScreenerCompany {
     market_cap: r.market_cap?.toString() || null,
     sector: r.sector ?? null,
     last_close: r.last_close?.toString() || "0",
-    quarterly_financials:
-      (r.quarterly_data as Array<{
-        period_end_date: string;
-        revenue: number | null;
-        net_income: number | null;
-        eps_diluted: number | null;
-      }>) || [],
+    quarterly_financials: parseQuarterlyData(r.quarterly_data),
     profitability_status: calculateProfitabilityStatus(r.latest_eps),
     revenue_growth_quarters: r.revenue_growth_quarters || 0,
     income_growth_quarters: r.income_growth_quarters || 0,

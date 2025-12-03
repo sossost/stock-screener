@@ -5,6 +5,11 @@ import { db } from "@/db/client";
  * 알림 종목 데이터 조회 쿼리 빌더
  */
 export function buildAlertsQuery(date: string, symbols: string[]): SQL {
+  if (symbols.length === 0) {
+    // 빈 배열일 경우 결과 없음을 반환하는 쿼리
+    return sql`SELECT NULL WHERE FALSE`;
+  }
+
   return sql`
     WITH alert_prices AS (
       SELECT DISTINCT ON (symbol)
