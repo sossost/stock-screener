@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { trades, tradeActions } from "@/db/schema";
-import { eq, and, gte, lte, inArray, count } from "drizzle-orm";
+import { eq, and, or, gte, lte, inArray, count, sql } from "drizzle-orm";
 import {
   calculateTradeStats,
   calculateTradeMetrics,
@@ -47,11 +47,33 @@ export async function GET(request: NextRequest) {
     const conditions = [eq(trades.userId, userId)];
 
     // 날짜 필터링: 완료된 거래는 endDate 기준, 진행중인 거래는 startDate 기준
-    if (startDate) {
-      conditions.push(gte(trades.startDate, startDate));
-    }
-    if (endDate) {
-      conditions.push(lte(trades.startDate, endDate));
+    if (startDate || endDate) {
+      // OR 조건: (진행중인 거래 AND startDate 조건) OR (완료된 거래 AND endDate 조건)
+      if (startDate && endDate) {
+        conditions.push(
+          sql`(
+            (${eq(trades.status, "OPEN")} AND ${gte(trades.startDate, startDate)} AND ${lte(trades.startDate, endDate)})
+            OR
+            (${eq(trades.status, "CLOSED")} AND ${gte(trades.endDate, startDate)} AND ${lte(trades.endDate, endDate)})
+          )`
+        );
+      } else if (startDate) {
+        conditions.push(
+          sql`(
+            (${eq(trades.status, "OPEN")} AND ${gte(trades.startDate, startDate)})
+            OR
+            (${eq(trades.status, "CLOSED")} AND ${gte(trades.endDate, startDate)})
+          )`
+        );
+      } else if (endDate) {
+        conditions.push(
+          sql`(
+            (${eq(trades.status, "OPEN")} AND ${lte(trades.startDate, endDate)})
+            OR
+            (${eq(trades.status, "CLOSED")} AND ${lte(trades.endDate, endDate)})
+          )`
+        );
+      }
     }
 
     const allTradesList = await db

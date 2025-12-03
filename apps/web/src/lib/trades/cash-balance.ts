@@ -17,35 +17,81 @@ export async function getCashBalance(userId: string): Promise<number> {
     return 0;
   }
 
-  return parseFloat(settings.cashBalance);
+  const balance = parseFloat(settings.cashBalance);
+  return isNaN(balance) ? 0 : balance;
 }
 
 /**
  * 특정 매매의 모든 액션을 기반으로 현금 잔액 업데이트
+ * 누적 오류 방지를 위해 사용자의 모든 트레이드의 모든 액션을 재계산
  * @param userId 사용자 ID
- * @param tradeId 매매 ID
- * @param commissionRate 수수료율 (%)
+ * @param tradeId 매매 ID (사용되지 않지만 호출 호환성을 위해 유지)
+ * @param commissionRate 수수료율 (%) (사용되지 않지만 호출 호환성을 위해 유지)
  */
 export async function updateCashBalanceForTrade(
   userId: string,
-  tradeId: number,
-  commissionRate: number
+  _tradeId: number,
+  _commissionRate: number
 ): Promise<void> {
-  // 해당 매매의 모든 액션 조회
+  // 사용자의 모든 트레이드 조회
+  const { trades } = await import("@/db/schema");
+  const allTrades = await db
+    .select({
+      id: trades.id,
+      commissionRate: trades.commissionRate,
+    })
+    .from(trades)
+    .where(eq(trades.userId, userId));
+
+  if (allTrades.length === 0) {
+    // 트레이드가 없으면 잔액을 0으로 설정
+    await db
+      .insert(portfolioSettings)
+      .values({
+        userId,
+        cashBalance: "0",
+      })
+      .onConflictDoUpdate({
+        target: portfolioSettings.userId,
+        set: {
+          cashBalance: "0",
+          updatedAt: new Date(),
+        },
+      });
+    return;
+  }
+
+  // 모든 트레이드의 모든 액션 조회
   const { tradeActions } = await import("@/db/schema");
-  const actions = await db
+  const { inArray } = await import("drizzle-orm");
+  const tradeIds = allTrades.map((t) => t.id);
+  const allActions = await db
     .select()
     .from(tradeActions)
-    .where(eq(tradeActions.tradeId, tradeId));
+    .where(inArray(tradeActions.tradeId, tradeIds));
 
-  // 현금 변화량 계산
-  const cashChange = calculateCashChange(actions, commissionRate);
+  // 트레이드별로 그룹핑하여 각 트레이드의 수수료율 적용
+  const actionsByTradeId = new Map<number, typeof allActions>();
+  for (const action of allActions) {
+    const existing = actionsByTradeId.get(action.tradeId) || [];
+    existing.push(action);
+    actionsByTradeId.set(action.tradeId, existing);
+  }
 
-  // 현재 현금 잔액 조회
-  const currentBalance = await getCashBalance(userId);
+  // 전체 현금 변화량 계산 (각 트레이드별 수수료율 적용)
+  let totalCashChange = 0;
+  for (const trade of allTrades) {
+    const actions = actionsByTradeId.get(trade.id) || [];
+    const commissionRate = trade.commissionRate
+      ? parseFloat(trade.commissionRate)
+      : 0.07;
+    const cashChange = calculateCashChange(actions, commissionRate);
+    totalCashChange += cashChange;
+  }
 
-  // 새로운 잔액 계산
-  const newBalance = currentBalance + cashChange;
+  // 초기 잔액(0)에서 모든 변화량을 합산한 값으로 설정
+  // TODO: 초기 잔액을 별도 필드로 관리하는 경우 이 부분 수정 필요
+  const newBalance = totalCashChange;
 
   // 현금 잔액 업데이트 (upsert)
   await db
