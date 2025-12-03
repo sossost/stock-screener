@@ -25,8 +25,7 @@ export async function POST(req: NextRequest) {
       console.error("❌ Validation failed:", result.error.format());
       return NextResponse.json(
         {
-          error:
-            result.error.issues[0]?.message || "입력 검증 실패",
+          error: result.error.issues[0]?.message || "입력 검증 실패",
         },
         { status: 400 }
       );

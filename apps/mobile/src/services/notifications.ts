@@ -25,18 +25,18 @@ const DEVICE_ID_KEY = "device_unique_id";
 async function generateUUID(): Promise<string> {
   // 16바이트 랜덤 데이터 생성
   const bytes = await Crypto.getRandomBytesAsync(16);
-  
+
   // UUID v4 형식으로 변환
   // bytes[6]의 상위 4비트를 0100으로 설정 (version 4)
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   // bytes[8]의 상위 2비트를 10으로 설정 (variant)
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  
+
   // 16진수 문자열로 변환
   const hex = Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  
+
   // UUID 형식으로 포맷팅: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
   return [
     hex.substring(0, 8),
