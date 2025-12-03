@@ -99,9 +99,10 @@ chmod +x .git/hooks/pre-commit
 
 **검증 항목**:
 
-1. `yarn lint` - ESLint 검사
-2. `yarn build` - 타입 체크 + 빌드
-3. `yarn test` - 테스트 실행
+1. `yarn format` - 코드 포매팅 적용
+2. `yarn lint` - ESLint 검사
+3. `yarn build` - 타입 체크 + 빌드
+4. `yarn test` - 테스트 실행
 
 ### 3단계: 수동 체크리스트 검증 (PR 전)
 
@@ -130,6 +131,7 @@ chmod +x .git/hooks/pre-commit
 
 ## 커밋 전 필수 체크 (생략 불가)
 
+- [ ] `yarn format` 실행 (코드 포매팅 적용)
 - [ ] `yarn lint` 통과
 - [ ] `yarn test` 통과
 - [ ] `yarn build` 통과
