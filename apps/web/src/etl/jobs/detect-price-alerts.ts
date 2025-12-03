@@ -9,6 +9,7 @@ import {
 import type { AlertData } from "@/lib/alerts/types";
 import { ALERT_TYPES } from "@/lib/alerts/constants";
 import { validateDatabaseOnlyEnvironment } from "../utils/validation";
+import { sendEmailAlertBatch } from "@/lib/notifications/email";
 
 // 중복 알림 방지를 위한 메모리 캐시 (초기 구현)
 // 키 형식: `${date}:${alertType}:${symbol}`
@@ -92,6 +93,7 @@ async function detectMa20BreakoutOrdered(): Promise<AlertData[]> {
       SELECT 
         dp.symbol,
         dp.adj_close::numeric AS today_close,
+        dp.volume::numeric AS today_volume,
         dm.ma20::numeric AS today_ma20,
         dm.ma50::numeric AS today_ma50,
         dm.ma100::numeric AS today_ma100,
@@ -100,6 +102,7 @@ async function detectMa20BreakoutOrdered(): Promise<AlertData[]> {
       JOIN daily_ma dm ON dp.symbol = dm.symbol AND dp.date = dm.date
       WHERE dp.date = ${latestDate}
         AND dp.adj_close IS NOT NULL
+        AND dp.volume IS NOT NULL
         AND dm.ma20 IS NOT NULL
         AND dm.ma50 IS NOT NULL
         AND dm.ma100 IS NOT NULL
@@ -109,22 +112,26 @@ async function detectMa20BreakoutOrdered(): Promise<AlertData[]> {
       SELECT 
         dp.symbol,
         dp.adj_close::numeric AS prev_close,
+        dp.volume::numeric AS prev_volume,
         dm.ma20::numeric AS prev_ma20
       FROM daily_prices dp
       JOIN daily_ma dm ON dp.symbol = dm.symbol AND dp.date = dm.date
       WHERE dp.date = ${previousDate}
         AND dp.adj_close IS NOT NULL
+        AND dp.volume IS NOT NULL
         AND dm.ma20 IS NOT NULL
     ),
     ordered AS (
       SELECT 
         l.symbol,
         l.today_close,
+        l.today_volume,
         l.today_ma20,
         l.today_ma50,
         l.today_ma100,
         l.today_ma200,
         p.prev_close,
+        p.prev_volume,
         p.prev_ma20
       FROM latest l
       JOIN previous p ON l.symbol = p.symbol
@@ -140,14 +147,23 @@ async function detectMa20BreakoutOrdered(): Promise<AlertData[]> {
     SELECT 
       o.symbol,
       s.company_name,
+      s.sector,
+      s.market_cap,
       o.today_close,
+      o.today_volume,
       o.today_ma20,
       o.today_ma50,
       o.today_ma100,
       o.today_ma200,
       o.prev_close,
+      o.prev_volume,
       o.prev_ma20,
-      (o.today_close / o.prev_ma20 - 1) * 100 AS breakout_percent
+      (o.today_close / o.prev_ma20 - 1) * 100 AS breakout_percent,
+      (o.today_close / o.prev_close - 1) * 100 AS price_change_percent,
+      CASE 
+        WHEN o.prev_volume > 0 THEN (o.today_volume / o.prev_volume - 1) * 100
+        ELSE NULL
+      END AS volume_change_percent
     FROM ordered o
     JOIN symbols s ON o.symbol = s.symbol
     ORDER BY o.symbol;
@@ -156,29 +172,43 @@ async function detectMa20BreakoutOrdered(): Promise<AlertData[]> {
   interface AlertRow {
     symbol: string;
     company_name: string | null;
+    sector: string | null;
+    market_cap: string | null;
     today_close: string;
+    today_volume: string;
     today_ma20: string;
     today_ma50: string;
     today_ma100: string;
     today_ma200: string;
     prev_close: string;
+    prev_volume: string;
     prev_ma20: string;
     breakout_percent: string;
+    price_change_percent: string;
+    volume_change_percent: string | null;
     [key: string]: unknown;
   }
 
   return (result.rows as unknown as AlertRow[]).map((r) => ({
     symbol: r.symbol,
     companyName: r.company_name || r.symbol,
+    sector: r.sector || null,
+    marketCap: r.market_cap ? Number(r.market_cap) : null,
     alertType: ALERT_TYPES.MA20_BREAKOUT_ORDERED,
     todayClose: Number(r.today_close),
+    todayVolume: Number(r.today_volume),
     todayMa20: Number(r.today_ma20),
     todayMa50: Number(r.today_ma50),
     todayMa100: Number(r.today_ma100),
     todayMa200: Number(r.today_ma200),
     prevClose: Number(r.prev_close),
+    prevVolume: Number(r.prev_volume),
     prevMa20: Number(r.prev_ma20),
     breakoutPercent: Number(r.breakout_percent),
+    priceChangePercent: Number(r.price_change_percent),
+    volumeChangePercent: r.volume_change_percent
+      ? Number(r.volume_change_percent)
+      : 0,
     date: latestDate,
   }));
 }
@@ -225,7 +255,7 @@ async function main() {
       } already notified)`
     );
 
-    // 3. 알림 정보 출력 (Phase 1에서는 로깅만)
+    // 3. 알림 정보 로깅
     for (const alert of newAlerts) {
       console.log(
         `\n📬 Alert detected for ${alert.symbol} (${alert.companyName})`
@@ -241,8 +271,38 @@ async function main() {
           2
         )} > ${alert.todayMa200.toFixed(2)}`
       );
+    }
 
-      // 알림을 보낸 것으로 표시
+    // 4. 종합 이메일 전송
+    if (newAlerts.length > 0) {
+      try {
+        // 환경 변수 확인
+        if (
+          process.env.RESEND_API_KEY &&
+          process.env.NOTIFICATION_EMAIL_FROM &&
+          process.env.NOTIFICATION_EMAIL_TO
+        ) {
+          await sendEmailAlertBatch(newAlerts);
+          console.log(
+            `\n📧 Email sent successfully (${newAlerts.length} alerts in one email)`
+          );
+        } else {
+          console.log(
+            `\n⚠️ Email not sent: Missing email configuration (RESEND_API_KEY, NOTIFICATION_EMAIL_FROM, or NOTIFICATION_EMAIL_TO)`
+          );
+        }
+      } catch (error) {
+        console.error(
+          `\n❌ Failed to send email: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        // 이메일 전송 실패해도 알림은 보낸 것으로 표시 (중복 방지)
+      }
+    }
+
+    // 5. 알림을 보낸 것으로 표시
+    for (const alert of newAlerts) {
       await markAsNotified(alert);
     }
 
