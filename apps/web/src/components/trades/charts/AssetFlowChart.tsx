@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { formatYLabel, formatXLabel } from "@/utils/chart-format";
+import { formatXLabel } from "@/utils/chart-format";
 import { Button } from "@/components/ui/button";
 import AssetFlowTooltip from "./AssetFlowTooltip";
 
-interface AssetSnapshot {
+interface PnlSnapshot {
   date: string;
-  totalAssets: number;
-  cash: number;
-  positionValue: number;
+  realizedPnl: number;
 }
 
 type Period = "1M" | "3M" | "ALL";
@@ -20,19 +18,12 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "ALL", label: "전체" },
 ];
 
-export default function AssetFlowChart({
-  currentTotalAssets,
-  currentCash,
-  currentPositionValue,
-}: {
-  currentTotalAssets?: number;
-  currentCash?: number;
-  currentPositionValue?: number;
-}) {
+export default function AssetFlowChart() {
   const [period, setPeriod] = useState<Period>("1M");
-  const [data, setData] = useState<AssetSnapshot[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hoveredData, setHoveredData] = useState<AssetSnapshot | null>(null);
+  const [data, setData] = useState<PnlSnapshot[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hoveredData, setHoveredData] = useState<PnlSnapshot | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(
     null
   );
@@ -41,16 +32,22 @@ export default function AssetFlowChart({
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const res = await fetch(`/api/trades/assets?period=${period}`);
         if (!res.ok) {
           throw new Error(`Failed to fetch: ${res.status}`);
         }
-        const snapshots = await res.json();
-        setData(snapshots);
+        const pnlData = await res.json();
+        setData(pnlData);
       } catch (error) {
-        console.error("Failed to fetch asset snapshots:", error);
-        // TODO: 사용자에게 에러 메시지 표시 (토스트 등)
+        console.error("Failed to fetch PnL flow:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "수익 흐름 데이터를 불러오지 못했습니다"
+        );
+        setData([]);
       } finally {
         setLoading(false);
       }
@@ -58,80 +55,51 @@ export default function AssetFlowChart({
     fetchData();
   }, [period]);
 
-  useEffect(() => {
-    if (
-      currentTotalAssets != null &&
-      currentCash != null &&
-      currentPositionValue != null &&
-      currentTotalAssets > 0
-    ) {
-      const saveSnapshot = async () => {
-        try {
-          const res = await fetch("/api/trades/assets", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              date: new Date().toISOString(),
-              totalAssets: currentTotalAssets,
-              cash: currentCash,
-              positionValue: currentPositionValue,
-            }),
-          });
-          if (!res.ok) {
-            throw new Error(`Failed to save asset snapshot: ${res.status}`);
-          }
-        } catch (error) {
-          console.error("Failed to save asset snapshot:", error);
-          // 실패해도 치명적이지 않으므로 조용히 처리
-        }
-      };
-      saveSnapshot();
-    }
-  }, [currentTotalAssets, currentCash, currentPositionValue]);
-
-  const chartData = useMemo(() => {
-    const result = [...data];
-    if (
-      currentTotalAssets != null &&
-      currentCash != null &&
-      currentPositionValue != null &&
-      currentTotalAssets > 0
-    ) {
-      const today = new Date().toISOString().split("T")[0];
-      const lastDate = result[result.length - 1]?.date?.split("T")[0];
-      if (lastDate !== today) {
-        result.push({
-          date: new Date().toISOString(),
-          totalAssets: currentTotalAssets,
-          cash: currentCash,
-          positionValue: currentPositionValue,
-        });
-      }
-    }
-    return result;
-  }, [data, currentTotalAssets, currentCash, currentPositionValue]);
-
   const chartCalc = useMemo(() => {
-    if (chartData.length === 0) return null;
-    const values = chartData.map((d) => d.totalAssets);
+    if (data.length === 0) return null;
+    const values = data.map((d) => d.realizedPnl);
     const dataMax = Math.max(...values);
-    const max = Math.ceil((dataMax * 1.1) / 1000) * 1000;
-    return { max, min: 0 };
-  }, [chartData]);
+    const dataMin = Math.min(...values);
+    
+    // 실제 데이터 범위에 맞춰 Y축 설정 (그래프가 바닥에서 시작하도록)
+    if (dataMin >= 0) {
+      const max = Math.ceil(dataMax * 1.1 / 1000) * 1000;
+      // 최소값을 데이터 최소값과 정확히 일치시켜 그래프 시작점과 Y축 눈금 일치
+      const min = dataMin;
+      return { max, min };
+    }
+    
+    // 양수와 음수를 모두 포함하도록 범위 설정
+    const max = Math.ceil(Math.max(dataMax, Math.abs(dataMin)) * 1.1 / 1000) * 1000;
+    const min = Math.floor(Math.min(dataMin, -Math.abs(dataMax)) * 1.1 / 1000) * 1000;
+    return { max, min };
+  }, [data]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (chartData.length === 0 || !containerRef.current) return;
+    if (data.length === 0 || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const ratio = (e.clientX - rect.left) / rect.width;
-    const index = Math.round(ratio * (chartData.length - 1));
-    if (index >= 0 && index < chartData.length) {
-      setHoveredData(chartData[index]);
+    const index = Math.round(ratio * (data.length - 1));
+    if (index >= 0 && index < data.length) {
+      setHoveredData(data[index]);
       setTooltipPos({ x: e.clientX, y: e.clientY });
     }
   };
 
+  // 에러 상태
+  if (error && !loading) {
+    return (
+      <div className="h-full flex flex-col">
+        <Header period={period} onPeriodChange={setPeriod} />
+        <div className="flex-1 flex items-center justify-center text-red-500 text-xs">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
   // 빈 상태
-  if (chartData.length === 0 && !loading) {
+  if (data.length === 0 && !loading) {
     return (
       <div className="h-full flex flex-col">
         <Header period={period} onPeriodChange={setPeriod} />
@@ -144,29 +112,58 @@ export default function AssetFlowChart({
 
   // SVG 경로 생성
   const getPath = () => {
-    if (!chartCalc || chartData.length === 0) return { line: "", area: "" };
+    if (!chartCalc || data.length === 0) return { line: "", area: "" };
 
     const w = 100; // percentage
     const h = 100;
 
-    const points = chartData.map((d, i) => {
-      const x = chartData.length > 1 ? (i / (chartData.length - 1)) * w : w / 2;
+    const points = data.map((d, i) => {
+      // X 좌표: 0부터 100까지 균등 분배
+      const x =
+        data.length > 1
+          ? (i / (data.length - 1)) * w
+          : 0;
       const y =
         h -
-        ((d.totalAssets - chartCalc.min) / (chartCalc.max - chartCalc.min)) * h;
+        ((d.realizedPnl - chartCalc.min) / (chartCalc.max - chartCalc.min)) * h;
       return { x, y };
     });
 
+    // line path: 모든 점을 연결
     const line = points
       .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
       .join(" ");
-    const area =
-      line + ` L ${points[points.length - 1].x} ${h} L ${points[0].x} ${h} Z`;
+    
+    // area path: line을 따라가고, 바닥으로 내려가서 닫기
+    // 경로: 첫 번째 점 -> 모든 점 -> 마지막 점 -> 바닥(마지막 x) -> 바닥(첫 번째 x) -> 첫 번째 점
+    const firstX = points[0].x;
+    const lastX = points[points.length - 1].x;
+    
+    // area path: 항상 바닥까지 채워지도록 구성
+    const area = `${line} L ${lastX} ${h} L ${firstX} ${h} Z`;
 
     return { line, area };
   };
 
   const { line, area } = getPath();
+
+  // Y축 눈금선 위치 계산 (viewBox 기준)
+  const getGridLineY = (value: number): number => {
+    if (!chartCalc) return 0;
+    const h = 100;
+    return h - ((value - chartCalc.min) / (chartCalc.max - chartCalc.min)) * h;
+  };
+
+  const gridLines = chartCalc
+    ? [
+        { y: getGridLineY(chartCalc.max), value: chartCalc.max },
+        {
+          y: getGridLineY((chartCalc.max + chartCalc.min) / 2),
+          value: (chartCalc.max + chartCalc.min) / 2,
+        },
+        { y: getGridLineY(chartCalc.min), value: chartCalc.min },
+      ]
+    : [];
 
   return (
     <div className="h-full flex flex-col">
@@ -204,41 +201,50 @@ export default function AssetFlowChart({
                     <stop offset="100%" stopColor="#dc2626" stopOpacity="0" />
                   </linearGradient>
                 </defs>
-                {/* 눈금선 */}
+                {/* 눈금선 - 데이터 범위에 맞춰 동적으로 계산 */}
+                {gridLines.map((grid, idx) => (
+                  <line
+                    key={idx}
+                    x1="0"
+                    y1={grid.y}
+                    x2="100"
+                    y2={grid.y}
+                    stroke="#f3f4f6"
+                    strokeWidth="0.5"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+                {/* Y축 경계선 (왼쪽) */}
                 <line
                   x1="0"
                   y1="0"
-                  x2="100"
-                  y2="0"
-                  stroke="#f3f4f6"
-                  strokeWidth="0.5"
+                  x2="0"
+                  y2="100"
+                  stroke="#d1d5db"
+                  strokeWidth="1"
                   vectorEffect="non-scaling-stroke"
                 />
-                <line
-                  x1="0"
-                  y1="50"
-                  x2="100"
-                  y2="50"
-                  stroke="#f3f4f6"
-                  strokeWidth="0.5"
-                  vectorEffect="non-scaling-stroke"
-                />
+                {/* X축 경계선 (아래) */}
                 <line
                   x1="0"
                   y1="100"
                   x2="100"
                   y2="100"
-                  stroke="#f3f4f6"
-                  strokeWidth="0.5"
+                  stroke="#d1d5db"
+                  strokeWidth="1"
                   vectorEffect="non-scaling-stroke"
                 />
                 {/* 영역 */}
                 <path d={area} fill="url(#areaGrad)" />
-                {/* 라인 */}
+                {/* 라인 - 양수는 초록, 음수는 빨강 */}
                 <path
                   d={line}
                   fill="none"
-                  stroke="#dc2626"
+                  stroke={
+                    data.length > 0 && data[data.length - 1].realizedPnl >= 0
+                      ? "#16a34a"
+                      : "#dc2626"
+                  }
                   strokeWidth="1.5"
                   vectorEffect="non-scaling-stroke"
                   strokeLinejoin="round"
@@ -250,12 +256,12 @@ export default function AssetFlowChart({
 
           {/* X축 레이블 - 맨 밑 */}
           <div className="h-4 flex-shrink-0 flex justify-between items-end text-[9px] text-gray-400">
-            {!loading && chartData.length > 0 ? (
+            {!loading && data.length > 0 ? (
               <>
-                <span>{formatXLabel(chartData[0].date)}</span>
-                {chartData.length > 1 && (
+                <span>{formatXLabel(data[0].date)}</span>
+                {data.length > 1 && (
                   <span>
-                    {formatXLabel(chartData[chartData.length - 1].date)}
+                    {formatXLabel(data[data.length - 1].date)}
                   </span>
                 )}
               </>
@@ -265,17 +271,57 @@ export default function AssetFlowChart({
           </div>
         </div>
 
-        {/* Y축 레이블 */}
-        <div className="w-10 flex flex-col text-[9px] text-gray-400 text-right pl-1">
-          {!loading && chartCalc ? (
-            <div className="flex-1 flex flex-col justify-between min-h-0">
-              <span>{formatYLabel(chartCalc.max)}</span>
-              <span>{formatYLabel(chartCalc.max / 2)}</span>
-              <span>$0</span>
-            </div>
-          ) : (
-            <div className="flex-1" />
-          )}
+        {/* Y축 레이블 - 차트 영역과 동일한 구조 */}
+        <div className="w-6 flex flex-col min-h-0">
+          {/* Y축 레이블 - 그래프 영역 높이 */}
+          <div className="flex-1 relative min-h-0 text-[9px] text-gray-400 text-right">
+            {!loading && chartCalc ? (
+              <>
+                {/* 모든 레이블을 그래프 영역 내에 배치 */}
+                {gridLines.map((grid, idx) => {
+                const value =
+                  idx === 0
+                    ? chartCalc.max
+                    : idx === 1
+                      ? (chartCalc.max + chartCalc.min) / 2
+                      : chartCalc.min;
+                let labelText: string;
+                if (chartCalc.max >= 1000000) {
+                  labelText = `${(value / 1000000).toFixed(1)}M`;
+                } else if (chartCalc.max >= 1000) {
+                  // 최소값/최대값은 소수점 표시, 중간값은 반올림하여 깔끔하게
+                  if (idx === 0 || idx === gridLines.length - 1) {
+                    // 최소값/최대값: 1000의 배수가 아니면 소수점 표시
+                    if (value % 1000 === 0) {
+                      labelText = `${(value / 1000).toFixed(0)}K`;
+                    } else {
+                      labelText = `${(value / 1000).toFixed(1)}K`;
+                    }
+                  } else {
+                    // 중간값: 반올림하여 깔끔하게 표시
+                    labelText = `${Math.round(value / 1000)}K`;
+                  }
+                } else {
+                  labelText = value.toFixed(0);
+                }
+                
+                return (
+                  <span
+                    key={idx}
+                    className="absolute right-0"
+                    style={{
+                      top: `${grid.y}%`,
+                      transform: "translateY(-50%)",
+                    }}
+                  >
+                    {labelText}
+                  </span>
+                );
+              })}
+              </>
+            ) : null}
+          </div>
+          {/* X축 레이블과 같은 높이의 하단 영역 */}
           <div className="h-4 flex-shrink-0" />
         </div>
       </div>
@@ -300,7 +346,7 @@ function Header({
       className="flex items-center justify-between mb-3"
       style={{ height: 20 }}
     >
-      <span className="text-xs font-medium text-gray-600">자산 흐름</span>
+      <span className="text-xs font-medium text-gray-600">수익 흐름 (PnL)</span>
       <div className="flex border rounded overflow-hidden">
         {PERIOD_OPTIONS.map((opt) => (
           <Button

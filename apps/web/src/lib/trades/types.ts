@@ -72,6 +72,7 @@ export interface TradeWithDetails extends Trade {
 export interface TradeListItem extends Trade {
   companyName: string | null;
   currentPrice: number | null;
+  priceChangePercent: number | null; // 전일대비 변동률 (%)
   calculated: Pick<
     TradeCalculated,
     | "avgEntryPrice"
@@ -79,6 +80,7 @@ export interface TradeListItem extends Trade {
     | "realizedPnl"
     | "realizedRoi"
     | "totalBuyQuantity"
+    | "totalSellQuantity"
     | "avgExitPrice"
     | "totalCommission"
   > & {
