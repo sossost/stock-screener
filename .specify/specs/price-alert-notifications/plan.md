@@ -215,7 +215,7 @@ CREATE TABLE price_alerts (
 
 ## Implementation Phases
 
-### Phase 1: 알림 감지 로직 (P1) - Day 1-2
+### Phase 1: 알림 감지 로직 (P1)
 
 **목표**: 정배열 상태에서 20일선 돌파 감지 및 로깅
 
@@ -242,7 +242,7 @@ CREATE TABLE price_alerts (
 - 콘솔에 알림 정보 출력
 - 중복 알림 방지 확인
 
-### Phase 2: 이메일 알림 전송 (P1) - Day 2-3
+### Phase 2: 이메일 알림 전송 (P1)
 
 **목표**: 감지된 알림을 이메일로 전송
 
@@ -268,7 +268,7 @@ CREATE TABLE price_alerts (
 - 알림 내용 정확성 확인
 - 에러 발생 시 로깅 및 ETL 계속 진행
 
-### Phase 3: 앱 푸시 알림 구현 (P1) - Day 3-5
+### Phase 3: 앱 푸시 알림 구현 (P1)
 
 **목표**: 모바일 앱에서 푸시 알림 수신 및 표시 기능 구현
 
@@ -298,7 +298,7 @@ CREATE TABLE price_alerts (
 - 알림 클릭 시 적절한 화면 이동
 - 백그라운드/포그라운드 모두에서 알림 수신
 
-### Phase 4: GitHub Actions 통합 (P1) - Day 5-6
+### Phase 4: GitHub Actions 통합 (P1)
 
 **목표**: 일일 ETL 완료 후 자동으로 알림 감지 및 전송
 
@@ -317,7 +317,7 @@ CREATE TABLE price_alerts (
 - GitHub Actions에서 자동 실행 확인
 - 이메일 및 푸시 알림 전송 확인
 
-### Phase 5: 테스트 및 검증 (P1) - Day 6-7
+### Phase 5: 테스트 및 검증 (P1)
 
 **목표**: 전체 시스템 검증 및 버그 수정
 
@@ -432,21 +432,21 @@ CREATE TABLE price_alerts (
 - `NOTIFICATION_EMAIL_FROM`: 발신자 이메일
 - `NOTIFICATION_EMAIL_TO`: 수신자 이메일 (쉼표 구분)
 
-## Timeline
-
-- **Day 1-2**: Phase 1 (알림 감지 로직)
-- **Day 2-3**: Phase 2 (이메일 알림)
-- **Day 3-5**: Phase 3 (앱 푸시 알림 구현)
-- **Day 5-6**: Phase 4 (GitHub Actions 통합)
-- **Day 6-7**: Phase 5 (테스트 및 검증)
-
-**총 예상 기간**: 7일
-
 ## Notes
 
-- **초기 구현 범위**: 앱 서비스 + 이메일 알림만 지원
-- 초기 구현은 최소 기능으로 시작 (MVP)
-- 향후 확장을 고려한 모듈화된 구조 (SMS, 슬랙, 텔레그램 등 추가 용이)
-- 에러 발생 시에도 ETL은 정상 완료 (Graceful Degradation)
-- 알림 이력 테이블은 선택사항 (초기에는 메모리 캐시 사용 가능)
+- ✅ **초기 구현 범위**: 앱 서비스 + 이메일 알림만 지원 - 완료
+- ✅ 초기 구현은 최소 기능으로 시작 (MVP) - 완료
+- ✅ 향후 확장을 고려한 모듈화된 구조 (SMS, 슬랙, 텔레그램 등 추가 용이)
+- ✅ 에러 발생 시에도 ETL은 정상 완료 (Graceful Degradation)
+- ✅ 알림 이력 테이블은 DB 테이블로 구현 완료 (`price_alerts`)
+
+## 구현 완료 사항 (2025-12-03)
+
+- ✅ 알림 감지 로직 구현 (`detect-price-alerts.ts`)
+- ✅ 이메일 알림 전송 (Resend, 종합 이메일 형식)
+- ✅ 모바일 푸시 알림 전송 (Expo Push Notification Service)
+- ✅ GitHub Actions 통합 (일일 ETL에 알림 감지 단계 추가)
+- ✅ 중복 알림 방지 (DB 테이블 기반)
+- ✅ 타임아웃 및 재시도 로직 (지수 백오프)
+- ✅ 실제 데이터로 테스트 완료 (35개 종목)
 

@@ -382,3 +382,28 @@ export const accessCodes = pgTable("access_codes", {
     .notNull()
     .defaultNow(),
 });
+
+// ==================== 푸시 알림 (Push Notifications) ====================
+
+/**
+ * 디바이스 토큰 테이블
+ * - 모바일 앱 푸시 알림을 위한 디바이스 토큰 관리
+ */
+export const deviceTokens = pgTable(
+  "device_tokens",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull().default("0"), // 향후 사용자별 관리
+    deviceId: text("device_id").notNull(),
+    pushToken: text("push_token").notNull(),
+    platform: text("platform").notNull(), // 'ios' | 'android'
+    isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    uq: unique("uq_device_tokens_device_id").on(t.deviceId),
+    idx_user: index("idx_device_tokens_user_id").on(t.userId),
+    idx_active: index("idx_device_tokens_active").on(t.isActive),
+  })
+);
