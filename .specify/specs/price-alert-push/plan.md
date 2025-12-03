@@ -160,7 +160,7 @@ CREATE TABLE device_tokens (
 
 ## Implementation Phases
 
-### Phase 1: 백엔드 푸시 알림 API (P1) - Day 1-2
+### Phase 1: 백엔드 푸시 알림 API (P1)
 
 **목표**: 디바이스 토큰 관리 및 푸시 알림 전송 API 구현
 
@@ -186,7 +186,7 @@ CREATE TABLE device_tokens (
 - API 엔드포인트 정상 동작
 - 푸시 알림 전송 함수 정상 동작
 
-### Phase 2: 모바일 앱 푸시 알림 설정 (P1) - Day 2-3
+### Phase 2: 모바일 앱 푸시 알림 설정 (P1)
 
 **목표**: 모바일 앱에서 푸시 알림 수신 및 처리 기능 구현
 
@@ -216,7 +216,7 @@ CREATE TABLE device_tokens (
 - 백그라운드/포그라운드 모두에서 알림 수신 ✅
 - 알림 클릭 시 상세 화면 이동 확인 (향후 구현)
 
-### Phase 3: ETL 통합 (P1) - Day 3-4
+### Phase 3: ETL 통합 (P1)
 
 **목표**: ETL에서 푸시 알림 전송 통합
 
@@ -235,7 +235,7 @@ CREATE TABLE device_tokens (
 - ETL 실행 시 푸시 알림 전송 확인
 - 이메일과 푸시 알림 모두 전송 확인
 
-### Phase 4: 테스트 및 검증 (P1) - Day 4-5
+### Phase 4: 테스트 및 검증 (P1)
 
 **목표**: 전체 시스템 검증 및 버그 수정
 
@@ -330,15 +330,6 @@ CREATE TABLE device_tokens (
 
 **모바일 앱**:
 - `API_BASE_URL`: 백엔드 API URL
-
-## Timeline
-
-- **Day 1-2**: Phase 1 (백엔드 푸시 알림 API)
-- **Day 2-3**: Phase 2 (모바일 앱 푸시 알림 설정)
-- **Day 3-4**: Phase 3 (ETL 통합)
-- **Day 4-5**: Phase 4 (테스트 및 검증)
-
-**총 예상 기간**: 5일
 
 ## Notes
 
