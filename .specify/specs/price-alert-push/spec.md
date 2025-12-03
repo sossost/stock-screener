@@ -112,7 +112,7 @@ CREATE INDEX idx_device_tokens_active ON device_tokens(is_active);
 
 **종합 알림 형식** (여러 종목이 감지되면 1개의 종합 알림으로 전송):
 
-```
+```text
 제목: 가격 알림: 35개 종목 20일선 돌파 감지
 본문: 조건: 정배열 상태에서 20일선 돌파
 ```

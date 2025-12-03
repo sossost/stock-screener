@@ -3,6 +3,7 @@ import * as Device from "expo-device";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as Crypto from "expo-crypto";
+import * as SecureStore from "expo-secure-store";
 
 // 알림 핸들러 설정
 Notifications.setNotificationHandler({
@@ -15,19 +16,71 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const DEVICE_ID_KEY = "device_unique_id";
+
+/**
+ * UUID v4 생성 (expo-crypto의 randomBytes 사용)
+ * @returns UUID v4 문자열
+ */
+async function generateUUID(): Promise<string> {
+  // 16바이트 랜덤 데이터 생성
+  const bytes = await Crypto.getRandomBytesAsync(16);
+  
+  // UUID v4 형식으로 변환
+  // bytes[6]의 상위 4비트를 0100으로 설정 (version 4)
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  // bytes[8]의 상위 2비트를 10으로 설정 (variant)
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  
+  // 16진수 문자열로 변환
+  const hex = Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  
+  // UUID 형식으로 포맷팅: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  return [
+    hex.substring(0, 8),
+    hex.substring(8, 12),
+    hex.substring(12, 16),
+    hex.substring(16, 20),
+    hex.substring(20, 32),
+  ].join("-");
+}
+
 /**
  * 디바이스 ID 생성 또는 가져오기
  * @returns 고유 디바이스 ID
  */
 async function getDeviceId(): Promise<string> {
-  // AsyncStorage나 SecureStore를 사용할 수도 있지만,
-  // 간단하게 기기 정보 기반으로 고유 ID 생성
-  const deviceInfo = `${Platform.OS}-${Device.modelName || "unknown"}`;
-  const deviceId = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    deviceInfo
+  // SecureStore에서 기존 ID 조회
+  let deviceId = await SecureStore.getItemAsync(DEVICE_ID_KEY);
+
+  if (!deviceId) {
+    // 새 UUID 생성 및 저장
+    deviceId = await generateUUID();
+    await SecureStore.setItemAsync(DEVICE_ID_KEY, deviceId);
+  }
+
+  return deviceId;
+}
+
+// 타임아웃 상수
+const REGISTER_TIMEOUT_MS = 10_000; // 10초
+
+/**
+ * 타임아웃이 포함된 fetch 래퍼
+ */
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+    clearTimeout(timeoutId)
   );
-  return deviceId.substring(0, 32); // 32자리로 제한
 }
 
 /**
@@ -57,7 +110,7 @@ async function registerDeviceToken(pushToken: string): Promise<void> {
       pushTokenLength: pushToken.length,
     });
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${API_BASE_URL}/api/notifications/register-device`,
       {
         method: "POST",
@@ -65,7 +118,8 @@ async function registerDeviceToken(pushToken: string): Promise<void> {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
-      }
+      },
+      REGISTER_TIMEOUT_MS
     );
 
     console.log("📥 Response status:", response.status, response.statusText);
@@ -156,14 +210,19 @@ export async function registerForPushNotificationsAsync(): Promise<
   }
 
   // 푸시 토큰 가져오기
-  const token = await Notifications.getExpoPushTokenAsync({
-    projectId: Constants.expoConfig?.extra?.eas?.projectId,
-  });
+  try {
+    const token = await Notifications.getExpoPushTokenAsync({
+      projectId: Constants.expoConfig?.extra?.eas?.projectId,
+    });
 
-  // 백엔드에 토큰 등록
-  await registerDeviceToken(token.data);
+    // 백엔드에 토큰 등록
+    await registerDeviceToken(token.data);
 
-  return token.data;
+    return token.data;
+  } catch (error) {
+    console.error("❌ Failed to get push token:", error);
+    return null;
+  }
 }
 
 /**

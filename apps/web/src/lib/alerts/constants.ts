@@ -6,4 +6,5 @@ export type AlertType = (typeof ALERT_TYPES)[keyof typeof ALERT_TYPES];
 
 export const ALERT_CHANNELS = {
   EMAIL: "email",
+  PUSH: "push",
 } as const;

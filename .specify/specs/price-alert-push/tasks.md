@@ -513,11 +513,12 @@
 ## 환경 변수 체크리스트
 
 **Web (apps/web)**:
-- [ ] `ALERT_CHANNELS=app,email` (알림 채널)
-- [ ] `EXPO_ACCESS_TOKEN=xxxxx` (선택사항, EAS Push 사용 시)
+- [ ] `RESEND_API_KEY` (이메일 전송용, Resend API 키)
+- [ ] `NOTIFICATION_EMAIL_FROM` (이메일 발신자 주소)
+- [ ] `NOTIFICATION_EMAIL_TO` (이메일 수신자 주소)
 
 **Mobile (apps/mobile)**:
-- [ ] `EXPO_PUBLIC_API_BASE_URL=https://your-api.com` (백엔드 API URL)
+- [ ] `EXPO_PUBLIC_API_BASE_URL=https://your-api.com` (백엔드 API URL, 선택사항)
 
 ## 수락 기준
 

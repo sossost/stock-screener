@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
+import { z } from "zod";
+
+const registerDeviceSchema = z.object({
+  pushToken: z.string().min(1, "pushToken은 필수입니다"),
+  deviceId: z.string().min(1, "deviceId는 필수입니다"),
+  platform: z.enum(["ios", "android"], {
+    message: "platform은 'ios' 또는 'android'여야 합니다",
+  }),
+});
 
 /**
  * POST /api/notifications/register-device
@@ -10,34 +19,26 @@ import { deviceTokens } from "@/db/schema";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { pushToken, deviceId, platform } = body;
+
+    const result = registerDeviceSchema.safeParse(body);
+    if (!result.success) {
+      console.error("❌ Validation failed:", result.error.format());
+      return NextResponse.json(
+        {
+          error:
+            result.error.issues[0]?.message || "입력 검증 실패",
+        },
+        { status: 400 }
+      );
+    }
+
+    const { pushToken, deviceId, platform } = result.data;
 
     console.log("📥 Register device request:", {
       pushToken: pushToken?.substring(0, 20) + "...",
       deviceId,
       platform,
     });
-
-    // 입력 검증
-    if (!pushToken || !deviceId || !platform) {
-      console.error("❌ Missing required fields:", {
-        hasPushToken: !!pushToken,
-        hasDeviceId: !!deviceId,
-        hasPlatform: !!platform,
-      });
-      return NextResponse.json(
-        { error: "pushToken, deviceId, platform 필수" },
-        { status: 400 }
-      );
-    }
-
-    if (platform !== "ios" && platform !== "android") {
-      console.error("❌ Invalid platform:", platform);
-      return NextResponse.json(
-        { error: "platform은 'ios' 또는 'android'여야 함" },
-        { status: 400 }
-      );
-    }
 
     // 기존 토큰 업데이트 또는 새로 생성
     console.log("💾 Inserting/updating device token...");
