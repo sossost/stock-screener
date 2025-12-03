@@ -17,6 +17,7 @@ on:
           - daily-prices
           - daily-ma
           - daily-ratios
+          - detect-alerts
 
 jobs:
   etl-daily-prices:
@@ -165,7 +166,12 @@ jobs:
     timeout-minutes: 30
     name: Detect Price Alerts
     needs: etl-daily-ratios
-    if: always() && (needs.etl-daily-ratios.result == 'success' || needs.etl-daily-ratios.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'all')
+    if: |
+      always() && (
+        (needs.etl-daily-ratios.result == 'success' || needs.etl-daily-ratios.result == 'skipped') && 
+        (github.event_name == 'schedule' || github.event.inputs.job_type == 'all')
+      ) || 
+      github.event.inputs.job_type == 'detect-alerts'
 
     steps:
       - name: Checkout code
