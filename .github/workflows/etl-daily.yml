@@ -160,11 +160,56 @@ jobs:
             *.log
             logs/
 
+  etl-detect-alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Detect Price Alerts
+    needs: etl-daily-ratios
+    if: always() && (needs.etl-daily-ratios.result == 'success' || needs.etl-daily-ratios.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'all')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Detect Price Alerts
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFICATION_EMAIL_FROM: ${{ secrets.NOTIFICATION_EMAIL_FROM }}
+          NOTIFICATION_EMAIL_TO: ${{ secrets.NOTIFICATION_EMAIL_TO }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          PGSSLMODE: no-verify
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        run: |
+          echo "🚀 Starting Price Alert Detection..."
+          cd apps/web
+          yarn etl:detect-alerts
+          echo "✅ Price Alert Detection completed!"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detect-alerts-logs
+          path: |
+            *.log
+            logs/
+
   notify-completion:
     if: always()
     runs-on: ubuntu-latest
     name: Notify Completion
-    needs: [etl-daily-prices, etl-daily-ma, etl-daily-ratios]
+    needs: [etl-daily-prices, etl-daily-ma, etl-daily-ratios, etl-detect-alerts]
 
     steps:
       - name: Notify Success
