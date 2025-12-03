@@ -383,6 +383,43 @@ export const accessCodes = pgTable("access_codes", {
     .defaultNow(),
 });
 
+// ==================== 가격 알림 (Price Alerts) ====================
+
+/**
+ * 가격 알림 이력 테이블
+ * - 돌파 감지 등 기술적 조건에 맞는 종목 알림 이력 저장
+ */
+export const priceAlerts = pgTable(
+  "price_alerts",
+  {
+    id: serial("id").primaryKey(),
+    symbol: text("symbol")
+      .notNull()
+      .references(() => symbols.symbol, { onDelete: "cascade" }),
+    alertType: text("alert_type").notNull(), // 'ma20_breakout_ordered'
+    alertDate: text("alert_date").notNull(), // 'YYYY-MM-DD'
+    conditionData: jsonb("condition_data"), // AlertData 전체 정보를 JSONB로 저장
+    notifiedAt: timestamp("notified_at", { withTimezone: true }).defaultNow(),
+    notificationChannels: text("notification_channels").array(), // ['email', 'push']
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    uq: unique("uq_price_alerts_symbol_type_date").on(
+      t.symbol,
+      t.alertType,
+      t.alertDate
+    ),
+    idx_symbol_date: index("idx_price_alerts_symbol_date").on(
+      t.symbol,
+      t.alertDate
+    ),
+    idx_type_date: index("idx_price_alerts_type_date").on(
+      t.alertType,
+      t.alertDate
+    ),
+  })
+);
+
 // ==================== 푸시 알림 (Push Notifications) ====================
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Star, BookOpen } from "lucide-react";
+import { Star, BookOpen, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface NavigationProps {
@@ -24,6 +24,12 @@ export function Navigation({
           </Link>
 
           <div className="flex items-center gap-2">
+            <Link href="/alerts">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Bell className="h-4 w-4" />
+                가격 알림
+              </Button>
+            </Link>
             {showTradesButton && (
               <Link href="/trades">
                 <Button variant="outline" size="sm" className="gap-2">
