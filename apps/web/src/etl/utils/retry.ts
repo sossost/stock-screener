@@ -60,6 +60,23 @@ function isRetryableError(error: any): boolean {
     return true;
   }
 
+  // PostgreSQL 내부 오류 (XX000) - 재시도 가능
+  // 서버 리소스 부족, 일시적인 연결 문제 등으로 발생할 수 있음
+  if (error.code === "XX000" || error.code === "57P01") {
+    return true;
+  }
+
+  // PostgreSQL 연결 관련 에러 코드
+  // 57P01: admin_shutdown, 57P02: crash_shutdown, 57P03: cannot_connect_now
+  if (
+    error.code?.startsWith("57P") ||
+    error.code === "08003" || // connection_does_not_exist
+    error.code === "08006" || // connection_failure
+    error.code === "08001" // sqlclient_unable_to_establish_sqlconnection
+  ) {
+    return true;
+  }
+
   // HTTP 상태 코드
   if (error.response?.status) {
     const status = error.response.status;
@@ -80,11 +97,15 @@ function isRetryableError(error: any): boolean {
     return true;
   }
 
-  // DB 연결 취소/종료 에러 (Neon DB idle timeout)
+  // DB 연결 취소/종료 에러 (Neon DB idle timeout, PostgreSQL connection errors)
   if (
     error.message?.includes("canceled") ||
     error.message?.includes("connection terminated") ||
-    error.message?.includes("Client has encountered a connection error")
+    error.message?.includes("Client has encountered a connection error") ||
+    error.message?.includes("DbHandler exited") ||
+    error.message?.includes("connection closed") ||
+    error.message?.includes("server closed the connection") ||
+    error.severity === "FATAL"
   ) {
     return true;
   }
@@ -186,8 +207,18 @@ export async function retryDatabaseOperation<T>(
   const result = await withRetry(operation, options);
 
   if (!result.success) {
+    const error = result.error;
+    const errorDetails =
+      error instanceof Error
+        ? {
+            message: error.message,
+            code: (error as any).code,
+            severity: (error as any).severity,
+          }
+        : { message: String(error) };
+
     throw new Error(
-      `데이터베이스 작업 실패 (${result.attempts}회 시도): ${result.error?.message}`
+      `데이터베이스 작업 실패 (${result.attempts}회 시도): ${errorDetails.message}${errorDetails.code ? ` [${errorDetails.code}]` : ""}${errorDetails.severity ? ` (${errorDetails.severity})` : ""}`
     );
   }
 
