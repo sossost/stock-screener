@@ -114,13 +114,8 @@ function buildCurrentDataCTE(params: ScreenerParams, requireMA: boolean): SQL {
       LEFT JOIN daily_prices pr ON pr.symbol = dm.symbol AND pr.date::date = ld.d
       WHERE dm.ma20 IS NOT NULL 
         AND dm.ma50 IS NOT NULL 
-        AND dm.ma100 IS NOT NULL 
         AND dm.ma200 IS NOT NULL
-        ${
-          ordered
-            ? sql`AND dm.ma20 > dm.ma50 AND dm.ma50 > dm.ma100 AND dm.ma100 > dm.ma200`
-            : sql``
-        }
+        ${ordered ? sql`AND dm.ma20 > dm.ma50 AND dm.ma50 > dm.ma200` : sql``}
         ${goldenCross ? sql`AND dm.ma50 > dm.ma200` : sql``}
         AND dm.symbol ~ '^[A-Z]{1,6}$'
         AND dm.symbol NOT LIKE '%W'
@@ -219,7 +214,7 @@ function buildPrevStatusCTE(maxRn: number): SQL {
     SELECT 
       symbol,
       COUNT(*) FILTER (
-        WHERE NOT (ma20 > ma50 AND ma50 > ma100 AND ma100 > ma200)
+        WHERE NOT (ma20 > ma50 AND ma50 > ma200)
       ) AS non_ordered_days_count
     FROM prev_ma
     WHERE rn BETWEEN 2 AND ${maxRn}
@@ -517,8 +512,8 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
       qr.pe_ratio,
         qr.peg_ratio,
         CASE 
-          WHEN cand.ma20 IS NOT NULL AND cand.ma50 IS NOT NULL AND cand.ma100 IS NOT NULL AND cand.ma200 IS NOT NULL
-            THEN (cand.ma20 > cand.ma50 AND cand.ma50 > cand.ma100 AND cand.ma100 > cand.ma200)
+          WHEN cand.ma20 IS NOT NULL AND cand.ma50 IS NOT NULL AND cand.ma200 IS NOT NULL
+            THEN (cand.ma20 > cand.ma50 AND cand.ma50 > cand.ma200)
           ELSE NULL
         END AS ordered
       FROM candidates cand
@@ -567,8 +562,8 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
       qr.pe_ratio,
       qr.peg_ratio,
       CASE 
-        WHEN cand.ma20 IS NOT NULL AND cand.ma50 IS NOT NULL AND cand.ma100 IS NOT NULL AND cand.ma200 IS NOT NULL
-          THEN (cand.ma20 > cand.ma50 AND cand.ma50 > cand.ma100 AND cand.ma100 > cand.ma200)
+        WHEN cand.ma20 IS NOT NULL AND cand.ma50 IS NOT NULL AND cand.ma200 IS NOT NULL
+          THEN (cand.ma20 > cand.ma50 AND cand.ma50 > cand.ma200)
         ELSE NULL
       END AS ordered
     FROM candidates cand

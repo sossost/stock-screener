@@ -40,7 +40,7 @@ export interface ScreenerResponse {
 
 // API 파라미터 타입
 export interface ScreenerParams {
-  ordered?: boolean; // MA20 > MA50 > MA100 > MA200 정배열 조건 적용 여부
+  ordered?: boolean; // MA20 > MA50 > MA200 정배열 조건 적용 여부 (100일선 제외)
   goldenCross?: boolean; // MA50 > MA200 조건 적용 여부
   justTurned?: boolean;
   lookbackDays?: number;
@@ -86,7 +86,7 @@ export interface ScreenerQueryResult {
 
 // 이평선 필터 상태 타입
 export interface MAFilterState {
-  ordered: boolean; // MA20 > MA50 > MA100 > MA200 정배열
+  ordered: boolean; // MA20 > MA50 > MA200 정배열 (100일선 제외)
   goldenCross: boolean; // MA50 > MA200
 }
 
