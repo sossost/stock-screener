@@ -456,11 +456,19 @@ export function CategoryFilterDialog({
                 <div className="space-y-3">
                   {/* 없음 옵션 */}
                   <div
+                    role="button"
+                    tabIndex={disabled ? -1 : 0}
                     className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                     onClick={() =>
                       !disabled &&
                       setTempState({ ...tempState, breakoutStrategy: null })
                     }
+                    onKeyDown={(e) => {
+                      if (!disabled && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        setTempState({ ...tempState, breakoutStrategy: null });
+                      }
+                    }}
                   >
                     <input
                       type="radio"
@@ -486,6 +494,8 @@ export function CategoryFilterDialog({
 
                   {/* 확정 돌파 전략 */}
                   <div
+                    role="button"
+                    tabIndex={disabled ? -1 : 0}
                     className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                     onClick={() =>
                       !disabled &&
@@ -494,6 +504,15 @@ export function CategoryFilterDialog({
                         breakoutStrategy: "confirmed",
                       })
                     }
+                    onKeyDown={(e) => {
+                      if (!disabled && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        setTempState({
+                          ...tempState,
+                          breakoutStrategy: "confirmed",
+                        });
+                      }
+                    }}
                   >
                     <input
                       type="radio"
@@ -522,11 +541,22 @@ export function CategoryFilterDialog({
 
                   {/* 재테스트 전략 */}
                   <div
+                    role="button"
+                    tabIndex={disabled ? -1 : 0}
                     className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                     onClick={() =>
                       !disabled &&
                       setTempState({ ...tempState, breakoutStrategy: "retest" })
                     }
+                    onKeyDown={(e) => {
+                      if (!disabled && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        setTempState({
+                          ...tempState,
+                          breakoutStrategy: "retest",
+                        });
+                      }
+                    }}
                   >
                     <input
                       type="radio"

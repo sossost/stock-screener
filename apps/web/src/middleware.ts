@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 /**
  * 미들웨어: 기본 필터가 URL에 없으면 리다이렉트
- * - ordered, goldenCross, profitability는 항상 URL에 포함되어야 함
+ * - searchParams가 비어있을 때만 기본 필터(ordered, goldenCross, profitability)를 추가
  * - 로컬스토리지의 필터는 클라이언트에서 처리 (서버에서는 접근 불가)
  */
 export function middleware(request: NextRequest) {

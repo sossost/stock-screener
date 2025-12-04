@@ -10,6 +10,19 @@ import {
 import { validateDatabaseOnlyEnvironment } from "../utils/validation";
 
 /**
+ * 돌파매매 신호 계산 상수
+ */
+const BREAKOUT_CONFIG = {
+  WINDOW_DAYS: 20, // 20일 고점/거래량 윈도우
+  VOLUME_MULTIPLIER: 2.0, // 확정 돌파 거래량 배수
+  UPPER_SHADOW_MAX_RATIO: 0.2, // 윗꼬리 최대 비율
+  RETEST_LOOKBACK_MIN_DAYS: 3, // 재테스트 최소 lookback
+  RETEST_LOOKBACK_MAX_DAYS: 10, // 재테스트 최대 lookback
+  MA20_DISTANCE_MIN: 0.98, // MA20 하단 임계값 (98%)
+  MA20_DISTANCE_MAX: 1.05, // MA20 상단 임계값 (105%)
+} as const;
+
+/**
  * 어제 기준 돌파/재테스트 신호를 계산하여 daily_breakout_signals 테이블에 저장
  * - 확정 돌파(confirmed breakout)
  * - 완벽한 재테스트(perfect retest)
@@ -90,12 +103,12 @@ export async function buildBreakoutSignals() {
           MAX(dp.high) OVER (
             PARTITION BY dp.symbol 
             ORDER BY dp.date::date 
-            ROWS BETWEEN 19 PRECEDING AND CURRENT ROW
+            ROWS BETWEEN ${BREAKOUT_CONFIG.WINDOW_DAYS - 1} PRECEDING AND CURRENT ROW
           ) AS high_20d,
           AVG(dp.volume) OVER (
             PARTITION BY dp.symbol 
             ORDER BY dp.date::date 
-            ROWS BETWEEN 19 PRECEDING AND CURRENT ROW
+            ROWS BETWEEN ${BREAKOUT_CONFIG.WINDOW_DAYS - 1} PRECEDING AND CURRENT ROW
           ) AS avg_volume_20d
         FROM daily_prices dp
         WHERE dp.date::date = (SELECT d FROM yesterday_trade_date)
@@ -117,10 +130,10 @@ export async function buildBreakoutSignals() {
           y.high_20d IS NOT NULL
           AND y.avg_volume_20d IS NOT NULL
           AND y.avg_volume_20d > 0
-          AND y.close >= y.high_20d
-          AND y.volume >= (y.avg_volume_20d * 2.0)
+          AND           y.close >= y.high_20d
+          AND y.volume >= (y.avg_volume_20d * ${BREAKOUT_CONFIG.VOLUME_MULTIPLIER})
           AND (y.high - y.low) > 0
-          AND (y.high - y.close) < ((y.high - y.low) * 0.2)
+          AND (y.high - y.close) < ((y.high - y.low) * ${BREAKOUT_CONFIG.UPPER_SHADOW_MAX_RATIO})
       ),
       -- 과거 3~10일 신고가 돌파 이력
       past_breakouts_retest AS (
@@ -128,8 +141,8 @@ export async function buildBreakoutSignals() {
         FROM daily_prices dp
         WHERE (SELECT d FROM last_trade_date) IS NOT NULL
           AND dp.date::date BETWEEN 
-            ((SELECT d FROM last_trade_date) - INTERVAL '10 days')::date AND
-            ((SELECT d FROM last_trade_date) - INTERVAL '3 days')::date
+            ((SELECT d FROM last_trade_date) - INTERVAL '${String(BREAKOUT_CONFIG.RETEST_LOOKBACK_MAX_DAYS)} days')::date AND
+            ((SELECT d FROM last_trade_date) - INTERVAL '${String(BREAKOUT_CONFIG.RETEST_LOOKBACK_MIN_DAYS)} days')::date
           AND dp.close IS NOT NULL
           AND dp.high IS NOT NULL
           AND EXISTS (
@@ -137,7 +150,7 @@ export async function buildBreakoutSignals() {
             FROM daily_prices dp2
             WHERE dp2.symbol = dp.symbol
               AND dp2.date::date <= dp.date::date
-              AND dp2.date::date >= (dp.date::date - INTERVAL '19 days')::date
+              AND dp2.date::date >= (dp.date::date - INTERVAL '${String(BREAKOUT_CONFIG.WINDOW_DAYS - 1)} days')::date
               AND dp2.high IS NOT NULL
             HAVING dp.close >= MAX(dp2.high)
           )
@@ -152,8 +165,8 @@ export async function buildBreakoutSignals() {
         WHERE 
           yd.ma20 IS NOT NULL
           AND yd.ma20 > 0
-          AND yd.close >= (yd.ma20 * 0.98)
-          AND yd.close <= (yd.ma20 * 1.05)
+          AND           yd.close >= (yd.ma20 * ${BREAKOUT_CONFIG.MA20_DISTANCE_MIN})
+          AND yd.close <= (yd.ma20 * ${BREAKOUT_CONFIG.MA20_DISTANCE_MAX})
           AND (
             yd.close >= yd.open OR
             (yd.open - yd.low) > (yd.close - yd.open)
