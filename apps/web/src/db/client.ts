@@ -12,6 +12,17 @@ const pool = new Pool({
   connectionTimeoutMillis: 30000, // 연결 타임아웃 30초
   statement_timeout: 120000, // 쿼리 타임아웃 2분
   query_timeout: 120000, // 쿼리 타임아웃 2분
+  // 연결 풀 에러 핸들링 개선
+  allowExitOnIdle: false, // 유휴 상태에서도 연결 유지
+});
+
+// 연결 풀 에러 핸들링
+pool.on("error", (err) => {
+  console.error("❌ Unexpected database pool error:", {
+    message: err.message,
+    code: (err as any).code,
+    severity: (err as any).severity,
+  });
 });
 
 export const db = drizzle(pool);
