@@ -39,6 +39,7 @@ const categoryLabels = {
   growth: "성장성 필터",
   profitability: "수익성 필터",
   price: "가격필터",
+  noise: "노이즈 필터",
 };
 
 export function CategoryFilterDialog({
@@ -90,6 +91,13 @@ export function CategoryFilterDialog({
       return {
         breakoutStrategy: filterState.breakoutStrategy ?? null,
       };
+    } else if (category === "noise") {
+      return {
+        volumeFilter: filterState.volumeFilter ?? false,
+        vcpFilter: filterState.vcpFilter ?? false,
+        bodyFilter: filterState.bodyFilter ?? false,
+        maConvergenceFilter: filterState.maConvergenceFilter ?? false,
+      };
     }
     return {};
   }, [open, category, filterState]);
@@ -115,6 +123,10 @@ export function CategoryFilterDialog({
     category,
     filterState.lookbackDays,
     filterState.breakoutStrategy,
+    filterState.volumeFilter,
+    filterState.vcpFilter,
+    filterState.bodyFilter,
+    filterState.maConvergenceFilter,
   ]); // 의존성 최적화
 
   const handleApply = () => {
@@ -178,6 +190,13 @@ export function CategoryFilterDialog({
     } else if (category === "price") {
       setTempState({
         breakoutStrategy: null,
+      });
+    } else if (category === "noise") {
+      setTempState({
+        volumeFilter: false,
+        vcpFilter: false,
+        bodyFilter: false,
+        maConvergenceFilter: false,
       });
     }
     onReset();
@@ -581,6 +600,136 @@ export function CategoryFilterDialog({
                     <span className="text-xs text-muted-foreground">
                       (정배열 + 과거 돌파 이력 + 20일선 부근)
                     </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 노이즈 필터 섹션 */}
+          {category === "noise" && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  노이즈가 적고 깔끔한 종목만 선별합니다. 소외주, 잡주, 속임수가
+                  많은 종목을 걸러냅니다.
+                </p>
+
+                <div className="space-y-3">
+                  {/* 거래량 필터 */}
+                  <div className="bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-2 h-10">
+                      <Checkbox
+                        id="volumeFilter"
+                        checked={tempState.volumeFilter ?? false}
+                        onCheckedChange={(checked) =>
+                          setTempState({
+                            ...tempState,
+                            volumeFilter: checked === true,
+                          })
+                        }
+                        disabled={disabled}
+                      />
+                      <label
+                        htmlFor="volumeFilter"
+                        className="flex-1 text-sm font-semibold leading-none cursor-pointer select-none"
+                      >
+                        거래량 필터
+                      </label>
+                      <span className="text-xs text-muted-foreground">
+                        (인기 없는 놈은 쳐낸다)
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-6 mt-1">
+                      평균 거래대금 {">"} $10M OR 평균 거래량 {">"} 500K
+                    </p>
+                  </div>
+
+                  {/* VCP 필터 */}
+                  <div className="bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-2 h-10">
+                      <Checkbox
+                        id="vcpFilter"
+                        checked={tempState.vcpFilter ?? false}
+                        onCheckedChange={(checked) =>
+                          setTempState({
+                            ...tempState,
+                            vcpFilter: checked === true,
+                          })
+                        }
+                        disabled={disabled}
+                      />
+                      <label
+                        htmlFor="vcpFilter"
+                        className="flex-1 text-sm font-semibold leading-none cursor-pointer select-none"
+                      >
+                        변동성 압축 (VCP)
+                      </label>
+                      <span className="text-xs text-muted-foreground">
+                        (용수철처럼 눌린 놈만 찾는다)
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-6 mt-1">
+                      ATR(14) / 현재가 {"<"} 5% AND Bollinger Band 폭 압축
+                    </p>
+                  </div>
+
+                  {/* 캔들 몸통 필터 */}
+                  <div className="bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-2 h-10">
+                      <Checkbox
+                        id="bodyFilter"
+                        checked={tempState.bodyFilter ?? false}
+                        onCheckedChange={(checked) =>
+                          setTempState({
+                            ...tempState,
+                            bodyFilter: checked === true,
+                          })
+                        }
+                        disabled={disabled}
+                      />
+                      <label
+                        htmlFor="bodyFilter"
+                        className="flex-1 text-sm font-semibold leading-none cursor-pointer select-none"
+                      >
+                        캔들 몸통 필터
+                      </label>
+                      <span className="text-xs text-muted-foreground">
+                        (지저분한 꼬리는 쳐낸다)
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-6 mt-1">
+                      몸통이 전체 길이의 60% 이상
+                    </p>
+                  </div>
+
+                  {/* 이평선 밀집 필터 */}
+                  <div className="bg-card rounded-lg px-4 py-2.5 border shadow-sm hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-2 h-10">
+                      <Checkbox
+                        id="maConvergenceFilter"
+                        checked={tempState.maConvergenceFilter ?? false}
+                        onCheckedChange={(checked) =>
+                          setTempState({
+                            ...tempState,
+                            maConvergenceFilter: checked === true,
+                          })
+                        }
+                        disabled={disabled}
+                      />
+                      <label
+                        htmlFor="maConvergenceFilter"
+                        className="flex-1 text-sm font-semibold leading-none cursor-pointer select-none"
+                      >
+                        이평선 밀집 필터
+                      </label>
+                      <span className="text-xs text-muted-foreground">
+                        (힘이 응축된 놈)
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-6 mt-1">
+                      MA20-MA50 간격 {"<"} 3%
+                    </p>
                   </div>
                 </div>
               </div>

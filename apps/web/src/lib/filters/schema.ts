@@ -27,6 +27,10 @@ export const filterDefaults = {
   ma100Above: false,
   ma200Above: false,
   breakoutStrategy: null as "confirmed" | "retest" | null,
+  volumeFilter: false,
+  vcpFilter: false,
+  bodyFilter: false,
+  maConvergenceFilter: false,
 };
 
 // 문자열 "true"/"false"를 boolean으로 변환하는 커스텀 스키마
@@ -73,6 +77,12 @@ export const filterSchema = z.object({
     .optional()
     .nullable()
     .default(filterDefaults.breakoutStrategy),
+  volumeFilter: booleanString.default(filterDefaults.volumeFilter),
+  vcpFilter: booleanString.default(filterDefaults.vcpFilter),
+  bodyFilter: booleanString.default(filterDefaults.bodyFilter),
+  maConvergenceFilter: booleanString.default(
+    filterDefaults.maConvergenceFilter
+  ),
 });
 
 export type ParsedFilters = z.infer<typeof filterSchema>;
@@ -136,6 +146,20 @@ export function parseFilters(
     }
     if (!Object.prototype.hasOwnProperty.call(normalized, "breakoutStrategy")) {
       data.breakoutStrategy = null;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "volumeFilter")) {
+      data.volumeFilter = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "vcpFilter")) {
+      data.vcpFilter = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "bodyFilter")) {
+      data.bodyFilter = false;
+    }
+    if (
+      !Object.prototype.hasOwnProperty.call(normalized, "maConvergenceFilter")
+    ) {
+      data.maConvergenceFilter = false;
     }
 
     return data;
@@ -212,6 +236,19 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
     params.set("breakoutStrategy", filters.breakoutStrategy);
   }
 
+  if (filters.volumeFilter === true) {
+    params.set("volumeFilter", "true");
+  }
+  if (filters.vcpFilter === true) {
+    params.set("vcpFilter", "true");
+  }
+  if (filters.bodyFilter === true) {
+    params.set("bodyFilter", "true");
+  }
+  if (filters.maConvergenceFilter === true) {
+    params.set("maConvergenceFilter", "true");
+  }
+
   if (
     filters.revenueGrowthRate !== null &&
     filters.revenueGrowthRate !== undefined
@@ -239,5 +276,7 @@ export function buildCacheTag(filters: ParsedFilters): string {
     filters.turnAround
   }-${filters.ma20Above}-${filters.ma50Above}-${filters.ma100Above}-${
     filters.ma200Above
-  }-${filters.breakoutStrategy ?? ""}`;
+  }-${filters.breakoutStrategy ?? ""}-${filters.volumeFilter ?? ""}-${
+    filters.vcpFilter ?? ""
+  }-${filters.bodyFilter ?? ""}-${filters.maConvergenceFilter ?? ""}`;
 }

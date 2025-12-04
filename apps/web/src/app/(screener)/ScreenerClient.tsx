@@ -61,6 +61,10 @@ export function ScreenerClient() {
     ma100Above: filterState.ma100Above ?? undefined,
     ma200Above: filterState.ma200Above ?? undefined,
     breakoutStrategy: filterState.breakoutStrategy ?? null,
+    volumeFilter: filterState.volumeFilter ?? undefined,
+    vcpFilter: filterState.vcpFilter ?? undefined,
+    bodyFilter: filterState.bodyFilter ?? undefined,
+    maConvergenceFilter: filterState.maConvergenceFilter ?? undefined,
   };
 
   const [screenerData, setScreenerData] = React.useState<ScreenerCompany[]>([]);
@@ -97,6 +101,10 @@ export function ScreenerClient() {
               ma100Above: filterState.ma100Above ?? undefined,
               ma200Above: filterState.ma200Above ?? undefined,
               breakoutStrategy: filterState.breakoutStrategy ?? null,
+              volumeFilter: filterState.volumeFilter ?? undefined,
+              vcpFilter: filterState.vcpFilter ?? undefined,
+              bodyFilter: filterState.bodyFilter ?? undefined,
+              maConvergenceFilter: filterState.maConvergenceFilter ?? undefined,
             }}
             isPending={isPending}
             onFilterApply={handleFilterApply}

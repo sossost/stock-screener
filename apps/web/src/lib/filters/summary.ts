@@ -22,6 +22,10 @@ export interface FilterState {
   ma100Above?: boolean; // 100일선 위
   ma200Above?: boolean; // 200일선 위
   breakoutStrategy?: "confirmed" | "retest" | null; // 돌파매매 전략
+  volumeFilter?: boolean; // 거래량 필터
+  vcpFilter?: boolean; // 변동성 압축 필터
+  bodyFilter?: boolean; // 캔들 몸통 필터
+  maConvergenceFilter?: boolean; // 이평선 밀집 필터
 }
 
 export interface FilterSummary {
@@ -30,7 +34,12 @@ export interface FilterSummary {
   summaryText: string;
 }
 
-export type FilterCategory = "ma" | "growth" | "profitability" | "price";
+export type FilterCategory =
+  | "ma"
+  | "growth"
+  | "profitability"
+  | "price"
+  | "noise";
 
 /**
  * 이평선 필터 요약
@@ -203,6 +212,41 @@ export function getPriceFilterSummary(filterState: FilterState): FilterSummary {
 }
 
 /**
+ * 노이즈 필터 요약
+ */
+export function getNoiseFilterSummary(filterState: FilterState): FilterSummary {
+  const activeFilters: string[] = [];
+
+  if (filterState.volumeFilter) {
+    activeFilters.push("거래량");
+  }
+  if (filterState.vcpFilter) {
+    activeFilters.push("VCP");
+  }
+  if (filterState.bodyFilter) {
+    activeFilters.push("캔들몸통");
+  }
+  if (filterState.maConvergenceFilter) {
+    activeFilters.push("이평선밀집");
+  }
+
+  const count = activeFilters.length;
+  let summaryText = "";
+
+  if (count === 0) {
+    summaryText = "노이즈필터 없음";
+  } else {
+    summaryText = activeFilters.join(", ");
+  }
+
+  return {
+    activeFilters,
+    count,
+    summaryText,
+  };
+}
+
+/**
  * 필터 상태를 요약 텍스트로 변환 (전체)
  */
 export function getFilterSummary(filterState: FilterState): FilterSummary {
@@ -223,6 +267,10 @@ export function getFilterSummary(filterState: FilterState): FilterSummary {
   // 가격 필터
   const priceSummary = getPriceFilterSummary(filterState);
   activeFilters.push(...priceSummary.activeFilters);
+
+  // 노이즈 필터
+  const noiseSummary = getNoiseFilterSummary(filterState);
+  activeFilters.push(...noiseSummary.activeFilters);
 
   const count = activeFilters.length;
   let summaryText = "";

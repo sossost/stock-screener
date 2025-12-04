@@ -28,6 +28,7 @@
     "etl:rs-backfill": "tsx src/etl/jobs/build-rs.ts backfill",
     "etl:daily-ratios": "tsx src/etl/jobs/calculate-daily-ratios.ts",
     "etl:breakout-signals": "tsx src/etl/jobs/build-breakout-signals.ts",
+    "etl:noise-signals": "tsx src/etl/jobs/build-noise-signals.ts",
     "etl:cleanup-invalid-symbols": "tsx src/etl/jobs/cleanup-invalid-symbols.ts",
     "etl:quarterly-financials": "tsx src/etl/jobs/load-quarterly-financials.ts",
     "etl:detect-alerts": "tsx src/etl/jobs/detect-price-alerts.ts"

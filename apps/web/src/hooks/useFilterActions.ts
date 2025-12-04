@@ -113,7 +113,11 @@ export function useFilterActions(
     newMa50Above?: boolean,
     newMa100Above?: boolean,
     newMa200Above?: boolean,
-    newBreakoutStrategy?: "confirmed" | "retest" | null
+    newBreakoutStrategy?: "confirmed" | "retest" | null,
+    newVolumeFilter?: boolean,
+    newVcpFilter?: boolean,
+    newBodyFilter?: boolean,
+    newMaConvergenceFilter?: boolean
   ) => {
     // 정배열 필터가 비활성화되면 "최근 전환" 옵션도 비활성화
     const finalJustTurned = newOrdered ? newJustTurned : false;
@@ -144,6 +148,10 @@ export function useFilterActions(
       ma100Above: filterState.ma100Above ?? false,
       ma200Above: filterState.ma200Above ?? false,
       breakoutStrategy: filterState.breakoutStrategy ?? null,
+      volumeFilter: filterState.volumeFilter ?? false,
+      vcpFilter: filterState.vcpFilter ?? false,
+      bodyFilter: filterState.bodyFilter ?? false,
+      maConvergenceFilter: filterState.maConvergenceFilter ?? false,
     });
     await fetch("/api/cache/revalidate", {
       method: "POST",
@@ -171,6 +179,10 @@ export function useFilterActions(
       ma100Above: filterState.ma100Above,
       ma200Above: filterState.ma200Above,
       breakoutStrategy: filterState.breakoutStrategy,
+      volumeFilter: filterState.volumeFilter,
+      vcpFilter: filterState.vcpFilter,
+      bodyFilter: filterState.bodyFilter,
+      maConvergenceFilter: filterState.maConvergenceFilter,
     };
 
     try {
@@ -224,6 +236,23 @@ export function useFilterActions(
         );
       }
 
+      // 노이즈 필터
+      if (newVolumeFilter !== undefined) {
+        await setBooleanFilter(newVolumeFilter, filterState.setVolumeFilter);
+      }
+      if (newVcpFilter !== undefined) {
+        await setBooleanFilter(newVcpFilter, filterState.setVcpFilter);
+      }
+      if (newBodyFilter !== undefined) {
+        await setBooleanFilter(newBodyFilter, filterState.setBodyFilter);
+      }
+      if (newMaConvergenceFilter !== undefined) {
+        await setBooleanFilter(
+          newMaConvergenceFilter,
+          filterState.setMaConvergenceFilter
+        );
+      }
+
       // 모든 URL 업데이트 완료 후 localStorage에 필터 저장 (debounce 적용)
       debouncedSaveFilters({
         ordered: newOrdered,
@@ -246,6 +275,10 @@ export function useFilterActions(
         ma100Above: newMa100Above ?? false,
         ma200Above: newMa200Above ?? false,
         breakoutStrategy: newBreakoutStrategy ?? null,
+        volumeFilter: newVolumeFilter ?? false,
+        vcpFilter: newVcpFilter ?? false,
+        bodyFilter: newBodyFilter ?? false,
+        maConvergenceFilter: newMaConvergenceFilter ?? false,
       });
 
       // 서버 컴포넌트 리패치 (transition으로 감싸서 로딩 표시)
@@ -337,6 +370,22 @@ export function useFilterActions(
           filterState.setMa200Above
         );
         await filterState.setBreakoutStrategy(previousState.breakoutStrategy);
+        await setBooleanFilter(
+          previousState.volumeFilter,
+          filterState.setVolumeFilter
+        );
+        await setBooleanFilter(
+          previousState.vcpFilter,
+          filterState.setVcpFilter
+        );
+        await setBooleanFilter(
+          previousState.bodyFilter,
+          filterState.setBodyFilter
+        );
+        await setBooleanFilter(
+          previousState.maConvergenceFilter,
+          filterState.setMaConvergenceFilter
+        );
       } catch (rollbackError) {
         console.error("롤백 실패:", rollbackError);
       }
@@ -389,7 +438,19 @@ export function useFilterActions(
         : (filterState.ma200Above ?? false),
       Object.prototype.hasOwnProperty.call(newState, "breakoutStrategy")
         ? (newState.breakoutStrategy ?? null)
-        : (filterState.breakoutStrategy ?? null)
+        : (filterState.breakoutStrategy ?? null),
+      Object.prototype.hasOwnProperty.call(newState, "volumeFilter")
+        ? (newState.volumeFilter ?? false)
+        : (filterState.volumeFilter ?? false),
+      Object.prototype.hasOwnProperty.call(newState, "vcpFilter")
+        ? (newState.vcpFilter ?? false)
+        : (filterState.vcpFilter ?? false),
+      Object.prototype.hasOwnProperty.call(newState, "bodyFilter")
+        ? (newState.bodyFilter ?? false)
+        : (filterState.bodyFilter ?? false),
+      Object.prototype.hasOwnProperty.call(newState, "maConvergenceFilter")
+        ? (newState.maConvergenceFilter ?? false)
+        : (filterState.maConvergenceFilter ?? false)
     );
   };
 
@@ -418,7 +479,11 @@ export function useFilterActions(
         false, // ma50Above 초기화
         false, // ma100Above 초기화
         false, // ma200Above 초기화
-        filterState.breakoutStrategy ?? null // breakoutStrategy 유지
+        filterState.breakoutStrategy ?? null, // breakoutStrategy 유지
+        filterState.volumeFilter ?? false,
+        filterState.vcpFilter ?? false,
+        filterState.bodyFilter ?? false,
+        filterState.maConvergenceFilter ?? false
       );
     } else if (category === "growth") {
       handleFilterChange(
@@ -439,7 +504,11 @@ export function useFilterActions(
         filterState.ma50Above ?? false,
         filterState.ma100Above ?? false,
         filterState.ma200Above ?? false,
-        filterState.breakoutStrategy ?? null
+        filterState.breakoutStrategy ?? null,
+        filterState.volumeFilter ?? false,
+        filterState.vcpFilter ?? false,
+        filterState.bodyFilter ?? false,
+        filterState.maConvergenceFilter ?? false
       );
     } else if (category === "profitability") {
       handleFilterChange(
@@ -462,7 +531,11 @@ export function useFilterActions(
         filterState.ma50Above ?? false,
         filterState.ma100Above ?? false,
         filterState.ma200Above ?? false,
-        filterState.breakoutStrategy ?? null
+        filterState.breakoutStrategy ?? null,
+        filterState.volumeFilter ?? false,
+        filterState.vcpFilter ?? false,
+        filterState.bodyFilter ?? false,
+        filterState.maConvergenceFilter ?? false
       );
     } else if (category === "price") {
       handleFilterChange(
@@ -485,7 +558,38 @@ export function useFilterActions(
         filterState.ma50Above ?? false,
         filterState.ma100Above ?? false,
         filterState.ma200Above ?? false,
-        null // breakoutStrategy 초기화
+        null, // breakoutStrategy 초기화
+        filterState.volumeFilter ?? false,
+        filterState.vcpFilter ?? false,
+        filterState.bodyFilter ?? false,
+        filterState.maConvergenceFilter ?? false
+      );
+    } else if (category === "noise") {
+      handleFilterChange(
+        filterState.ordered ?? false,
+        filterState.goldenCross ?? false,
+        filterState.justTurned ?? false,
+        filterState.lookbackDays ?? FILTER_DEFAULTS.LOOKBACK_DAYS,
+        filterState.profitability,
+        filterState.turnAround ?? false,
+        filterState.revenueGrowth ?? false,
+        filterState.incomeGrowth ?? false,
+        filterState.revenueGrowthQuarters ??
+          FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
+        filterState.incomeGrowthQuarters ??
+          FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
+        filterState.revenueGrowthRate ?? null,
+        filterState.incomeGrowthRate ?? null,
+        filterState.pegFilter ?? false,
+        filterState.ma20Above ?? false,
+        filterState.ma50Above ?? false,
+        filterState.ma100Above ?? false,
+        filterState.ma200Above ?? false,
+        filterState.breakoutStrategy ?? null,
+        false, // volumeFilter 초기화
+        false, // vcpFilter 초기화
+        false, // bodyFilter 초기화
+        false // maConvergenceFilter 초기화
       );
     }
   };

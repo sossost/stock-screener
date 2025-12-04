@@ -87,6 +87,16 @@ export function useFilterInitialization(
         await filterState.setMa200Above(filtersToApply.ma200Above);
       if (filtersToApply.breakoutStrategy !== undefined)
         await filterState.setBreakoutStrategy(filtersToApply.breakoutStrategy);
+      if (filtersToApply.volumeFilter !== undefined)
+        await filterState.setVolumeFilter(filtersToApply.volumeFilter);
+      if (filtersToApply.vcpFilter !== undefined)
+        await filterState.setVcpFilter(filtersToApply.vcpFilter);
+      if (filtersToApply.bodyFilter !== undefined)
+        await filterState.setBodyFilter(filtersToApply.bodyFilter);
+      if (filtersToApply.maConvergenceFilter !== undefined)
+        await filterState.setMaConvergenceFilter(
+          filtersToApply.maConvergenceFilter
+        );
 
       // 정렬 상태도 함께 초기화 (localStorage 값이 있으면 항상 적용)
       if (sortState) {

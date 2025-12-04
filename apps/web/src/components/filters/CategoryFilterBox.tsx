@@ -6,11 +6,12 @@ import {
   getGrowthFilterSummary,
   getProfitabilityFilterSummary,
   getPriceFilterSummary,
+  getNoiseFilterSummary,
   type FilterState,
   type FilterCategory,
 } from "@/lib/filters/summary";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, DollarSign, BarChart3, Zap } from "lucide-react";
+import { TrendingUp, DollarSign, BarChart3, Zap, Filter } from "lucide-react";
 
 interface CategoryFilterBoxProps {
   category: FilterCategory;
@@ -39,6 +40,11 @@ const categoryConfig = {
     label: "가격",
     icon: Zap,
     getSummary: getPriceFilterSummary,
+  },
+  noise: {
+    label: "노이즈",
+    icon: Filter,
+    getSummary: getNoiseFilterSummary,
   },
 };
 
