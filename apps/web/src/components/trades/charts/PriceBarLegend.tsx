@@ -23,10 +23,10 @@ export default function PriceBarLegend({
   const currentPercent = getPercent(currentPrice);
 
   // 현재가가 모든 목표가보다 높은지 확인
-  const maxTargetPrice = targets.length > 0 
-    ? Math.max(...targets.map((t) => t.price))
-    : null;
-  const isCurrentPriceAboveTargets = maxTargetPrice !== null && currentPrice > maxTargetPrice;
+  const maxTargetPrice =
+    targets.length > 0 ? Math.max(...targets.map((t) => t.price)) : null;
+  const isCurrentPriceAboveTargets =
+    maxTargetPrice !== null && currentPrice > maxTargetPrice;
 
   return (
     <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3">

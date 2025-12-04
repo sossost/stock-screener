@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
 
     for (const trade of allTradesList) {
       const actions = actionsByTradeId.get(trade.id) || [];
-      
+
       // 매도 액션이 없으면 스킵
       const hasSellActions = actions.some((a) => a.actionType === "SELL");
       if (!hasSellActions) continue;
@@ -145,10 +145,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to fetch PnL flow:", error);
-    return NextResponse.json(
-      { error: "수익 흐름 조회 실패" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "수익 흐름 조회 실패" }, { status: 500 });
   }
 }
 

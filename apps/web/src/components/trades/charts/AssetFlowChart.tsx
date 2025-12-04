@@ -60,18 +60,20 @@ export default function AssetFlowChart() {
     const values = data.map((d) => d.realizedPnl);
     const dataMax = Math.max(...values);
     const dataMin = Math.min(...values);
-    
+
     // 실제 데이터 범위에 맞춰 Y축 설정 (그래프가 바닥에서 시작하도록)
     if (dataMin >= 0) {
-      const max = Math.ceil(dataMax * 1.1 / 1000) * 1000;
+      const max = Math.ceil((dataMax * 1.1) / 1000) * 1000;
       // 최소값을 데이터 최소값과 정확히 일치시켜 그래프 시작점과 Y축 눈금 일치
       const min = dataMin;
       return { max, min };
     }
-    
+
     // 양수와 음수를 모두 포함하도록 범위 설정
-    const max = Math.ceil(Math.max(dataMax, Math.abs(dataMin)) * 1.1 / 1000) * 1000;
-    const min = Math.floor(Math.min(dataMin, -Math.abs(dataMax)) * 1.1 / 1000) * 1000;
+    const max =
+      Math.ceil((Math.max(dataMax, Math.abs(dataMin)) * 1.1) / 1000) * 1000;
+    const min =
+      Math.floor((Math.min(dataMin, -Math.abs(dataMax)) * 1.1) / 1000) * 1000;
     return { max, min };
   }, [data]);
 
@@ -119,10 +121,7 @@ export default function AssetFlowChart() {
 
     const points = data.map((d, i) => {
       // X 좌표: 0부터 100까지 균등 분배
-      const x =
-        data.length > 1
-          ? (i / (data.length - 1)) * w
-          : 0;
+      const x = data.length > 1 ? (i / (data.length - 1)) * w : 0;
       const y =
         h -
         ((d.realizedPnl - chartCalc.min) / (chartCalc.max - chartCalc.min)) * h;
@@ -133,12 +132,12 @@ export default function AssetFlowChart() {
     const line = points
       .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
       .join(" ");
-    
+
     // area path: line을 따라가고, 바닥으로 내려가서 닫기
     // 경로: 첫 번째 점 -> 모든 점 -> 마지막 점 -> 바닥(마지막 x) -> 바닥(첫 번째 x) -> 첫 번째 점
     const firstX = points[0].x;
     const lastX = points[points.length - 1].x;
-    
+
     // area path: 항상 바닥까지 채워지도록 구성
     const area = `${line} L ${lastX} ${h} L ${firstX} ${h} Z`;
 
@@ -260,9 +259,7 @@ export default function AssetFlowChart() {
               <>
                 <span>{formatXLabel(data[0].date)}</span>
                 {data.length > 1 && (
-                  <span>
-                    {formatXLabel(data[data.length - 1].date)}
-                  </span>
+                  <span>{formatXLabel(data[data.length - 1].date)}</span>
                 )}
               </>
             ) : (
@@ -279,45 +276,45 @@ export default function AssetFlowChart() {
               <>
                 {/* 모든 레이블을 그래프 영역 내에 배치 */}
                 {gridLines.map((grid, idx) => {
-                const value =
-                  idx === 0
-                    ? chartCalc.max
-                    : idx === 1
-                      ? (chartCalc.max + chartCalc.min) / 2
-                      : chartCalc.min;
-                let labelText: string;
-                if (chartCalc.max >= 1000000) {
-                  labelText = `${(value / 1000000).toFixed(1)}M`;
-                } else if (chartCalc.max >= 1000) {
-                  // 최소값/최대값은 소수점 표시, 중간값은 반올림하여 깔끔하게
-                  if (idx === 0 || idx === gridLines.length - 1) {
-                    // 최소값/최대값: 1000의 배수가 아니면 소수점 표시
-                    if (value % 1000 === 0) {
-                      labelText = `${(value / 1000).toFixed(0)}K`;
+                  const value =
+                    idx === 0
+                      ? chartCalc.max
+                      : idx === 1
+                        ? (chartCalc.max + chartCalc.min) / 2
+                        : chartCalc.min;
+                  let labelText: string;
+                  if (chartCalc.max >= 1000000) {
+                    labelText = `${(value / 1000000).toFixed(1)}M`;
+                  } else if (chartCalc.max >= 1000) {
+                    // 최소값/최대값은 소수점 표시, 중간값은 반올림하여 깔끔하게
+                    if (idx === 0 || idx === gridLines.length - 1) {
+                      // 최소값/최대값: 1000의 배수가 아니면 소수점 표시
+                      if (value % 1000 === 0) {
+                        labelText = `${(value / 1000).toFixed(0)}K`;
+                      } else {
+                        labelText = `${(value / 1000).toFixed(1)}K`;
+                      }
                     } else {
-                      labelText = `${(value / 1000).toFixed(1)}K`;
+                      // 중간값: 반올림하여 깔끔하게 표시
+                      labelText = `${Math.round(value / 1000)}K`;
                     }
                   } else {
-                    // 중간값: 반올림하여 깔끔하게 표시
-                    labelText = `${Math.round(value / 1000)}K`;
+                    labelText = value.toFixed(0);
                   }
-                } else {
-                  labelText = value.toFixed(0);
-                }
-                
-                return (
-                  <span
-                    key={idx}
-                    className="absolute right-0"
-                    style={{
-                      top: `${grid.y}%`,
-                      transform: "translateY(-50%)",
-                    }}
-                  >
-                    {labelText}
-                  </span>
-                );
-              })}
+
+                  return (
+                    <span
+                      key={idx}
+                      className="absolute right-0"
+                      style={{
+                        top: `${grid.y}%`,
+                        transform: "translateY(-50%)",
+                      }}
+                    >
+                      {labelText}
+                    </span>
+                  );
+                })}
               </>
             ) : null}
           </div>

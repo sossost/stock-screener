@@ -21,4 +21,3 @@ export const alertsQuerySchema = z.object({
 });
 
 export type AlertsQueryParams = z.infer<typeof alertsQuerySchema>;
-

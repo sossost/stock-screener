@@ -67,7 +67,7 @@ export async function getTradesList(
 
   // 배치 조회: 심볼별 최신 가격 및 전일 가격
   const uniqueSymbols = [...new Set(tradeList.map((t) => t.trade.symbol))];
-  
+
   // 최신 가격 조회
   const latestPrices = await db
     .select({
@@ -142,7 +142,7 @@ export async function getTradesList(
   for (const symbol of uniqueSymbols) {
     const currentPrice = priceBySymbol.get(symbol);
     const prevPrice = prevPriceBySymbol.get(symbol);
-    
+
     if (currentPrice && prevPrice && prevPrice > 0) {
       const changePercent = ((currentPrice - prevPrice) / prevPrice) * 100;
       priceChangeBySymbol.set(symbol, changePercent);

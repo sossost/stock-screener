@@ -22,7 +22,8 @@ export default function AlertsError({
           variant="error"
           title="알림을 불러오지 못했습니다"
           description={
-            error.message || "알 수 없는 오류가 발생했습니다. 다시 시도해주세요."
+            error.message ||
+            "알 수 없는 오류가 발생했습니다. 다시 시도해주세요."
           }
         />
         <div className="mt-4 flex justify-center">
@@ -34,4 +35,3 @@ export default function AlertsError({
     </div>
   );
 }
-
