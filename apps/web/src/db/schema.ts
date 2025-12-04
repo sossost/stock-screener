@@ -364,6 +364,7 @@ export const portfolioSettings = pgTable("portfolio_settings", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().unique().default("0"),
   cashBalance: numeric("cash_balance").notNull().default("0"),
+  initialCashBalance: numeric("initial_cash_balance").default("0"), // 초기 현금 잔액 (사용자가 설정한 값)
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
