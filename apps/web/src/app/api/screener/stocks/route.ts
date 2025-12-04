@@ -101,6 +101,14 @@ function parseRequestParams(searchParams: URLSearchParams): ScreenerParams {
     breakoutStrategy:
       (searchParams.get("breakoutStrategy") as "confirmed" | "retest" | null) ||
       null,
+
+    // 노이즈 필터
+    volumeFilter: parseBooleanParam(searchParams.get("volumeFilter")),
+    vcpFilter: parseBooleanParam(searchParams.get("vcpFilter")),
+    bodyFilter: parseBooleanParam(searchParams.get("bodyFilter")),
+    maConvergenceFilter: parseBooleanParam(
+      searchParams.get("maConvergenceFilter")
+    ),
   };
 }
 

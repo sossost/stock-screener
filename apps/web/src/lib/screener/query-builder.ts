@@ -18,7 +18,8 @@ function requiresMA(params: ScreenerParams): boolean {
     params.ma20Above === true ||
     params.ma50Above === true ||
     params.ma100Above === true ||
-    params.ma200Above === true
+    params.ma200Above === true ||
+    params.maConvergenceFilter === true // 이평선 밀집 필터는 MA 필요
   );
 }
 
@@ -408,6 +409,10 @@ function buildWhereFilters(params: ScreenerParams): SQL {
     ma100Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
     ma200Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
     breakoutStrategy = null,
+    volumeFilter = false,
+    vcpFilter = false,
+    bodyFilter = false,
+    maConvergenceFilter = false,
   } = params;
 
   return sql`
@@ -477,6 +482,22 @@ function buildWhereFilters(params: ScreenerParams): SQL {
         ? sql`AND dbs.is_perfect_retest IS TRUE`
         : sql``
     }
+    ${
+      volumeFilter
+        ? sql`AND dns.avg_dollar_volume_20d IS NOT NULL AND dns.avg_volume_20d IS NOT NULL AND (dns.avg_dollar_volume_20d::numeric > 10000000 OR dns.avg_volume_20d::numeric > 500000)`
+        : sql``
+    }
+    ${vcpFilter ? sql`AND dns.is_vcp IS TRUE` : sql``}
+    ${
+      bodyFilter
+        ? sql`AND dns.body_ratio IS NOT NULL AND dns.body_ratio::numeric > 0.6`
+        : sql``
+    }
+    ${
+      maConvergenceFilter
+        ? sql`AND dns.ma20_ma50_distance_percent IS NOT NULL AND ABS(dns.ma20_ma50_distance_percent::numeric) < 3.0`
+        : sql``
+    }
   `;
 }
 
@@ -500,6 +521,14 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
   const { breakoutStrategy = null } = params;
   const needBreakoutFilter =
     breakoutStrategy === "confirmed" || breakoutStrategy === "retest";
+  const {
+    volumeFilter = false,
+    vcpFilter = false,
+    bodyFilter = false,
+    maConvergenceFilter = false,
+  } = params;
+  const needNoiseFilter =
+    volumeFilter || vcpFilter || bodyFilter || maConvergenceFilter;
 
   // justTurned 필터가 필요할 때만 prev_ma와 prev_status CTE 포함
   if (needPrevStatus) {
@@ -548,6 +577,11 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
       ${
         needBreakoutFilter
           ? sql`LEFT JOIN daily_breakout_signals dbs ON dbs.symbol = cand.symbol AND dbs.date::date = (SELECT d FROM prev_d)`
+          : sql``
+      }
+      ${
+        needNoiseFilter
+          ? sql`LEFT JOIN daily_noise_signals dns ON dns.symbol = cand.symbol AND dns.date::date = cand.d`
           : sql``
       }
       LEFT JOIN LATERAL (
@@ -603,6 +637,11 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
     ${
       needBreakoutFilter
         ? sql`LEFT JOIN daily_breakout_signals dbs ON dbs.symbol = cand.symbol AND dbs.date::date = (SELECT d FROM prev_d)`
+        : sql``
+    }
+    ${
+      needNoiseFilter
+        ? sql`LEFT JOIN daily_noise_signals dns ON dns.symbol = cand.symbol AND dns.date::date = cand.d`
         : sql``
     }
     LEFT JOIN LATERAL (

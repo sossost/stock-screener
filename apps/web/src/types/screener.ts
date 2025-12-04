@@ -62,6 +62,10 @@ export interface ScreenerParams {
   ma100Above?: boolean; // 100일선 위
   ma200Above?: boolean; // 200일선 위
   breakoutStrategy?: "confirmed" | "retest" | null; // 돌파매매 전략 (전략 A: confirmed, 전략 B: retest)
+  volumeFilter?: boolean; // 거래량 필터 (20일 평균 거래대금 > $10M OR 평균 거래량 > 500K)
+  vcpFilter?: boolean; // 변동성 압축 필터 (VCP)
+  bodyFilter?: boolean; // 캔들 몸통 필터 (몸통 > 전체 길이의 60%)
+  maConvergenceFilter?: boolean; // 이평선 밀집 필터 (MA20-MA50 간격 < 3%)
 }
 
 // DB 쿼리 결과 타입

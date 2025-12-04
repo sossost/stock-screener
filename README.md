@@ -37,6 +37,12 @@
     - **확정 돌파 전략**: EOD 기준으로 어제 캔들이 최근 20일 고점을 돌파하면서 거래량이 20일 평균의 2배 이상이고, 윗꼬리가 전체 캔들 길이의 20% 이내인 종목만 필터링
     - **완벽 재테스트 전략**: 정배열(MA20 > MA50 > MA200) + 과거 3~10일 사이 신고가 돌파 이력이 있고, 어제 종가가 20일선 98~105% 구간에서 지지를 받은 망치/양봉 패턴인 종목만 필터링
     - 두 전략 모두 **ETL에서 `daily_breakout_signals` 테이블에 미리 계산**한 신호를 사용하므로, 스크리너에서는 단순 `JOIN`만 수행하여 성능 저하 없이 사용할 수 있음
+  - **노이즈 필터**: 소외주, 잡주, 속임수가 많은 종목을 걸러내는 필터 그룹
+    - **거래량 필터**: 평균 거래대금 > $10M OR 평균 거래량 > 500K (인기 없는 종목 제외)
+    - **변동성 압축 필터 (VCP)**: ATR(14) / 현재가 < 5% AND Bollinger Band 폭이 60일 평균의 80% 이하로 압축된 종목 (용수철처럼 눌린 종목)
+    - **캔들 몸통 필터**: 몸통이 전체 캔들 길이의 60% 이상인 종목 (지저분한 꼬리 제외)
+    - **이평선 밀집 필터**: MA20-MA50 간격이 3% 이내인 종목 (힘이 응축된 종목)
+    - 모든 필터는 **ETL에서 `daily_noise_signals` 테이블에 미리 계산**하므로 성능 저하 없이 사용 가능
 - **성장성 필터**:
   - **연속 성장 분기 수**: 연속 2-8분기 매출/수익 성장 기업 선별
   - **평균 성장률**: 선택한 N분기 동안 평균 성장률이 X% 이상인 기업 선별
@@ -146,7 +152,8 @@
 4. **이동평균선** 계산
 5. **RS 점수** 계산 (12M/6M/3M 가중)
 6. **돌파매매 신호** 계산 (`daily_breakout_signals` 테이블)
-7. **비정상 종목들** (워런트, ETF 등) 제거
+7. **노이즈 필터 신호** 계산 (`daily_noise_signals` 테이블)
+8. **비정상 종목들** (워런트, ETF 등) 제거
 
 ## 🚀 어떻게 실행하나요?
 
@@ -272,11 +279,12 @@ yarn test:all
 ### 데이터 업데이트
 
 - 데이터는 매일 업데이트 (수동: `yarn etl:daily-prices`)
-- GitHub Actions 스케줄: 23:30 UTC(= KST 08:30) 단일 스케줄로 prices → MA/RS → ratios → breakout-signals → alerts 순차 실행
+- GitHub Actions 스케줄: 23:30 UTC(= KST 08:30) 단일 스케줄로 prices → MA/RS → ratios → breakout-signals → noise-signals → alerts 순차 실행
 - 분기별 재무 데이터는 `yarn etl:quarterly-financials` 실행
 - RS 점수는 가격 데이터 기반으로 `yarn etl:rs`(최신일) 또는 `yarn etl:rs-backfill`(최근 1년) 실행
 - 일일 밸류에이션(PER/PEG 등)은 `yarn etl:daily-ratios` 실행 (FMP TTM API 사용)
 - 돌파매매 신호: `yarn etl:breakout-signals` 실행 (확정 돌파/완벽 재테스트 신호 계산)
+- 노이즈 필터 신호: `yarn etl:noise-signals` 실행 (거래량/VCP/캔들몸통/이평선밀집 신호 계산)
 - 가격 알림 감지: `yarn etl:detect-alerts` 실행 (일일 가격/이동평균 ETL 완료 후 자동 실행)
 
 ## 🔧 유용한 명령어들
@@ -294,6 +302,7 @@ yarn etl:rs                 # RS(12M/6M/3M 가중) 계산
 yarn etl:rs-backfill        # RS 최근 1년치 백필
 yarn etl:daily-ratios       # 일일 밸류에이션 (PER/PEG 등)
 yarn etl:breakout-signals   # 돌파매매 신호 계산 (확정 돌파/완벽 재테스트)
+yarn etl:noise-signals      # 노이즈 필터 신호 계산 (거래량/VCP/캔들몸통/이평선밀집)
 yarn etl:detect-alerts      # 가격 알림 감지 및 전송
 # 모바일(Expo) 개발
 yarn dev:mobile             # Expo dev 서버

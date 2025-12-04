@@ -8,7 +8,10 @@
 import "dotenv/config";
 import { db, pool } from "@/db/client";
 import { sql } from "drizzle-orm";
-import { getLatestTradeDate, getPreviousTradeDate } from "@/etl/utils/date-helpers";
+import {
+  getLatestTradeDate,
+  getPreviousTradeDate,
+} from "@/etl/utils/date-helpers";
 
 async function testConfirmedBreakout() {
   console.log("🧪 확정 돌파 필터 테스트 시작...\n");
@@ -360,9 +363,13 @@ async function main() {
     } else {
       console.log("📋 돌파매매 필터 테스트\n");
       console.log("사용법:");
-      console.log("  yarn tsx src/scripts/test-breakout-filter.ts confirmed  # 확정 돌파 테스트");
-      console.log("  yarn tsx src/scripts/test-breakout-filter.ts retest     # 완벽한 재테스트 테스트\n");
-      
+      console.log(
+        "  yarn tsx src/scripts/test-breakout-filter.ts confirmed  # 확정 돌파 테스트"
+      );
+      console.log(
+        "  yarn tsx src/scripts/test-breakout-filter.ts retest     # 완벽한 재테스트 테스트\n"
+      );
+
       await testConfirmedBreakout();
       console.log("\n" + "=".repeat(50) + "\n");
       await testPerfectRetest();
@@ -383,4 +390,3 @@ if (require.main === module) {
       process.exit(1);
     });
 }
-

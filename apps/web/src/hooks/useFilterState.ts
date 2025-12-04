@@ -95,6 +95,23 @@ export function useFilterState() {
     return setBreakoutStrategyRaw(value);
   };
 
+  const [volumeFilter, setVolumeFilter] = useQueryState(
+    "volumeFilter",
+    parseAsBoolean.withDefault(filterDefaults.volumeFilter)
+  );
+  const [vcpFilter, setVcpFilter] = useQueryState(
+    "vcpFilter",
+    parseAsBoolean.withDefault(filterDefaults.vcpFilter)
+  );
+  const [bodyFilter, setBodyFilter] = useQueryState(
+    "bodyFilter",
+    parseAsBoolean.withDefault(filterDefaults.bodyFilter)
+  );
+  const [maConvergenceFilter, setMaConvergenceFilter] = useQueryState(
+    "maConvergenceFilter",
+    parseAsBoolean.withDefault(filterDefaults.maConvergenceFilter)
+  );
+
   return {
     ordered,
     setOrdered,
@@ -132,5 +149,13 @@ export function useFilterState() {
     setMa200Above,
     breakoutStrategy,
     setBreakoutStrategy,
+    volumeFilter,
+    setVolumeFilter,
+    vcpFilter,
+    setVcpFilter,
+    bodyFilter,
+    setBodyFilter,
+    maConvergenceFilter,
+    setMaConvergenceFilter,
   };
 }

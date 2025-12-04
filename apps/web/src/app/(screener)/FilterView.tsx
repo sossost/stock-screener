@@ -61,6 +61,12 @@ export function FilterView({
           onClick={() => setOpenCategory("price")}
           disabled={isPending}
         />
+        <CategoryFilterBox
+          category="noise"
+          filterState={filterState}
+          onClick={() => setOpenCategory("noise")}
+          disabled={isPending}
+        />
 
         {/* 티커 검색 인풋 */}
         <div className="relative ml-auto">

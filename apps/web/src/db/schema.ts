@@ -259,6 +259,36 @@ export const dailyBreakoutSignals = pgTable(
   })
 );
 
+export const dailyNoiseSignals = pgTable(
+  "daily_noise_signals",
+  {
+    symbol: text("symbol")
+      .notNull()
+      .references(() => symbols.symbol, { onDelete: "cascade" }),
+    date: text("date").notNull(), // 'YYYY-MM-DD'
+    // 거래량 필터 (20일 평균)
+    avgDollarVolume20d: numeric("avg_dollar_volume_20d"), // 평균 거래대금 (20일)
+    avgVolume20d: numeric("avg_volume_20d"), // 평균 거래량 (20일)
+    // VCP 필터
+    atr14: numeric("atr14"), // ATR(14) 값
+    atr14Percent: numeric("atr14_percent"), // ATR(14) / close * 100
+    bbWidthCurrent: numeric("bb_width_current"), // 현재 Bollinger Band 폭
+    bbWidthAvg60d: numeric("bb_width_avg_60d"), // 60일 평균 Bollinger Band 폭
+    isVcp: boolean("is_vcp").notNull().default(false), // VCP 조건 만족 여부
+    // 캔들 몸통 필터 (최신 거래일만)
+    bodyRatio: numeric("body_ratio"), // (close - open) / (high - low)
+    // 이평선 밀집 필터 (최신 거래일만)
+    ma20Ma50DistancePercent: numeric("ma20_ma50_distance_percent"), // (MA20 - MA50) / MA50 * 100
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    uq: unique("uq_daily_noise_signals_symbol_date").on(t.symbol, t.date),
+    idx_date_vcp: index("idx_daily_noise_signals_date_vcp").on(t.date, t.isVcp),
+  })
+);
+
 // ==================== 매매일지 (Trading Journal) ====================
 
 /**
