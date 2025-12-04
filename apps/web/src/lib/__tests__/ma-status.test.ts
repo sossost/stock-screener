@@ -3,7 +3,7 @@ import { calculateMAStatus } from "../ma-status";
 
 describe("calculateMAStatus", () => {
   describe("정배열 (ordered)", () => {
-    it("ma20 > ma50 > ma100 > ma200이면 정배열", () => {
+    it("ma20 > ma50 > ma200이면 정배열 (100일선 제외)", () => {
       const result = calculateMAStatus(150, 140, 130, 120);
       expect(result.ordered).toBe(true);
     });
@@ -14,20 +14,21 @@ describe("calculateMAStatus", () => {
       expect(result.ordered).toBe(false);
     });
 
-    it("ma50 < ma100이면 정배열 아님", () => {
-      const result = calculateMAStatus(150, 120, 130, 110);
+    it("ma50 < ma200이면 정배열 아님", () => {
+      const result = calculateMAStatus(150, 120, 130, 140);
       expect(result.ordered).toBe(false);
     });
 
-    it("ma100 < ma200이면 정배열 아님", () => {
-      const result = calculateMAStatus(150, 140, 110, 120);
-      expect(result.ordered).toBe(false);
+    it("ma100은 무시됨 (호환성 유지)", () => {
+      // ma100이 ma50보다 작아도 정배열 (ma20 > ma50 > ma200이면 OK)
+      const result = calculateMAStatus(150, 140, 100, 120);
+      expect(result.ordered).toBe(true);
     });
 
-    it("하나라도 null이면 정배열 아님", () => {
+    it("하나라도 null이면 정배열 아님 (ma100 제외)", () => {
       expect(calculateMAStatus(null, 140, 130, 120).ordered).toBe(false);
       expect(calculateMAStatus(150, null, 130, 120).ordered).toBe(false);
-      expect(calculateMAStatus(150, 140, null, 120).ordered).toBe(false);
+      expect(calculateMAStatus(150, 140, null, 120).ordered).toBe(true); // ma100은 null이어도 OK
       expect(calculateMAStatus(150, 140, 130, null).ordered).toBe(false);
     });
 

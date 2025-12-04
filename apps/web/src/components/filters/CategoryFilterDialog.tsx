@@ -200,7 +200,7 @@ export function CategoryFilterDialog({
                     정배열
                   </label>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    (MA20 {">"} MA50 {">"} MA100 {">"} MA200)
+                    (MA20 {">"} MA50 {">"} MA200)
                   </span>
                 </div>
 

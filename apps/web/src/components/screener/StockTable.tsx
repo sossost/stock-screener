@@ -87,10 +87,10 @@ function generateTableCaption(
   if (filterState.ordered) {
     if (filterState.justTurned && filterState.lookbackDays) {
       parts.push(
-        `최근 ${filterState.lookbackDays}일 이내에 MA20 > MA50 > MA100 > MA200 정배열로 전환한 종목`
+        `최근 ${filterState.lookbackDays}일 이내에 MA20 > MA50 > MA200 정배열로 전환한 종목`
       );
     } else {
-      parts.push("MA20 > MA50 > MA100 > MA200 정배열 조건을 만족하는 종목");
+      parts.push("MA20 > MA50 > MA200 정배열 조건을 만족하는 종목");
     }
   } else if (filterState.goldenCross) {
     parts.push("MA50 > MA200 골든크로스 조건을 만족하는 종목");
