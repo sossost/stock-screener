@@ -61,6 +61,13 @@ export default function AssetFlowChart() {
     const dataMax = Math.max(...values);
     const dataMin = Math.min(...values);
 
+    // 모든 값이 동일한 경우 처리 (division by zero 방지)
+    if (dataMax === dataMin) {
+      const value = dataMax;
+      const padding = value === 0 ? 1000 : Math.abs(value) * 0.1;
+      return { max: value + padding, min: value - padding };
+    }
+
     // 실제 데이터 범위에 맞춰 Y축 설정 (그래프가 바닥에서 시작하도록)
     if (dataMin >= 0) {
       const max = Math.ceil((dataMax * 1.1) / 1000) * 1000;

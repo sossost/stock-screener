@@ -3,12 +3,14 @@ import { db } from "@/db/client";
 import { assetSnapshots, trades, tradeActions } from "@/db/schema";
 import { eq, and, gte, inArray } from "drizzle-orm";
 import { getUserIdFromRequest } from "@/lib/auth/user";
-import { calculateTradeMetrics } from "@/lib/trades/calculations";
+import {
+  calculateTradeMetrics,
+  DEFAULT_COMMISSION_RATE,
+} from "@/lib/trades/calculations";
 
 const DAYS_IN_MONTH = 30;
 const DAYS_IN_QUARTER = 90;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const DEFAULT_COMMISSION_RATE = 0.07;
 
 /**
  * GET /api/trades/assets
@@ -91,7 +93,7 @@ export async function GET(request: NextRequest) {
       if (!hasSellActions) continue;
 
       const commissionRate = trade.commissionRate
-        ? parseFloat(trade.commissionRate)
+        ? parseFloat(trade.commissionRate) || DEFAULT_COMMISSION_RATE
         : DEFAULT_COMMISSION_RATE;
 
       const calculated = calculateTradeMetrics(
