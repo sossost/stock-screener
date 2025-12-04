@@ -96,6 +96,11 @@ function parseRequestParams(searchParams: URLSearchParams): ScreenerParams {
     ma50Above: parseBooleanParam(searchParams.get("ma50Above")),
     ma100Above: parseBooleanParam(searchParams.get("ma100Above")),
     ma200Above: parseBooleanParam(searchParams.get("ma200Above")),
+
+    // 돌파매매 전략 필터
+    breakoutStrategy:
+      (searchParams.get("breakoutStrategy") as "confirmed" | "retest" | null) ||
+      null,
   };
 }
 

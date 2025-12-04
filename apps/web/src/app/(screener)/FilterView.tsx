@@ -9,6 +9,7 @@ import type { FilterState, FilterCategory } from "@/lib/filters/summary";
 
 type FilterViewProps = {
   filterState: FilterState;
+  rawFilterState?: FilterState;
   isPending: boolean;
   onFilterApply: (newState: Partial<FilterState>) => void;
   onFilterReset: (category: FilterCategory) => void;
@@ -21,6 +22,7 @@ type FilterViewProps = {
  */
 export function FilterView({
   filterState,
+  rawFilterState,
   isPending,
   onFilterApply,
   onFilterReset,
@@ -28,6 +30,8 @@ export function FilterView({
   onTickerSearchChange,
 }: FilterViewProps) {
   const [openCategory, setOpenCategory] = useState<FilterCategory | null>(null);
+  // 다이얼로그는 원본 filterState를 사용 (체크박스 초기화용)
+  const dialogFilterState = rawFilterState ?? filterState;
 
   return (
     <>
@@ -49,6 +53,12 @@ export function FilterView({
           category="profitability"
           filterState={filterState}
           onClick={() => setOpenCategory("profitability")}
+          disabled={isPending}
+        />
+        <CategoryFilterBox
+          category="price"
+          filterState={filterState}
+          onClick={() => setOpenCategory("price")}
           disabled={isPending}
         />
 
@@ -76,7 +86,7 @@ export function FilterView({
               setOpenCategory(null);
             }
           }}
-          filterState={filterState}
+          filterState={dialogFilterState}
           onApply={onFilterApply}
           onReset={() => {
             onFilterReset(openCategory);

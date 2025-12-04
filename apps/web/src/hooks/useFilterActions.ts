@@ -112,7 +112,8 @@ export function useFilterActions(
     newMa20Above?: boolean,
     newMa50Above?: boolean,
     newMa100Above?: boolean,
-    newMa200Above?: boolean
+    newMa200Above?: boolean,
+    newBreakoutStrategy?: "confirmed" | "retest" | null
   ) => {
     // 정배열 필터가 비활성화되면 "최근 전환" 옵션도 비활성화
     const finalJustTurned = newOrdered ? newJustTurned : false;
@@ -142,6 +143,7 @@ export function useFilterActions(
       ma50Above: filterState.ma50Above ?? false,
       ma100Above: filterState.ma100Above ?? false,
       ma200Above: filterState.ma200Above ?? false,
+      breakoutStrategy: filterState.breakoutStrategy ?? null,
     });
     await fetch("/api/cache/revalidate", {
       method: "POST",
@@ -168,12 +170,17 @@ export function useFilterActions(
       ma50Above: filterState.ma50Above,
       ma100Above: filterState.ma100Above,
       ma200Above: filterState.ma200Above,
+      breakoutStrategy: filterState.breakoutStrategy,
     };
 
     try {
       // URL 업데이트
-      // 이평선 필터는 true일 때만 URL에 설정, false일 때는 URL에서 제거
-      await setBooleanFilter(newOrdered, filterState.setOrdered);
+      // ordered는 기본값이 true이므로, false일 때도 URL에 명시적으로 설정하여 middleware가 다시 추가하지 않도록 함
+      if (newOrdered === false) {
+        await filterState.setOrdered(false);
+      } else {
+        await setBooleanFilter(newOrdered, filterState.setOrdered);
+      }
       // goldenCross는 기본값이 true이므로, false일 때도 URL에 명시적으로 유지
       await filterState.setGoldenCross(newGoldenCross);
       await setBooleanFilter(finalJustTurned, filterState.setJustTurned);
@@ -210,6 +217,13 @@ export function useFilterActions(
       await setBooleanFilter(newMa100Above, filterState.setMa100Above);
       await setBooleanFilter(newMa200Above, filterState.setMa200Above);
 
+      // 돌파매매 전략 필터
+      if (newBreakoutStrategy !== undefined) {
+        await filterState.setBreakoutStrategy(
+          newBreakoutStrategy === null ? null : newBreakoutStrategy
+        );
+      }
+
       // 모든 URL 업데이트 완료 후 localStorage에 필터 저장 (debounce 적용)
       debouncedSaveFilters({
         ordered: newOrdered,
@@ -231,6 +245,7 @@ export function useFilterActions(
         ma50Above: newMa50Above ?? false,
         ma100Above: newMa100Above ?? false,
         ma200Above: newMa200Above ?? false,
+        breakoutStrategy: newBreakoutStrategy ?? null,
       });
 
       // 서버 컴포넌트 리패치 (transition으로 감싸서 로딩 표시)
@@ -321,6 +336,7 @@ export function useFilterActions(
           previousState.ma200Above,
           filterState.setMa200Above
         );
+        await filterState.setBreakoutStrategy(previousState.breakoutStrategy);
       } catch (rollbackError) {
         console.error("롤백 실패:", rollbackError);
       }
@@ -332,9 +348,15 @@ export function useFilterActions(
   // 필터 팝업에서 적용 버튼 클릭 시 (카테고리별 부분 업데이트)
   const handleFilterApply = (newState: Partial<FilterState>) => {
     handleFilterChange(
-      newState.ordered ?? filterState.ordered ?? false,
-      newState.goldenCross ?? filterState.goldenCross ?? false,
-      newState.justTurned ?? filterState.justTurned ?? false,
+      Object.prototype.hasOwnProperty.call(newState, "ordered")
+        ? (newState.ordered ?? false)
+        : (filterState.ordered ?? false),
+      Object.prototype.hasOwnProperty.call(newState, "goldenCross")
+        ? (newState.goldenCross ?? false)
+        : (filterState.goldenCross ?? false),
+      Object.prototype.hasOwnProperty.call(newState, "justTurned")
+        ? (newState.justTurned ?? false)
+        : (filterState.justTurned ?? false),
       newState.lookbackDays ??
         filterState.lookbackDays ??
         FILTER_DEFAULTS.LOOKBACK_DAYS,
@@ -364,7 +386,10 @@ export function useFilterActions(
         : (filterState.ma100Above ?? false),
       Object.prototype.hasOwnProperty.call(newState, "ma200Above")
         ? (newState.ma200Above ?? false)
-        : (filterState.ma200Above ?? false)
+        : (filterState.ma200Above ?? false),
+      Object.prototype.hasOwnProperty.call(newState, "breakoutStrategy")
+        ? (newState.breakoutStrategy ?? null)
+        : (filterState.breakoutStrategy ?? null)
     );
   };
 
@@ -392,7 +417,8 @@ export function useFilterActions(
         false, // ma20Above 초기화
         false, // ma50Above 초기화
         false, // ma100Above 초기화
-        false // ma200Above 초기화
+        false, // ma200Above 초기화
+        filterState.breakoutStrategy ?? null // breakoutStrategy 유지
       );
     } else if (category === "growth") {
       handleFilterChange(
@@ -412,7 +438,8 @@ export function useFilterActions(
         filterState.ma20Above ?? false,
         filterState.ma50Above ?? false,
         filterState.ma100Above ?? false,
-        filterState.ma200Above ?? false
+        filterState.ma200Above ?? false,
+        filterState.breakoutStrategy ?? null
       );
     } else if (category === "profitability") {
       handleFilterChange(
@@ -434,7 +461,31 @@ export function useFilterActions(
         filterState.ma20Above ?? false,
         filterState.ma50Above ?? false,
         filterState.ma100Above ?? false,
-        filterState.ma200Above ?? false
+        filterState.ma200Above ?? false,
+        filterState.breakoutStrategy ?? null
+      );
+    } else if (category === "price") {
+      handleFilterChange(
+        filterState.ordered ?? false,
+        filterState.goldenCross ?? false,
+        filterState.justTurned ?? false,
+        filterState.lookbackDays ?? FILTER_DEFAULTS.LOOKBACK_DAYS,
+        filterState.profitability,
+        filterState.turnAround ?? false,
+        filterState.revenueGrowth ?? false,
+        filterState.incomeGrowth ?? false,
+        filterState.revenueGrowthQuarters ??
+          FILTER_DEFAULTS.REVENUE_GROWTH_QUARTERS,
+        filterState.incomeGrowthQuarters ??
+          FILTER_DEFAULTS.INCOME_GROWTH_QUARTERS,
+        filterState.revenueGrowthRate ?? null,
+        filterState.incomeGrowthRate ?? null,
+        filterState.pegFilter ?? false,
+        filterState.ma20Above ?? false,
+        filterState.ma50Above ?? false,
+        filterState.ma100Above ?? false,
+        filterState.ma200Above ?? false,
+        null // breakoutStrategy 초기화
       );
     }
   };

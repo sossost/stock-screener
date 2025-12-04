@@ -3,6 +3,7 @@ import {
   parseAsBoolean,
   parseAsInteger,
   parseAsStringLiteral,
+  parseAsString,
 } from "nuqs";
 import { filterDefaults, profitabilityValues } from "@/lib/filters/schema";
 
@@ -77,6 +78,23 @@ export function useFilterState() {
     parseAsBoolean
   );
 
+  const [breakoutStrategyRaw, setBreakoutStrategyRaw] = useQueryState(
+    "breakoutStrategy",
+    parseAsString
+  );
+
+  // breakoutStrategy를 "confirmed" | "retest" | null로 변환
+  const breakoutStrategy: "confirmed" | "retest" | null =
+    breakoutStrategyRaw === "confirmed" || breakoutStrategyRaw === "retest"
+      ? breakoutStrategyRaw
+      : null;
+
+  const setBreakoutStrategy = async (
+    value: "confirmed" | "retest" | null
+  ): Promise<URLSearchParams> => {
+    return setBreakoutStrategyRaw(value);
+  };
+
   return {
     ordered,
     setOrdered,
@@ -112,5 +130,7 @@ export function useFilterState() {
     setMa100Above,
     ma200Above,
     setMa200Above,
+    breakoutStrategy,
+    setBreakoutStrategy,
   };
 }

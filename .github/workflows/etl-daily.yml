@@ -3,7 +3,7 @@ name: Daily ETL Pipeline
 on:
   schedule:
     # 미국장 마감(ET 16:00 ≈ UTC 21:00) 이후 2시간 버퍼
-    # 모든 ETL 순차 실행: prices → MA/RS → ratios (needs로 순서 제어)
+    # 모든 ETL 순차 실행: prices → MA/RS → ratios → breakout-signals → alerts (needs로 순서 제어)
     - cron: "30 23 * * *"
   workflow_dispatch: # 수동 실행 가능
     inputs:
@@ -17,6 +17,7 @@ on:
           - daily-prices
           - daily-ma
           - daily-ratios
+          - breakout-signals
           - detect-alerts
 
 jobs:
@@ -71,7 +72,7 @@ jobs:
   etl-daily-ma:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    name: Daily MA ETL
+    name: Daily MA & RS ETL
     needs: etl-daily-prices
     if: always() && (needs.etl-daily-prices.result == 'success' || needs.etl-daily-prices.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'daily-ma' || github.event.inputs.job_type == 'all')
 
@@ -161,16 +162,55 @@ jobs:
             *.log
             logs/
 
+  etl-breakout-signals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    name: Breakout Signals ETL
+    needs: etl-daily-ratios
+    if: always() && (needs.etl-daily-ratios.result == 'success' || needs.etl-daily-ratios.result == 'skipped') && (github.event_name == 'schedule' || github.event.inputs.job_type == 'breakout-signals' || github.event.inputs.job_type == 'all')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run Breakout Signals ETL
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGSSLMODE: no-verify
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        run: |
+          echo "📈 Building Breakout Signals..."
+          yarn etl:breakout-signals
+          echo "✅ Breakout Signals ETL completed!"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakout-signals-logs
+          path: |
+            *.log
+            logs/
+
   etl-detect-alerts:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     name: Detect Price Alerts
-    needs: etl-daily-ratios
+    needs: etl-breakout-signals
     if: |
       always() && (
-        (needs.etl-daily-ratios.result == 'success' || needs.etl-daily-ratios.result == 'skipped') && 
+        (needs.etl-breakout-signals.result == 'success' || needs.etl-breakout-signals.result == 'skipped') &&
         (github.event_name == 'schedule' || github.event.inputs.job_type == 'all')
-      ) || 
+      ) ||
       github.event.inputs.job_type == 'detect-alerts'
 
     steps:
@@ -215,17 +255,24 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     name: Notify Completion
-    needs: [etl-daily-prices, etl-daily-ma, etl-daily-ratios, etl-detect-alerts]
+    needs:
+      [
+        etl-daily-prices,
+        etl-daily-ma,
+        etl-daily-ratios,
+        etl-breakout-signals,
+        etl-detect-alerts,
+      ]
 
     steps:
       - name: Notify Success
-        if: needs.etl-daily-prices.result == 'success' && needs.etl-daily-ma.result == 'success' && needs.etl-daily-ratios.result == 'success'
+        if: needs.etl-daily-prices.result == 'success' && needs.etl-daily-ma.result == 'success' && needs.etl-daily-ratios.result == 'success' && needs.etl-breakout-signals.result == 'success'
         run: |
           echo "✅ Daily ETL Pipeline completed successfully!"
           echo "📊 Daily prices, moving averages, and valuation ratios updated"
 
       - name: Notify Failure
-        if: needs.etl-daily-prices.result == 'failure' || needs.etl-daily-ma.result == 'failure' || needs.etl-daily-ratios.result == 'failure'
+        if: needs.etl-daily-prices.result == 'failure' || needs.etl-daily-ma.result == 'failure' || needs.etl-daily-ratios.result == 'failure' || needs.etl-breakout-signals.result == 'failure'
         run: |
           echo "❌ Daily ETL Pipeline failed!"
           echo "🔍 Check the logs for details"

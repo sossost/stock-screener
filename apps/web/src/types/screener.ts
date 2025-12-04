@@ -61,6 +61,7 @@ export interface ScreenerParams {
   ma50Above?: boolean; // 50일선 위
   ma100Above?: boolean; // 100일선 위
   ma200Above?: boolean; // 200일선 위
+  breakoutStrategy?: "confirmed" | "retest" | null; // 돌파매매 전략 (전략 A: confirmed, 전략 B: retest)
 }
 
 // DB 쿼리 결과 타입

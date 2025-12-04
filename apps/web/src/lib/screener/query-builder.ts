@@ -95,6 +95,17 @@ function buildLastDateCTE(requireMA: boolean): SQL {
 }
 
 /**
+ * 어제 거래일 CTE 생성 (breakout signals 매칭용)
+ */
+function buildPreviousDateCTE(): SQL {
+  return sql`
+    SELECT MAX(date::date)::date AS d
+    FROM daily_prices
+    WHERE date::date < (SELECT MAX(date::date)::date FROM daily_prices)
+  `;
+}
+
+/**
  * 현재 데이터 CTE 생성 (MA 조건 포함)
  */
 function buildCurrentDataCTE(params: ScreenerParams, requireMA: boolean): SQL {
@@ -396,6 +407,7 @@ function buildWhereFilters(params: ScreenerParams): SQL {
     ma50Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
     ma100Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
     ma200Above = false, // URL 파라미터에 명시적으로 값이 있어야만 적용
+    breakoutStrategy = null,
   } = params;
 
   return sql`
@@ -455,6 +467,16 @@ function buildWhereFilters(params: ScreenerParams): SQL {
         ? sql`AND cand.close IS NOT NULL AND cand.ma200 IS NOT NULL AND cand.close > cand.ma200`
         : sql``
     }
+    ${
+      breakoutStrategy === "confirmed"
+        ? sql`AND dbs.is_confirmed_breakout IS TRUE`
+        : sql``
+    }
+    ${
+      breakoutStrategy === "retest"
+        ? sql`AND dbs.is_perfect_retest IS TRUE`
+        : sql``
+    }
   `;
 }
 
@@ -475,6 +497,9 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
   const requireMA = requiresMA(params);
   const maxRn = QUERY_CONSTANTS.MAX_RN_OFFSET + lookbackDays;
   const needPrevStatus = justTurned && ordered === true;
+  const { breakoutStrategy = null } = params;
+  const needBreakoutFilter =
+    breakoutStrategy === "confirmed" || breakoutStrategy === "retest";
 
   // justTurned 필터가 필요할 때만 prev_ma와 prev_status CTE 포함
   if (needPrevStatus) {
@@ -482,6 +507,7 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
     WITH last_d AS (
       ${buildLastDateCTE(requireMA)}
     ),
+    ${needBreakoutFilter ? sql`prev_d AS (${buildPreviousDateCTE()}),` : sql``}
     cur AS (
       ${buildCurrentDataCTE(params, requireMA)}
     ),
@@ -519,6 +545,11 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
       FROM candidates cand
       LEFT JOIN prev_status ps ON ps.symbol = cand.symbol
       LEFT JOIN symbols s ON s.symbol = cand.symbol
+      ${
+        needBreakoutFilter
+          ? sql`LEFT JOIN daily_breakout_signals dbs ON dbs.symbol = cand.symbol AND dbs.date::date = (SELECT d FROM prev_d)`
+          : sql``
+      }
       LEFT JOIN LATERAL (
         ${buildQuarterlyFinancialsCTE(
           revenueGrowthQuarters,
@@ -538,6 +569,7 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
     WITH last_d AS (
       ${buildLastDateCTE(requireMA)}
     ),
+    ${needBreakoutFilter ? sql`prev_d AS (${buildPreviousDateCTE()}),` : sql``}
     cur AS (
       ${buildCurrentDataCTE(params, requireMA)}
     ),
@@ -568,6 +600,11 @@ export function buildScreenerQuery(params: ScreenerParams): SQL {
       END AS ordered
     FROM candidates cand
     LEFT JOIN symbols s ON s.symbol = cand.symbol
+    ${
+      needBreakoutFilter
+        ? sql`LEFT JOIN daily_breakout_signals dbs ON dbs.symbol = cand.symbol AND dbs.date::date = (SELECT d FROM prev_d)`
+        : sql``
+    }
     LEFT JOIN LATERAL (
       ${buildQuarterlyFinancialsCTE(
         revenueGrowthQuarters,
