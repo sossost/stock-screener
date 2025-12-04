@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { trades, tradeActions } from "@/db/schema";
-import { eq, and, gte, lte, inArray, count } from "drizzle-orm";
-import { calculateTradeStats } from "@/lib/trades/calculations";
+import { eq, and, or, gte, lte, inArray, count, sql } from "drizzle-orm";
+import {
+  calculateTradeStats,
+  calculateTradeMetrics,
+} from "@/lib/trades/calculations";
 import { getUserIdFromRequest } from "@/lib/auth/user";
 
 /**
@@ -40,23 +43,46 @@ export async function GET(request: NextRequest) {
 
     const userId = getUserIdFromRequest(request);
 
-    // DB WHERE 절에서 직접 필터링
-    const conditions = [eq(trades.userId, userId), eq(trades.status, "CLOSED")];
+    // 완료된 거래 + 진행중인 거래(매도가 발생한 경우) 조회
+    const conditions = [eq(trades.userId, userId)];
 
-    if (startDate) {
-      conditions.push(gte(trades.endDate, startDate));
-    }
-    if (endDate) {
-      conditions.push(lte(trades.endDate, endDate));
+    // 날짜 필터링: 완료된 거래는 endDate 기준, 진행중인 거래는 startDate 기준
+    if (startDate || endDate) {
+      // OR 조건: (진행중인 거래 AND startDate 조건) OR (완료된 거래 AND endDate 조건)
+      if (startDate && endDate) {
+        conditions.push(
+          sql`(
+            (${eq(trades.status, "OPEN")} AND ${gte(trades.startDate, startDate)} AND ${lte(trades.startDate, endDate)})
+            OR
+            (${eq(trades.status, "CLOSED")} AND ${gte(trades.endDate, startDate)} AND ${lte(trades.endDate, endDate)})
+          )`
+        );
+      } else if (startDate) {
+        conditions.push(
+          sql`(
+            (${eq(trades.status, "OPEN")} AND ${gte(trades.startDate, startDate)})
+            OR
+            (${eq(trades.status, "CLOSED")} AND ${gte(trades.endDate, startDate)})
+          )`
+        );
+      } else if (endDate) {
+        conditions.push(
+          sql`(
+            (${eq(trades.status, "OPEN")} AND ${lte(trades.startDate, endDate)})
+            OR
+            (${eq(trades.status, "CLOSED")} AND ${lte(trades.endDate, endDate)})
+          )`
+        );
+      }
     }
 
-    const tradeList = await db
+    const allTradesList = await db
       .select()
       .from(trades)
       .where(and(...conditions));
 
     // N+1 쿼리 해결: 한 번에 모든 액션 조회
-    const tradeIds = tradeList.map((t) => t.id);
+    const tradeIds = allTradesList.map((t) => t.id);
     const allActions =
       tradeIds.length > 0
         ? await db
@@ -73,13 +99,51 @@ export async function GET(request: NextRequest) {
       actionsByTradeId.set(action.tradeId, existing);
     }
 
-    const tradesWithActions = tradeList.map((trade) => ({
-      ...trade,
-      actions: actionsByTradeId.get(trade.id) || [],
-    }));
+    // 완료된 거래만 통계 계산에 포함 (진행중인 거래는 실현 손익만 별도 계산)
+    const closedTradesWithActions = allTradesList
+      .filter((trade) => trade.status === "CLOSED")
+      .map((trade) => ({
+        ...trade,
+        actions: actionsByTradeId.get(trade.id) || [],
+      }));
 
-    // 통계 계산
-    const stats = calculateTradeStats(tradesWithActions);
+    // 통계 계산 (완료된 거래 기준)
+    const stats = calculateTradeStats(closedTradesWithActions);
+
+    // 진행중인 거래의 부분 매도 실현 손익도 통계에 추가
+    const openTradesWithActions = allTradesList
+      .filter((trade) => trade.status === "OPEN")
+      .map((trade) => ({
+        ...trade,
+        actions: actionsByTradeId.get(trade.id) || [],
+      }));
+
+    // 진행중인 거래 중 매도가 발생한 거래의 실현 손익 합산
+    let openTradesRealizedPnl = 0;
+    for (const trade of openTradesWithActions) {
+      const hasSellActions = trade.actions.some((a) => a.actionType === "SELL");
+      if (!hasSellActions) continue;
+
+      const commissionRate = trade.commissionRate
+        ? parseFloat(trade.commissionRate)
+        : 0.07;
+
+      const calculated = calculateTradeMetrics(
+        trade.actions,
+        trade.planStopLoss,
+        commissionRate
+      );
+
+      if (calculated.realizedPnl !== 0) {
+        openTradesRealizedPnl += calculated.realizedPnl;
+      }
+    }
+
+    // 총 실현 손익에 진행중인 거래의 실현 손익 추가
+    const adjustedStats = {
+      ...stats,
+      totalPnl: stats.totalPnl + openTradesRealizedPnl,
+    };
 
     // OPEN 매매 수 (count 사용)
     const [openTradesResult] = await db
@@ -88,7 +152,7 @@ export async function GET(request: NextRequest) {
       .where(and(eq(trades.userId, userId), eq(trades.status, "OPEN")));
 
     return NextResponse.json({
-      ...stats,
+      ...adjustedStats,
       openTrades: openTradesResult?.count ?? 0,
     });
   } catch (error) {

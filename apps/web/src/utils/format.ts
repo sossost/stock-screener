@@ -168,13 +168,17 @@ export function formatPrice(value: string | number | null): string {
  * 손익 금액 포맷팅 (테이블용 - K 단위 반올림)
  */
 export function formatPnl(value: number): string {
-  const sign = value >= 0 ? "+" : "";
   const absValue = Math.abs(value);
+  let formattedValue: string;
 
   if (absValue >= 1000) {
-    return `${sign}$${trimTrailingZeros((value / 1000).toFixed(1))}K`;
+    formattedValue = `${trimTrailingZeros((absValue / 1000).toFixed(1))}K`;
+  } else {
+    formattedValue = addCommas(Math.round(absValue).toString());
   }
-  return `${sign}$${addCommas(Math.round(value).toString())}`;
+
+  const sign = value >= 0 ? "+" : "-";
+  return `${sign}$${formattedValue}`;
 }
 
 /**

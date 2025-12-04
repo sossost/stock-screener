@@ -1,16 +1,14 @@
 "use client";
 
-import { formatPositionValue, formatDateKr } from "@/utils/format";
+import { formatPnl, formatDateKr } from "@/utils/format";
 
-interface AssetSnapshot {
+interface PnlSnapshot {
   date: string;
-  totalAssets: number;
-  cash: number;
-  positionValue: number;
+  realizedPnl: number;
 }
 
 interface AssetFlowTooltipProps {
-  data: AssetSnapshot;
+  data: PnlSnapshot;
   position: { x: number; y: number };
 }
 
@@ -37,13 +35,13 @@ export default function AssetFlowTooltip({
       style={{ left, top }}
     >
       <p className="text-gray-500 mb-1">{formatDateKr(data.date)}</p>
-      <p className="font-semibold text-red-600">
-        {formatPositionValue(data.totalAssets)}
+      <p
+        className={`font-semibold ${
+          data.realizedPnl >= 0 ? "text-green-600" : "text-red-600"
+        }`}
+      >
+        {formatPnl(data.realizedPnl)}
       </p>
-      <div className="flex gap-2 mt-1 text-gray-400 text-[10px]">
-        <span>현금: {formatPositionValue(data.cash)}</span>
-        <span>포지션: {formatPositionValue(data.positionValue)}</span>
-      </div>
     </div>
   );
 }

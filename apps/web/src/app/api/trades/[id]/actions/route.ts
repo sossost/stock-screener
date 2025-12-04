@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { trades, tradeActions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { canSellQuantity } from "@/lib/trades/calculations";
+import {
+  canSellQuantity,
+  calculateTradeMetrics,
+} from "@/lib/trades/calculations";
 import { CreateActionRequest } from "@/lib/trades/types";
 import { getUserIdFromRequest } from "@/lib/auth/user";
+import { updateCashBalanceForTrade } from "@/lib/trades/cash-balance";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -139,39 +143,81 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const isFirstAction =
       existingActionsCount.length === 0 && body.actionType === "BUY";
 
-    // 액션 생성
+    // 트랜잭션으로 액션 생성 및 자동 완료 처리
     const actionDate = body.actionDate ? new Date(body.actionDate) : new Date();
+    const commissionRate = trade.commissionRate
+      ? parseFloat(trade.commissionRate)
+      : 0.07;
 
-    const [newAction] = await db
-      .insert(tradeActions)
-      .values({
-        tradeId,
-        actionType: body.actionType,
-        actionDate,
-        price: body.price.toString(),
-        quantity: body.quantity,
-        note: body.note || null,
-      })
-      .returning();
-
-    // 첫 매수면 startDate 업데이트
-    if (isFirstAction) {
-      await db
-        .update(trades)
-        .set({
-          startDate: actionDate,
-          updatedAt: new Date(),
+    const result = await db.transaction(async (tx) => {
+      // 액션 생성
+      const [newAction] = await tx
+        .insert(tradeActions)
+        .values({
+          tradeId,
+          actionType: body.actionType,
+          actionDate,
+          price: body.price.toString(),
+          quantity: body.quantity,
+          note: body.note || null,
         })
-        .where(eq(trades.id, tradeId));
-    } else {
-      // updatedAt만 업데이트
-      await db
-        .update(trades)
-        .set({ updatedAt: new Date() })
-        .where(eq(trades.id, tradeId));
+        .returning();
+
+      // 모든 액션 조회하여 보유 수량 확인
+      const allActions = await tx
+        .select()
+        .from(tradeActions)
+        .where(eq(tradeActions.tradeId, tradeId))
+        .orderBy(tradeActions.actionDate);
+
+      const calculated = calculateTradeMetrics(
+        allActions,
+        trade.planStopLoss,
+        commissionRate
+      );
+
+      // 보유 수량이 0이면 자동 완료 처리
+      const shouldAutoClose = calculated.currentQuantity === 0;
+
+      // 첫 매수면 startDate 업데이트
+      if (isFirstAction) {
+        await tx
+          .update(trades)
+          .set({
+            startDate: actionDate,
+            updatedAt: new Date(),
+            ...(shouldAutoClose && {
+              status: "CLOSED",
+              endDate: actionDate,
+            }),
+          })
+          .where(eq(trades.id, tradeId));
+      } else {
+        // updatedAt 업데이트 및 자동 완료 처리
+        await tx
+          .update(trades)
+          .set({
+            updatedAt: new Date(),
+            ...(shouldAutoClose && {
+              status: "CLOSED",
+              endDate: actionDate,
+            }),
+          })
+          .where(eq(trades.id, tradeId));
+      }
+
+      return { newAction, commissionRate };
+    });
+
+    // 현금 잔액 업데이트 (트랜잭션 외부에서 처리하여 실패해도 액션은 유지)
+    try {
+      await updateCashBalanceForTrade(userId, tradeId, result.commissionRate);
+    } catch (error) {
+      console.error("[Actions API] Cash balance update failed:", error);
+      // 현금 업데이트 실패해도 액션은 성공했으므로 계속 진행
     }
 
-    return NextResponse.json(newAction, { status: 201 });
+    return NextResponse.json(result.newAction, { status: 201 });
   } catch (error) {
     console.error("[Actions API] POST error:", error);
     return NextResponse.json({ error: "매매 내역 추가 실패" }, { status: 500 });

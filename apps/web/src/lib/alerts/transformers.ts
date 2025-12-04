@@ -107,4 +107,3 @@ export function transformToScreenerCompany(r: QueryResult): ScreenerCompany {
     peg_ratio: parseNumericValue(r.peg_ratio),
   };
 }
-

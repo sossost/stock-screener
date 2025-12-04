@@ -11,7 +11,11 @@ vi.mock("@tanstack/react-query", () => ({
 
 // AlertTableGroup 모킹
 vi.mock("../AlertTableGroup", () => ({
-  AlertTableGroup: ({ alertsByDate }: { alertsByDate: Array<{ date: string; alerts: unknown[] }> }) => (
+  AlertTableGroup: ({
+    alertsByDate,
+  }: {
+    alertsByDate: Array<{ date: string; alerts: unknown[] }>;
+  }) => (
     <div data-testid="alert-table-group">
       {alertsByDate.map((item) => (
         <div key={item.date}>{item.date}</div>
@@ -77,7 +81,9 @@ describe("AlertsClient", () => {
     render(<AlertsClient />);
 
     await waitFor(() => {
-      expect(screen.getByText("알림을 불러오지 못했습니다")).toBeInTheDocument();
+      expect(
+        screen.getByText("알림을 불러오지 못했습니다")
+      ).toBeInTheDocument();
       expect(screen.queryByTestId("alert-table-group")).not.toBeInTheDocument();
     });
   });
@@ -95,4 +101,3 @@ describe("AlertsClient", () => {
     });
   });
 });
-

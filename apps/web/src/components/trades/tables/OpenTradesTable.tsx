@@ -75,7 +75,7 @@ export default function OpenTradesTable({
                 손절가
               </TableHead>
               <TableHead className="font-medium text-gray-600">
-                현재가
+                현재가 (전일대비)
               </TableHead>
               <TableHead className="font-medium text-gray-600">
                 목표가
@@ -94,6 +94,9 @@ export default function OpenTradesTable({
               )}
               <TableHead className="font-medium text-gray-600">
                 미실현 손익
+              </TableHead>
+              <TableHead className="font-medium text-gray-600">
+                실현 손익
               </TableHead>
               <TableHead className="font-medium text-gray-600">
                 시작일
@@ -185,24 +188,21 @@ export default function OpenTradesTable({
                   </TableCell>
                   <TableCell>
                     {currentPrice > 0 ? (
-                      <span
-                        className={
-                          isProfitable
-                            ? "text-blue-600"
-                            : isLoss
-                              ? "text-red-500"
-                              : ""
-                        }
-                      >
-                        {formatPrice(currentPrice)} (
-                        {currentPercent !== null && currentPercent >= 0
-                          ? "+"
-                          : ""}
-                        {currentPercent !== null
-                          ? formatPercent(currentPercent, 1)
-                          : "-"}
-                        )
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span>{formatPrice(currentPrice)}</span>
+                        {trade.priceChangePercent !== null ? (
+                          <span
+                            className={
+                              trade.priceChangePercent >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }
+                          >
+                            ({trade.priceChangePercent >= 0 ? "+" : ""}
+                            {formatPercent(trade.priceChangePercent, 1)})
+                          </span>
+                        ) : null}
+                      </div>
                     ) : (
                       "-"
                     )}
@@ -234,6 +234,23 @@ export default function OpenTradesTable({
                     >
                       {formatPnl(unrealizedPnl)} ({formatRoi(unrealizedRoi)})
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    {trade.calculated.totalSellQuantity > 0 ? (
+                      <span
+                        className={
+                          trade.calculated.realizedPnl > 0
+                            ? "text-green-600"
+                            : trade.calculated.realizedPnl < 0
+                              ? "text-red-600"
+                              : "text-gray-500"
+                        }
+                      >
+                        {formatPnl(trade.calculated.realizedPnl)}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-gray-500">
                     {formatDateKr(trade.startDate)}

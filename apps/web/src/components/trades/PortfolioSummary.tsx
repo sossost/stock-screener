@@ -159,11 +159,7 @@ export default function PortfolioSummary({
 
         {/* 우측: 자산 흐름 */}
         <div className="p-4 flex flex-col h-full">
-          <AssetFlowChart
-            currentTotalAssets={totalAssets}
-            currentCash={cashBalance}
-            currentPositionValue={totalPositionValue}
-          />
+          <AssetFlowChart />
         </div>
       </div>
     </div>

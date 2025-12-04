@@ -209,4 +209,3 @@ export function buildAlertsQuery(date: string, symbols: string[]): SQL {
     LEFT JOIN daily_ma dm ON dm.symbol = ap.symbol AND dm.date = ${date}
   `;
 }
-

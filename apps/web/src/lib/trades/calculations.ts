@@ -385,3 +385,32 @@ export function calculateUnrealizedPnl(
 
   return { unrealizedPnl, unrealizedRoi };
 }
+
+/**
+ * 액션 배열을 기반으로 현금 변화량 계산
+ * @param actions 매수/매도 액션 배열
+ * @param commissionRate 수수료율 (%, 기본 0.07%)
+ * @returns 현금 변화량 (양수: 증가, 음수: 감소)
+ */
+export function calculateCashChange(
+  actions: TradeAction[],
+  commissionRate: number = DEFAULT_COMMISSION_RATE
+): number {
+  const commissionRateDecimal = commissionRate / 100;
+  let totalChange = 0;
+
+  for (const action of actions) {
+    const price = parseFloat(action.price);
+    const quantity = action.quantity;
+
+    if (action.actionType === "BUY") {
+      // 매수: 현금 감소 (가격 * 수량 * (1 + 수수료율))
+      totalChange -= price * quantity * (1 + commissionRateDecimal);
+    } else if (action.actionType === "SELL") {
+      // 매도: 현금 증가 (가격 * 수량 * (1 - 수수료율))
+      totalChange += price * quantity * (1 - commissionRateDecimal);
+    }
+  }
+
+  return totalChange;
+}

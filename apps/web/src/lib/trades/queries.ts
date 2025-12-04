@@ -65,12 +65,15 @@ export async function getTradesList(
     actionsByTradeId.set(action.tradeId, existing);
   }
 
-  // 배치 조회: 심볼별 최신 가격 (서브쿼리로 각 심볼의 최신 날짜 가격 조회)
+  // 배치 조회: 심볼별 최신 가격 및 전일 가격
   const uniqueSymbols = [...new Set(tradeList.map((t) => t.trade.symbol))];
+
+  // 최신 가격 조회
   const latestPrices = await db
     .select({
       symbol: dailyPrices.symbol,
       close: dailyPrices.close,
+      date: dailyPrices.date,
     })
     .from(dailyPrices)
     .where(
@@ -87,10 +90,62 @@ export async function getTradesList(
       )
     );
 
+  // 전일 가격 조회 (최신 날짜보다 하루 전)
+  const latestDatesBySymbol = new Map<string, string>();
+  for (const price of latestPrices) {
+    if (price.date) {
+      latestDatesBySymbol.set(price.symbol, price.date);
+    }
+  }
+
+  const prevPrices = await db
+    .select({
+      symbol: dailyPrices.symbol,
+      close: dailyPrices.close,
+    })
+    .from(dailyPrices)
+    .where(
+      and(
+        inArray(dailyPrices.symbol, uniqueSymbols),
+        sql`(${dailyPrices.symbol}, ${dailyPrices.date}) IN (
+          SELECT symbol, MAX(date) FROM daily_prices 
+          WHERE symbol IN (${sql.join(
+            uniqueSymbols.map((s) => sql`${s}`),
+            sql`, `
+          )})
+            AND date < (
+              SELECT MAX(date) FROM daily_prices 
+              WHERE symbol = daily_prices.symbol
+            )
+          GROUP BY symbol
+        )`
+      )
+    );
+
   const priceBySymbol = new Map<string, number>();
+  const prevPriceBySymbol = new Map<string, number>();
+  const priceChangeBySymbol = new Map<string, number>();
+
   for (const price of latestPrices) {
     if (price.close) {
       priceBySymbol.set(price.symbol, parseFloat(price.close));
+    }
+  }
+
+  for (const price of prevPrices) {
+    if (price.close) {
+      prevPriceBySymbol.set(price.symbol, parseFloat(price.close));
+    }
+  }
+
+  // 전일대비 변동률 계산
+  for (const symbol of uniqueSymbols) {
+    const currentPrice = priceBySymbol.get(symbol);
+    const prevPrice = prevPriceBySymbol.get(symbol);
+
+    if (currentPrice && prevPrice && prevPrice > 0) {
+      const changePercent = ((currentPrice - prevPrice) / prevPrice) * 100;
+      priceChangeBySymbol.set(symbol, changePercent);
     }
   }
 
@@ -98,6 +153,7 @@ export async function getTradesList(
   const result: TradeListItem[] = tradeList.map(({ trade, companyName }) => {
     const actions = actionsByTradeId.get(trade.id) || [];
     const currentPrice = priceBySymbol.get(trade.symbol) || null;
+    const priceChangePercent = priceChangeBySymbol.get(trade.symbol) || null;
 
     const commissionRate = trade.commissionRate
       ? parseFloat(trade.commissionRate)
@@ -117,12 +173,14 @@ export async function getTradesList(
       ...trade,
       companyName,
       currentPrice,
+      priceChangePercent,
       calculated: {
         avgEntryPrice: calculated.avgEntryPrice,
         currentQuantity: calculated.currentQuantity,
         realizedPnl: calculated.realizedPnl,
         realizedRoi: calculated.realizedRoi,
         totalBuyQuantity: calculated.totalBuyQuantity,
+        totalSellQuantity: calculated.totalSellQuantity,
         avgExitPrice: calculated.avgExitPrice,
         totalCommission: calculated.totalCommission,
         holdingDays,

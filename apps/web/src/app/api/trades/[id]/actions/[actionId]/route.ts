@@ -3,6 +3,7 @@ import { db } from "@/db/client";
 import { trades, tradeActions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getUserIdFromRequest } from "@/lib/auth/user";
+import { updateCashBalanceForTrade } from "@/lib/trades/cash-balance";
 
 type RouteContext = {
   params: Promise<{ id: string; actionId: string }>;
@@ -108,6 +109,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       .set({ updatedAt: new Date() })
       .where(eq(trades.id, tradeId));
 
+    // 현금 잔액 재계산 (액션 수정 시)
+    const commissionRate = trade.commissionRate
+      ? parseFloat(trade.commissionRate)
+      : 0.07;
+    try {
+      await updateCashBalanceForTrade(userId, tradeId, commissionRate);
+    } catch (error) {
+      console.error("[Actions API] Cash balance update failed:", error);
+      // 현금 업데이트 실패해도 액션 수정은 성공했으므로 계속 진행
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Actions API] PATCH error:", error);
@@ -189,6 +201,17 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .update(trades)
       .set({ updatedAt: new Date() })
       .where(eq(trades.id, tradeId));
+
+    // 현금 잔액 재계산 (액션 삭제 시)
+    const commissionRate = trade.commissionRate
+      ? parseFloat(trade.commissionRate)
+      : 0.07;
+    try {
+      await updateCashBalanceForTrade(userId, tradeId, commissionRate);
+    } catch (error) {
+      console.error("[Actions API] Cash balance update failed:", error);
+      // 현금 업데이트 실패해도 액션 삭제는 성공했으므로 계속 진행
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

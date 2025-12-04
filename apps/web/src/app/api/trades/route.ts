@@ -88,12 +88,14 @@ export async function GET(request: NextRequest) {
           ...trade,
           companyName,
           currentPrice,
+          priceChangePercent: null, // API 라우트에서는 전일대비 계산하지 않음 (getTradesList 사용 권장)
           calculated: {
             avgEntryPrice: calculated.avgEntryPrice,
             currentQuantity: calculated.currentQuantity,
             realizedPnl: calculated.realizedPnl,
             realizedRoi: calculated.realizedRoi,
             totalBuyQuantity: calculated.totalBuyQuantity,
+            totalSellQuantity: calculated.totalSellQuantity,
             avgExitPrice: calculated.avgExitPrice,
             totalCommission: calculated.totalCommission,
             holdingDays,
