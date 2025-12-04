@@ -221,6 +221,44 @@ export const watchlist = pgTable(
   })
 );
 
+/**
+ * 돌파매매 신호 테이블
+ * - EOD 기준으로 미리 계산된 돌파/재테스트 신호를 저장
+ * - 스크리너는 이 테이블을 JOIN만 해서 사용 (실시간 윈도우 함수 계산 제거)
+ */
+export const dailyBreakoutSignals = pgTable(
+  "daily_breakout_signals",
+  {
+    symbol: text("symbol")
+      .notNull()
+      .references(() => symbols.symbol, { onDelete: "cascade" }),
+    date: text("date").notNull(), // 'YYYY-MM-DD'
+    // 전략 A: 확정 돌파
+    isConfirmedBreakout: boolean("is_confirmed_breakout")
+      .notNull()
+      .default(false),
+    breakoutPercent: numeric("breakout_percent"), // (close / high_20d - 1) * 100
+    volumeRatio: numeric("volume_ratio"), // volume / avg_volume_20d
+    // 전략 B: 완벽한 재테스트
+    isPerfectRetest: boolean("is_perfect_retest").notNull().default(false),
+    ma20DistancePercent: numeric("ma20_distance_percent"), // (close / ma20 - 1) * 100
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    uq: unique("uq_daily_breakout_signals_symbol_date").on(t.symbol, t.date),
+    idx_date_confirmed: index("idx_daily_breakout_signals_date_confirmed").on(
+      t.date,
+      t.isConfirmedBreakout
+    ),
+    idx_date_retest: index("idx_daily_breakout_signals_date_retest").on(
+      t.date,
+      t.isPerfectRetest
+    ),
+  })
+);
+
 // ==================== 매매일지 (Trading Journal) ====================
 
 /**

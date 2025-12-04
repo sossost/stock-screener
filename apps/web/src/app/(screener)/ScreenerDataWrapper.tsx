@@ -5,7 +5,6 @@ import { useScreenerData } from "@/hooks/useScreenerData";
 import type { FilterState } from "@/lib/filters/summary";
 import type { ScreenerCompany } from "@/types/screener";
 import { StockTable } from "@/components/screener/StockTable";
-import { TableSkeleton } from "./TableSkeleton";
 import { StateMessage } from "@/components/common/StateMessage";
 
 type ScreenerClientProps = {
@@ -46,18 +45,22 @@ export function ScreenerDataWrapper({
     );
   }
 
-  // 데이터 로드 중이거나 데이터가 없으면 스켈레톤 표시
-  if (screenerData.data.length === 0 && !screenerData.error) {
-    return <TableSkeleton />;
+  // useSuspenseQuery를 사용하므로 이 컴포넌트가 렌더링되었다는 것은 데이터가 로드되었다는 의미
+  // 데이터가 비어있으면 필터 조건에 맞는 결과가 없는 것
+  if (screenerData.data.length === 0) {
+    return (
+      <StateMessage
+        title="표시할 데이터가 없습니다"
+        description="필터 조건을 완화하거나 다른 티커를 검색해 보세요."
+      />
+    );
   }
-
-  const hasDataLoaded = screenerData.data.length > 0;
 
   // filteredData가 비어있지만 아직 상위 컴포넌트에 데이터가 전달되지 않았을 수 있음
   // screenerData.data.length > 0이지만 filteredData.length === 0이면
   // 아직 티커 검색이 적용되지 않은 상태일 수 있으므로 원본 데이터를 표시
   // 또는 실제로 필터링 결과가 없는 상태
-  if (hasDataLoaded && filteredData.length === 0) {
+  if (filteredData.length === 0) {
     // tickerSearch가 비어있으면 티커 검색이 적용되지 않은 것이므로 원본 데이터 표시
     if (tickerSearch.length === 0) {
       return (

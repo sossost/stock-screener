@@ -84,10 +84,9 @@ async function getActualBreakoutAlerts(): Promise<AlertData[]> {
       FROM latest l
       JOIN previous p ON l.symbol = p.symbol
       WHERE 
-        -- 정배열 조건
+        -- 정배열 조건 (MA20 > MA50 > MA200, 100일선 제외)
         l.today_ma20 > l.today_ma50
-        AND l.today_ma50 > l.today_ma100
-        AND l.today_ma100 > l.today_ma200
+        AND l.today_ma50 > l.today_ma200
         -- 20일선 돌파 조건
         AND p.prev_close < p.prev_ma20  -- 전일 종가 < 전일 ma20
         AND l.today_close > l.today_ma20  -- 오늘 종가 > 오늘 ma20

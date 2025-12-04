@@ -26,6 +26,7 @@ export const filterDefaults = {
   ma50Above: false,
   ma100Above: false,
   ma200Above: false,
+  breakoutStrategy: null as "confirmed" | "retest" | null,
 };
 
 // 문자열 "true"/"false"를 boolean으로 변환하는 커스텀 스키마
@@ -67,6 +68,11 @@ export const filterSchema = z.object({
   ma50Above: booleanString.default(filterDefaults.ma50Above),
   ma100Above: booleanString.default(filterDefaults.ma100Above),
   ma200Above: booleanString.default(filterDefaults.ma200Above),
+  breakoutStrategy: z
+    .enum(["confirmed", "retest"])
+    .optional()
+    .nullable()
+    .default(filterDefaults.breakoutStrategy),
 });
 
 export type ParsedFilters = z.infer<typeof filterSchema>;
@@ -127,6 +133,9 @@ export function parseFilters(
     }
     if (!Object.prototype.hasOwnProperty.call(normalized, "ma200Above")) {
       data.ma200Above = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(normalized, "breakoutStrategy")) {
+      data.breakoutStrategy = null;
     }
 
     return data;
@@ -197,6 +206,13 @@ export function buildQueryParams(filters: ParsedFilters): URLSearchParams {
   }
 
   if (
+    filters.breakoutStrategy !== null &&
+    filters.breakoutStrategy !== undefined
+  ) {
+    params.set("breakoutStrategy", filters.breakoutStrategy);
+  }
+
+  if (
     filters.revenueGrowthRate !== null &&
     filters.revenueGrowthRate !== undefined
   ) {
@@ -223,5 +239,5 @@ export function buildCacheTag(filters: ParsedFilters): string {
     filters.turnAround
   }-${filters.ma20Above}-${filters.ma50Above}-${filters.ma100Above}-${
     filters.ma200Above
-  }`;
+  }-${filters.breakoutStrategy ?? ""}`;
 }

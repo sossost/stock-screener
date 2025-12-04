@@ -31,7 +31,7 @@ export interface StockMAInfo {
 }
 
 export interface StockMAStatus {
-  /** MA20 > MA50 > MA100 > MA200 정배열 */
+  /** MA20 > MA50 > MA200 정배열 (100일선 제외) */
   ordered: boolean;
   /** MA50 > MA200 골든크로스 */
   goldenCross: boolean;

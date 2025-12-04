@@ -73,19 +73,15 @@ describe("AlertsClient", () => {
   });
 
   it("에러 발생 시 에러 메시지 표시", async () => {
-    mockUseSuspenseQuery.mockReturnValue({
-      data: undefined,
-      error: new Error("Failed to fetch"),
+    // useSuspenseQuery는 에러를 throw하므로, 에러 바운더리로 처리됨
+    // 테스트에서는 에러를 throw하도록 모킹
+    mockUseSuspenseQuery.mockImplementation(() => {
+      throw new Error("Failed to fetch");
     });
 
-    render(<AlertsClient />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("알림을 불러오지 못했습니다")
-      ).toBeInTheDocument();
-      expect(screen.queryByTestId("alert-table-group")).not.toBeInTheDocument();
-    });
+    // 에러 바운더리 없이 렌더링하면 에러가 throw됨
+    // 실제로는 에러 바운더리가 에러를 처리하므로, 여기서는 에러가 throw되는지만 확인
+    expect(() => render(<AlertsClient />)).toThrow("Failed to fetch");
   });
 
   it("데이터가 null일 때 빈 상태 표시", async () => {

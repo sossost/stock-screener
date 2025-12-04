@@ -41,6 +41,7 @@ export function isQueryResult(row: unknown): row is QueryResult {
 
 /**
  * 정배열 여부 계산
+ * @param ma100 사용하지 않음, 호환성 유지
  */
 export function calculateOrdered(
   ma20: number | null,
@@ -48,14 +49,13 @@ export function calculateOrdered(
   ma100: number | null,
   ma200: number | null
 ): boolean {
+  // 정배열: MA20 > MA50 > MA200 (100일선 제외)
   return (
     ma20 !== null &&
     ma50 !== null &&
-    ma100 !== null &&
     ma200 !== null &&
     ma20 > ma50 &&
-    ma50 > ma100 &&
-    ma100 > ma200
+    ma50 > ma200
   );
 }
 

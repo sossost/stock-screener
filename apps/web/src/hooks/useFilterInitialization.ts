@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { loadDefaultFilters, loadSavedSortState } from "@/utils/filter-storage";
 import { filterDefaults } from "@/lib/filters/schema";
-import { FILTER_INIT_DELAY_MS } from "@/lib/filters/constants";
 import type { useFilterState } from "./useFilterState";
 import type { FilterState } from "@/lib/filters/summary";
 import type { useSortState } from "./useSortState";
@@ -19,118 +17,86 @@ export function useFilterInitialization(
   filterState: ReturnType<typeof useFilterState>,
   sortState?: ReturnType<typeof useSortState>
 ): boolean {
-  const searchParamsObj = useSearchParams();
   const hasInitialized = useRef(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
     const initializeFilters = async () => {
-      const hasUrlFilters = searchParamsObj.toString().length > 0;
+      // 이미 초기화되었으면 더 이상 실행하지 않음
+      if (hasInitialized.current) {
+        return;
+      }
 
-      if (!hasUrlFilters) {
-        // localStorage에서 로드, 없으면 filterDefaults 사용
-        const savedFilters = loadDefaultFilters();
-        const filtersToApply: Partial<FilterState> =
-          savedFilters || filterDefaults;
+      hasInitialized.current = true;
 
-        // 기본값을 URL에 업데이트 (undefined가 아닌 값만)
-        const updatePromises: Promise<URLSearchParams | void>[] = [];
-        if (filtersToApply.ordered !== undefined)
-          updatePromises.push(filterState.setOrdered(filtersToApply.ordered));
-        if (filtersToApply.goldenCross !== undefined)
-          updatePromises.push(
-            filterState.setGoldenCross(filtersToApply.goldenCross)
-          );
-        if (filtersToApply.justTurned !== undefined)
-          updatePromises.push(
-            filterState.setJustTurned(filtersToApply.justTurned)
-          );
-        if (filtersToApply.lookbackDays !== undefined)
-          updatePromises.push(
-            filterState.setLookbackDays(filtersToApply.lookbackDays)
-          );
-        if (filtersToApply.profitability !== undefined)
-          updatePromises.push(
-            filterState.setProfitability(filtersToApply.profitability)
-          );
-        if (filtersToApply.turnAround !== undefined)
-          updatePromises.push(
-            filterState.setTurnAround(filtersToApply.turnAround)
-          );
-        if (filtersToApply.revenueGrowth !== undefined)
-          updatePromises.push(
-            filterState.setRevenueGrowth(filtersToApply.revenueGrowth)
-          );
-        if (filtersToApply.incomeGrowth !== undefined)
-          updatePromises.push(
-            filterState.setIncomeGrowth(filtersToApply.incomeGrowth)
-          );
-        if (filtersToApply.revenueGrowthQuarters !== undefined)
-          updatePromises.push(
-            filterState.setRevenueGrowthQuarters(
-              filtersToApply.revenueGrowthQuarters
-            )
-          );
-        if (filtersToApply.incomeGrowthQuarters !== undefined)
-          updatePromises.push(
-            filterState.setIncomeGrowthQuarters(
-              filtersToApply.incomeGrowthQuarters
-            )
-          );
-        if (filtersToApply.revenueGrowthRate !== undefined)
-          updatePromises.push(
-            filterState.setRevenueGrowthRate(filtersToApply.revenueGrowthRate)
-          );
-        if (filtersToApply.incomeGrowthRate !== undefined)
-          updatePromises.push(
-            filterState.setIncomeGrowthRate(filtersToApply.incomeGrowthRate)
-          );
-        if (filtersToApply.pegFilter !== undefined)
-          updatePromises.push(
-            filterState.setPegFilter(filtersToApply.pegFilter)
-          );
-        if (filtersToApply.ma20Above !== undefined)
-          updatePromises.push(
-            filterState.setMa20Above(filtersToApply.ma20Above)
-          );
-        if (filtersToApply.ma50Above !== undefined)
-          updatePromises.push(
-            filterState.setMa50Above(filtersToApply.ma50Above)
-          );
-        if (filtersToApply.ma100Above !== undefined)
-          updatePromises.push(
-            filterState.setMa100Above(filtersToApply.ma100Above)
-          );
-        if (filtersToApply.ma200Above !== undefined)
-          updatePromises.push(
-            filterState.setMa200Above(filtersToApply.ma200Above)
-          );
+      // 1순위: localStorage, 없으면 filterDefaults 사용
+      const savedFilters = loadDefaultFilters();
+      const filtersToApply: Partial<FilterState> = savedFilters
+        ? { ...filterDefaults, ...savedFilters }
+        : filterDefaults;
 
-        // 정렬 상태도 함께 초기화
-        if (sortState) {
-          const savedSortState = loadSavedSortState();
-          if (savedSortState) {
-            updatePromises.push(sortState.setSort(savedSortState));
-          }
+      // 기본/저장된 필터를 URL에 적용 (localStorage가 항상 우선)
+      // 모든 set 함수는 await으로 동기적으로 처리하여 URL과 UI 상태를 즉시 반영
+      await filterState.setOrdered(
+        filtersToApply.ordered ?? filterDefaults.ordered
+      );
+      await filterState.setGoldenCross(
+        filtersToApply.goldenCross ?? filterDefaults.goldenCross
+      );
+      await filterState.setProfitability(
+        filtersToApply.profitability ?? filterDefaults.profitability
+      );
+      if (filtersToApply.justTurned !== undefined)
+        await filterState.setJustTurned(filtersToApply.justTurned);
+      if (filtersToApply.lookbackDays !== undefined)
+        await filterState.setLookbackDays(filtersToApply.lookbackDays);
+      if (filtersToApply.turnAround !== undefined)
+        await filterState.setTurnAround(filtersToApply.turnAround);
+      if (filtersToApply.revenueGrowth !== undefined)
+        await filterState.setRevenueGrowth(filtersToApply.revenueGrowth);
+      if (filtersToApply.incomeGrowth !== undefined)
+        await filterState.setIncomeGrowth(filtersToApply.incomeGrowth);
+      if (filtersToApply.revenueGrowthQuarters !== undefined)
+        await filterState.setRevenueGrowthQuarters(
+          filtersToApply.revenueGrowthQuarters
+        );
+      if (filtersToApply.incomeGrowthQuarters !== undefined)
+        await filterState.setIncomeGrowthQuarters(
+          filtersToApply.incomeGrowthQuarters
+        );
+      if (filtersToApply.revenueGrowthRate !== undefined)
+        await filterState.setRevenueGrowthRate(
+          filtersToApply.revenueGrowthRate
+        );
+      if (filtersToApply.incomeGrowthRate !== undefined)
+        await filterState.setIncomeGrowthRate(filtersToApply.incomeGrowthRate);
+      if (filtersToApply.pegFilter !== undefined) {
+        if (filtersToApply.pegFilter === true) {
+          await filterState.setPegFilter(true);
+        } else {
+          await filterState.setPegFilter(null);
         }
+      }
+      if (filtersToApply.ma20Above !== undefined)
+        await filterState.setMa20Above(filtersToApply.ma20Above);
+      if (filtersToApply.ma50Above !== undefined)
+        await filterState.setMa50Above(filtersToApply.ma50Above);
+      if (filtersToApply.ma100Above !== undefined)
+        await filterState.setMa100Above(filtersToApply.ma100Above);
+      if (filtersToApply.ma200Above !== undefined)
+        await filterState.setMa200Above(filtersToApply.ma200Above);
+      if (filtersToApply.breakoutStrategy !== undefined)
+        await filterState.setBreakoutStrategy(filtersToApply.breakoutStrategy);
 
-        // URL 업데이트 완료 대기
-        try {
-          await Promise.all(updatePromises);
-          // 브라우저가 URL을 반영할 시간 확보
-          await new Promise((resolve) =>
-            setTimeout(resolve, FILTER_INIT_DELAY_MS)
-          );
-        } catch (error) {
-          console.error("필터 초기화 실패:", error);
-          // 에러 발생해도 초기화는 완료된 것으로 처리 (기본값 사용)
+      // 정렬 상태도 함께 초기화 (localStorage 값이 있으면 항상 적용)
+      if (sortState) {
+        const savedSortState = loadSavedSortState();
+        if (savedSortState) {
+          await sortState.setSort(savedSortState);
         }
       }
 
-      // 초기화 완료 표시 (에러 발생 여부와 관계없이)
+      // 초기화 완료 표시
       setIsInitialized(true);
     };
 

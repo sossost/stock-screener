@@ -21,6 +21,7 @@ export interface FilterState {
   ma50Above?: boolean; // 50일선 위
   ma100Above?: boolean; // 100일선 위
   ma200Above?: boolean; // 200일선 위
+  breakoutStrategy?: "confirmed" | "retest" | null; // 돌파매매 전략
 }
 
 export interface FilterSummary {
@@ -29,7 +30,7 @@ export interface FilterSummary {
   summaryText: string;
 }
 
-export type FilterCategory = "ma" | "growth" | "profitability";
+export type FilterCategory = "ma" | "growth" | "profitability" | "price";
 
 /**
  * 이평선 필터 요약
@@ -174,6 +175,34 @@ export function getProfitabilityFilterSummary(
 }
 
 /**
+ * 가격 필터 요약 (돌파매매 전략)
+ */
+export function getPriceFilterSummary(filterState: FilterState): FilterSummary {
+  const activeFilters: string[] = [];
+
+  if (filterState.breakoutStrategy === "confirmed") {
+    activeFilters.push("확정 돌파");
+  } else if (filterState.breakoutStrategy === "retest") {
+    activeFilters.push("재테스트");
+  }
+
+  const count = activeFilters.length;
+  let summaryText = "";
+
+  if (count === 0) {
+    summaryText = "가격필터 없음";
+  } else {
+    summaryText = activeFilters.join(", ");
+  }
+
+  return {
+    activeFilters,
+    count,
+    summaryText,
+  };
+}
+
+/**
  * 필터 상태를 요약 텍스트로 변환 (전체)
  */
 export function getFilterSummary(filterState: FilterState): FilterSummary {
@@ -190,6 +219,10 @@ export function getFilterSummary(filterState: FilterState): FilterSummary {
   // 성장성 필터
   const growthSummary = getGrowthFilterSummary(filterState);
   activeFilters.push(...growthSummary.activeFilters);
+
+  // 가격 필터
+  const priceSummary = getPriceFilterSummary(filterState);
+  activeFilters.push(...priceSummary.activeFilters);
 
   const count = activeFilters.length;
   let summaryText = "";

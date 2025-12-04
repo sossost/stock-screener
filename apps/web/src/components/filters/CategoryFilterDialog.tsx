@@ -38,6 +38,7 @@ const categoryLabels = {
   ma: "이평선 필터",
   growth: "성장성 필터",
   profitability: "수익성 필터",
+  price: "가격필터",
 };
 
 export function CategoryFilterDialog({
@@ -85,6 +86,10 @@ export function CategoryFilterDialog({
         profitability: filterState.profitability ?? "all",
         turnAround: filterState.turnAround ?? false,
       };
+    } else if (category === "price") {
+      return {
+        breakoutStrategy: filterState.breakoutStrategy ?? null,
+      };
     }
     return {};
   }, [open, category, filterState]);
@@ -104,7 +109,13 @@ export function CategoryFilterDialog({
         );
       }
     }
-  }, [open, initialTempState, category, filterState.lookbackDays]); // 의존성 최적화
+  }, [
+    open,
+    initialTempState,
+    category,
+    filterState.lookbackDays,
+    filterState.breakoutStrategy,
+  ]); // 의존성 최적화
 
   const handleApply = () => {
     if (category === "ma") {
@@ -164,6 +175,10 @@ export function CategoryFilterDialog({
         profitability: "all",
         turnAround: false,
       });
+    } else if (category === "price") {
+      setTempState({
+        breakoutStrategy: null,
+      });
     }
     onReset();
   };
@@ -200,7 +215,7 @@ export function CategoryFilterDialog({
                     정배열
                   </label>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    (MA20 {">"} MA50 {">"} MA100 {">"} MA200)
+                    (MA20 {">"} MA50 {">"} MA200)
                   </span>
                 </div>
 
@@ -424,6 +439,120 @@ export function CategoryFilterDialog({
                   가장 최근 EPS가 양수이고 직전 분기 EPS가 0 이하인 기업만
                   보여줍니다. EPS 데이터가 2분기 이상 없으면 제외됩니다.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* 가격필터 섹션 */}
+          {category === "price" && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  EOD(종가) 데이터 기준으로 어제 거래일의 가격 패턴을
+                  분석합니다.
+                </p>
+
+                {/* 전략 선택 라디오 버튼 그룹 */}
+                <div className="space-y-3">
+                  {/* 없음 옵션 */}
+                  <div
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                    onClick={() =>
+                      !disabled &&
+                      setTempState({ ...tempState, breakoutStrategy: null })
+                    }
+                  >
+                    <input
+                      type="radio"
+                      id="breakout-none"
+                      name="breakoutStrategy"
+                      checked={
+                        tempState.breakoutStrategy === null ||
+                        tempState.breakoutStrategy === undefined
+                      }
+                      onChange={() =>
+                        setTempState({ ...tempState, breakoutStrategy: null })
+                      }
+                      disabled={disabled}
+                      className="h-4 w-4 cursor-pointer"
+                    />
+                    <label
+                      htmlFor="breakout-none"
+                      className="flex-1 text-sm font-medium leading-none cursor-pointer"
+                    >
+                      필터 없음
+                    </label>
+                  </div>
+
+                  {/* 확정 돌파 전략 */}
+                  <div
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                    onClick={() =>
+                      !disabled &&
+                      setTempState({
+                        ...tempState,
+                        breakoutStrategy: "confirmed",
+                      })
+                    }
+                  >
+                    <input
+                      type="radio"
+                      id="breakout-confirmed"
+                      name="breakoutStrategy"
+                      checked={tempState.breakoutStrategy === "confirmed"}
+                      onChange={() =>
+                        setTempState({
+                          ...tempState,
+                          breakoutStrategy: "confirmed",
+                        })
+                      }
+                      disabled={disabled}
+                      className="h-4 w-4 cursor-pointer"
+                    />
+                    <label
+                      htmlFor="breakout-confirmed"
+                      className="flex-1 text-sm font-medium leading-none cursor-pointer"
+                    >
+                      확정 돌파
+                    </label>
+                    <span className="text-xs text-muted-foreground">
+                      (신고가 돌파 + 거래량 폭증 + 강한 양봉)
+                    </span>
+                  </div>
+
+                  {/* 재테스트 전략 */}
+                  <div
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                    onClick={() =>
+                      !disabled &&
+                      setTempState({ ...tempState, breakoutStrategy: "retest" })
+                    }
+                  >
+                    <input
+                      type="radio"
+                      id="breakout-retest"
+                      name="breakoutStrategy"
+                      checked={tempState.breakoutStrategy === "retest"}
+                      onChange={() =>
+                        setTempState({
+                          ...tempState,
+                          breakoutStrategy: "retest",
+                        })
+                      }
+                      disabled={disabled}
+                      className="h-4 w-4 cursor-pointer"
+                    />
+                    <label
+                      htmlFor="breakout-retest"
+                      className="flex-1 text-sm font-medium leading-none cursor-pointer"
+                    >
+                      재테스트
+                    </label>
+                    <span className="text-xs text-muted-foreground">
+                      (정배열 + 과거 돌파 이력 + 20일선 부근)
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
