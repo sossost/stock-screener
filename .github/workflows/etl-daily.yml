@@ -2,24 +2,24 @@ name: Daily ETL Pipeline
 
 on:
   schedule:
-         # 미국장 마감(ET 16:00 ≈ UTC 21:00) 이후 2시간 버퍼
-         # 모든 ETL 순차 실행: prices → MA/RS → ratios → breakout-signals → noise-signals → alerts (needs로 순서 제어)
-         - cron: "30 23 * * *"
+    # 미국장 마감(ET 16:00 ≈ UTC 21:00) 이후 2시간 버퍼
+    # 모든 ETL 순차 실행: prices → MA/RS → ratios → breakout-signals → noise-signals → alerts (needs로 순서 제어)
+    - cron: "30 23 * * *"
   workflow_dispatch: # 수동 실행 가능
     inputs:
-             job_type:
-               description: "ETL 작업 타입 선택"
-               required: true
-               default: "all"
-               type: choice
-               options:
-                 - all
-                 - daily-prices
-                 - daily-ma
-                 - daily-ratios
-                 - breakout-signals
-                 - noise-signals
-                 - detect-alerts
+      job_type:
+        description: "ETL 작업 타입 선택"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - daily-prices
+          - daily-ma
+          - daily-ratios
+          - breakout-signals
+          - noise-signals
+          - detect-alerts
 
 jobs:
   etl-daily-prices:
@@ -291,30 +291,30 @@ jobs:
             *.log
             logs/
 
-         notify-completion:
-           if: always()
-           runs-on: ubuntu-latest
-           name: Notify Completion
-           needs:
-             [
-               etl-daily-prices,
-               etl-daily-ma,
-               etl-daily-ratios,
-               etl-breakout-signals,
-               etl-noise-signals,
-               etl-detect-alerts,
-             ]
+  notify-completion:
+    if: always()
+    runs-on: ubuntu-latest
+    name: Notify Completion
+    needs:
+      [
+        etl-daily-prices,
+        etl-daily-ma,
+        etl-daily-ratios,
+        etl-breakout-signals,
+        etl-noise-signals,
+        etl-detect-alerts,
+      ]
 
     steps:
-             - name: Notify Success
-               if: needs.etl-daily-prices.result == 'success' && needs.etl-daily-ma.result == 'success' && needs.etl-daily-ratios.result == 'success' && needs.etl-breakout-signals.result == 'success' && needs.etl-noise-signals.result == 'success'
-               run: |
-                 echo "✅ Daily ETL Pipeline completed successfully!"
-                 echo "📊 Daily prices, moving averages, and valuation ratios updated"
+      - name: Notify Success
+        if: needs.etl-daily-prices.result == 'success' && needs.etl-daily-ma.result == 'success' && needs.etl-daily-ratios.result == 'success' && needs.etl-breakout-signals.result == 'success' && needs.etl-noise-signals.result == 'success'
+        run: |
+          echo "✅ Daily ETL Pipeline completed successfully!"
+          echo "📊 Daily prices, moving averages, and valuation ratios updated"
 
-             - name: Notify Failure
-               if: needs.etl-daily-prices.result == 'failure' || needs.etl-daily-ma.result == 'failure' || needs.etl-daily-ratios.result == 'failure' || needs.etl-breakout-signals.result == 'failure' || needs.etl-noise-signals.result == 'failure'
-               run: |
-                 echo "❌ Daily ETL Pipeline failed!"
-                 echo "🔍 Check the logs for details"
-                 exit 1
+      - name: Notify Failure
+        if: needs.etl-daily-prices.result == 'failure' || needs.etl-daily-ma.result == 'failure' || needs.etl-daily-ratios.result == 'failure' || needs.etl-breakout-signals.result == 'failure' || needs.etl-noise-signals.result == 'failure'
+        run: |
+          echo "❌ Daily ETL Pipeline failed!"
+          echo "🔍 Check the logs for details"
+          exit 1
