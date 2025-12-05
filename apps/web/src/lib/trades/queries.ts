@@ -65,76 +65,88 @@ export async function getTradesList(
     actionsByTradeId.set(action.tradeId, existing);
   }
 
-  // 배치 조회: 심볼별 최신 가격 및 전일 가격
+  // 배치 조회: 심볼별 최신 가격 및 전일 가격 (윈도우 함수로 최적화)
   const uniqueSymbols = [...new Set(tradeList.map((t) => t.trade.symbol))];
 
-  // 최신 가격 조회
-  const latestPrices = await db
-    .select({
-      symbol: dailyPrices.symbol,
-      close: dailyPrices.close,
-      date: dailyPrices.date,
-    })
-    .from(dailyPrices)
-    .where(
-      and(
-        inArray(dailyPrices.symbol, uniqueSymbols),
-        sql`(${dailyPrices.symbol}, ${dailyPrices.date}) IN (
-          SELECT symbol, MAX(date) FROM daily_prices 
-          WHERE symbol IN (${sql.join(
-            uniqueSymbols.map((s) => sql`${s}`),
-            sql`, `
-          )})
-          GROUP BY symbol
-        )`
-      )
-    );
+  if (uniqueSymbols.length === 0) {
+    // 심볼이 없으면 빈 결과 반환
+    return tradeList.map(({ trade, companyName }) => {
+      const actions = actionsByTradeId.get(trade.id) || [];
+      const commissionRate = trade.commissionRate
+        ? parseFloat(trade.commissionRate)
+        : undefined;
+      const calculated = calculateTradeMetrics(
+        actions,
+        trade.planStopLoss,
+        commissionRate
+      );
 
-  // 전일 가격 조회 (최신 날짜보다 하루 전)
-  const latestDatesBySymbol = new Map<string, string>();
-  for (const price of latestPrices) {
-    if (price.date) {
-      latestDatesBySymbol.set(price.symbol, price.date);
-    }
+      const holdingDays =
+        trade.status === "CLOSED"
+          ? calculateHoldingDays(trade.startDate, trade.endDate)
+          : undefined;
+
+      return {
+        ...trade,
+        companyName,
+        currentPrice: null,
+        priceChangePercent: null,
+        calculated: {
+          avgEntryPrice: calculated.avgEntryPrice,
+          currentQuantity: calculated.currentQuantity,
+          realizedPnl: calculated.realizedPnl,
+          realizedRoi: calculated.realizedRoi,
+          totalBuyQuantity: calculated.totalBuyQuantity,
+          totalSellQuantity: calculated.totalSellQuantity,
+          avgExitPrice: calculated.avgExitPrice,
+          totalCommission: calculated.totalCommission,
+          holdingDays,
+        },
+      };
+    });
   }
 
-  const prevPrices = await db
-    .select({
-      symbol: dailyPrices.symbol,
-      close: dailyPrices.close,
-    })
-    .from(dailyPrices)
-    .where(
-      and(
-        inArray(dailyPrices.symbol, uniqueSymbols),
-        sql`(${dailyPrices.symbol}, ${dailyPrices.date}) IN (
-          SELECT symbol, MAX(date) FROM daily_prices 
-          WHERE symbol IN (${sql.join(
-            uniqueSymbols.map((s) => sql`${s}`),
-            sql`, `
-          )})
-            AND date < (
-              SELECT MAX(date) FROM daily_prices 
-              WHERE symbol = daily_prices.symbol
-            )
-          GROUP BY symbol
-        )`
-      )
-    );
+  // 최신 가격 및 전일 가격을 한 번의 쿼리로 조회 (윈도우 함수 사용)
+  const priceData = await db.execute(sql`
+    WITH ranked_prices AS (
+      SELECT
+        symbol,
+        close,
+        date,
+        ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY date DESC) AS rn
+      FROM daily_prices
+      WHERE symbol IN (${sql.join(
+        uniqueSymbols.map((s) => sql`${s}`),
+        sql`, `
+      )})
+    )
+    SELECT
+      symbol,
+      MAX(CASE WHEN rn = 1 THEN close END) AS latest_close,
+      MAX(CASE WHEN rn = 1 THEN date END) AS latest_date,
+      MAX(CASE WHEN rn = 2 THEN close END) AS prev_close
+    FROM ranked_prices
+    WHERE rn <= 2
+    GROUP BY symbol
+  `);
 
   const priceBySymbol = new Map<string, number>();
   const prevPriceBySymbol = new Map<string, number>();
   const priceChangeBySymbol = new Map<string, number>();
 
-  for (const price of latestPrices) {
-    if (price.close) {
-      priceBySymbol.set(price.symbol, parseFloat(price.close));
+  // 결과 파싱
+  for (const row of priceData.rows as Array<{
+    symbol: string;
+    latest_close: string | null;
+    latest_date: string | null;
+    prev_close: string | null;
+  }>) {
+    const symbol = row.symbol;
+    if (row.latest_close) {
+      priceBySymbol.set(symbol, parseFloat(row.latest_close));
     }
-  }
-
-  for (const price of prevPrices) {
-    if (price.close) {
-      prevPriceBySymbol.set(price.symbol, parseFloat(price.close));
+    if (row.prev_close) {
+      prevPriceBySymbol.set(symbol, parseFloat(row.prev_close));
     }
   }
 
