@@ -141,8 +141,8 @@ export async function buildBreakoutSignals() {
         FROM daily_prices dp
         WHERE (SELECT d FROM last_trade_date) IS NOT NULL
           AND dp.date::date BETWEEN 
-            ((SELECT d FROM last_trade_date) - INTERVAL '${String(BREAKOUT_CONFIG.RETEST_LOOKBACK_MAX_DAYS)} days')::date AND
-            ((SELECT d FROM last_trade_date) - INTERVAL '${String(BREAKOUT_CONFIG.RETEST_LOOKBACK_MIN_DAYS)} days')::date
+            ((SELECT d FROM last_trade_date) - INTERVAL '${sql.raw(String(BREAKOUT_CONFIG.RETEST_LOOKBACK_MAX_DAYS))} days')::date AND
+            ((SELECT d FROM last_trade_date) - INTERVAL '${sql.raw(String(BREAKOUT_CONFIG.RETEST_LOOKBACK_MIN_DAYS))} days')::date
           AND dp.close IS NOT NULL
           AND dp.high IS NOT NULL
           AND EXISTS (
@@ -150,7 +150,7 @@ export async function buildBreakoutSignals() {
             FROM daily_prices dp2
             WHERE dp2.symbol = dp.symbol
               AND dp2.date::date <= dp.date::date
-              AND dp2.date::date >= (dp.date::date - INTERVAL '${String(BREAKOUT_CONFIG.WINDOW_DAYS - 1)} days')::date
+              AND dp2.date::date >= (dp.date::date - INTERVAL '${sql.raw(String(BREAKOUT_CONFIG.WINDOW_DAYS - 1))} days')::date
               AND dp2.high IS NOT NULL
             HAVING dp.close >= MAX(dp2.high)
           )
