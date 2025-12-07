@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 캐시 무효화
-    revalidateTag(tag);
+    revalidateTag(tag, "default");
 
     return NextResponse.json({
       success: true,
