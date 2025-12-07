@@ -36,7 +36,9 @@
     "etl:rs-backfill": "yarn workspace web etl:rs-backfill",
     "etl:daily-ratios": "yarn workspace web etl:daily-ratios",
     "etl:breakout-signals": "yarn workspace web etl:breakout-signals",
+    "etl:noise-signals": "yarn workspace web etl:noise-signals",
     "etl:cleanup-invalid-symbols": "yarn workspace web etl:cleanup-invalid-symbols",
-    "etl:quarterly-financials": "yarn workspace web etl:quarterly-financials"
+    "etl:quarterly-financials": "yarn workspace web etl:quarterly-financials",
+    "etl:detect-alerts": "yarn workspace web etl:detect-alerts"
   }
 }
