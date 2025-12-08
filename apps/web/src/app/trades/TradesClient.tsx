@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TradeListItem, TradeStatus } from "@/lib/trades/types";
@@ -58,48 +58,36 @@ export default function TradesClient({
     }
   }, [initialFilter, profitFilter]);
 
-  // 완료된 거래의 수익/손실 개수 및 총합 계산
-  const closedTrades = initialStatus === "CLOSED" ? initialTrades : [];
-  const profitTrades = closedTrades.filter(
-    (trade) => trade.calculated.realizedPnl > 0
-  );
-  const lossTrades = closedTrades.filter(
-    (trade) => trade.calculated.realizedPnl < 0
-  );
+  // 완료된 거래의 수익/손실 필터링 (메모이제이션)
+  const { closedTrades, profitTrades, lossTrades } = useMemo(() => {
+    const closed = initialStatus === "CLOSED" ? initialTrades : [];
+    const profit = closed.filter((trade) => trade.calculated.realizedPnl > 0);
+    const loss = closed.filter((trade) => trade.calculated.realizedPnl < 0);
+    return { closedTrades: closed, profitTrades: profit, lossTrades: loss };
+  }, [initialTrades, initialStatus]);
 
-  // 필터에 따른 총합 계산
-  const getTotalPnl = () => {
-    if (initialStatus !== "CLOSED") return 0;
-    if (profitFilter === "profit") {
-      return profitTrades.reduce(
-        (sum, trade) => sum + trade.calculated.realizedPnl,
-        0
-      );
-    }
-    if (profitFilter === "loss") {
-      return lossTrades.reduce(
-        (sum, trade) => sum + trade.calculated.realizedPnl,
-        0
-      );
-    }
-    // "all"일 때는 전체 총합
-    return closedTrades.reduce(
+  // 필터별 총합 계산 (메모이제이션)
+  const { totalPnl, totalProfit, totalLoss } = useMemo(() => {
+    const profit = profitTrades.reduce(
       (sum, trade) => sum + trade.calculated.realizedPnl,
       0
     );
-  };
-
-  const totalPnl = getTotalPnl();
-
-  // 수익 총합과 손실 총합
-  const totalProfit = profitTrades.reduce(
-    (sum, trade) => sum + trade.calculated.realizedPnl,
-    0
-  );
-  const totalLoss = lossTrades.reduce(
-    (sum, trade) => sum + trade.calculated.realizedPnl,
-    0
-  );
+    const loss = lossTrades.reduce(
+      (sum, trade) => sum + trade.calculated.realizedPnl,
+      0
+    );
+    let total = 0;
+    if (initialStatus === "CLOSED") {
+      if (profitFilter === "profit") total = profit;
+      else if (profitFilter === "loss") total = loss;
+      else
+        total = closedTrades.reduce(
+          (sum, trade) => sum + trade.calculated.realizedPnl,
+          0
+        );
+    }
+    return { totalPnl: total, totalProfit: profit, totalLoss: loss };
+  }, [closedTrades, profitTrades, lossTrades, initialStatus, profitFilter]);
 
   const handleStatusChange = (status: TradeStatus) => {
     // 상태 변경 시 필터 초기화
