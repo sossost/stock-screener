@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TradeListItem, TradeStatus } from "@/lib/trades/types";
@@ -50,6 +50,13 @@ export default function TradesClient({
   const [showNewTradeForm, setShowNewTradeForm] = useState(false);
   const [totalAssets, setTotalAssets] = useState(0);
   const [profitFilter, setProfitFilter] = useState<ProfitFilter>(initialFilter);
+
+  // Sync profitFilter state when initialFilter prop changes from URL navigation
+  useEffect(() => {
+    if (profitFilter !== initialFilter) {
+      setProfitFilter(initialFilter);
+    }
+  }, [initialFilter, profitFilter]);
 
   // 완료된 거래의 수익/손실 개수 및 총합 계산
   const closedTrades = initialStatus === "CLOSED" ? initialTrades : [];

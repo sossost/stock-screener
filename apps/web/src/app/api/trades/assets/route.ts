@@ -5,6 +5,7 @@ import { eq, and, gte, inArray } from "drizzle-orm";
 import { getUserIdFromRequest } from "@/lib/auth/user";
 import {
   calculateTradeMetrics,
+  calculateSellActionPnl,
   DEFAULT_COMMISSION_RATE,
 } from "@/lib/trades/calculations";
 
@@ -145,38 +146,18 @@ export async function GET(request: NextRequest) {
         if (sellActions.length === 0) continue;
 
         // 각 매도 액션별로 실현손익 계산 (통계 API와 동일한 방식)
-        const commissionRateDecimal = commissionRate / 100;
-        const avgEntryPrice = calculated.avgEntryPrice;
+        const sellActionPnls = calculateSellActionPnl(
+          sellActions,
+          calculated.avgEntryPrice,
+          calculated.totalBuyAmount,
+          calculated.totalSellQuantity,
+          commissionRate
+        );
 
-        // 각 매도 액션별로 실현손익 계산
-        for (const sellAction of sellActions) {
-          // 해당 매도 액션의 매도 금액
-          const sellAmount = sellAction.price * sellAction.quantity;
-
-          // 해당 매도 액션의 총 수수료 계산
-          // 통계 API 방식: (매수 금액 + 매도 금액) * 수수료율
-          // 각 매도 액션별로는 매도 수량 비율로 매수 수수료 분배
-          const sellQuantityRatio =
-            calculated.totalSellQuantity > 0
-              ? sellAction.quantity / calculated.totalSellQuantity
-              : 0;
-          const allocatedBuyCommission =
-            calculated.totalBuyAmount *
-            commissionRateDecimal *
-            sellQuantityRatio;
-          const sellCommission = sellAmount * commissionRateDecimal;
-          const totalSellCommission = allocatedBuyCommission + sellCommission;
-
-          // 해당 매도 액션의 실현손익 (통계 API와 동일한 방식)
-          // grossPnl = (매도가 - 평균진입가) * 매도수량
-          const sellGrossPnl =
-            (sellAction.price - avgEntryPrice) * sellAction.quantity;
-          // realizedPnl = grossPnl - 수수료
-          const sellRealizedPnl = sellGrossPnl - totalSellCommission;
-
-          // 매도 날짜에 실현손익 추가
-          const currentPnl = pnlByDate.get(sellAction.date) || 0;
-          pnlByDate.set(sellAction.date, currentPnl + sellRealizedPnl);
+        // 매도 날짜별로 실현손익 집계
+        for (const { date, realizedPnl } of sellActionPnls) {
+          const currentPnl = pnlByDate.get(date) || 0;
+          pnlByDate.set(date, currentPnl + realizedPnl);
         }
       }
     }

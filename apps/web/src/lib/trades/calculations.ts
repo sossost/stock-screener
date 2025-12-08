@@ -414,3 +414,56 @@ export function calculateCashChange(
 
   return totalChange;
 }
+
+/**
+ * 매도 액션별 실현손익 계산
+ * @param sellActions 매도 액션 배열 (date, price, quantity)
+ * @param avgEntryPrice 평균 진입가
+ * @param totalBuyAmount 총 매수 금액
+ * @param totalSellQuantity 총 매도 수량
+ * @param commissionRate 수수료율 (%, 기본 0.07%)
+ * @returns 매도 액션별 실현손익 배열
+ */
+export interface SellActionPnl {
+  date: string;
+  realizedPnl: number;
+}
+
+export function calculateSellActionPnl(
+  sellActions: Array<{ date: string; price: number; quantity: number }>,
+  avgEntryPrice: number,
+  totalBuyAmount: number,
+  totalSellQuantity: number,
+  commissionRate: number
+): SellActionPnl[] {
+  const commissionRateDecimal = commissionRate / 100;
+
+  return sellActions.map((sellAction) => {
+    // 입력 검증
+    if (isNaN(sellAction.price) || isNaN(sellAction.quantity)) {
+      throw new Error(
+        `Invalid sell action data: price=${sellAction.price}, quantity=${sellAction.quantity}`
+      );
+    }
+
+    const sellAmount = sellAction.price * sellAction.quantity;
+
+    // 매도 수량 비율로 매수 수수료 분배
+    const sellQuantityRatio =
+      totalSellQuantity > 0 ? sellAction.quantity / totalSellQuantity : 0;
+    const allocatedBuyCommission =
+      totalBuyAmount * commissionRateDecimal * sellQuantityRatio;
+    const sellCommission = sellAmount * commissionRateDecimal;
+    const totalSellCommission = allocatedBuyCommission + sellCommission;
+
+    // 실현손익 계산
+    const sellGrossPnl =
+      (sellAction.price - avgEntryPrice) * sellAction.quantity;
+    const sellRealizedPnl = sellGrossPnl - totalSellCommission;
+
+    return {
+      date: sellAction.date,
+      realizedPnl: sellRealizedPnl,
+    };
+  });
+}
