@@ -106,13 +106,36 @@ export async function GET(request: NextRequest) {
         }
 
         const finalPnl = parseFloat(trade.finalPnl);
+        if (isNaN(finalPnl)) {
+          console.error(
+            `[Data Integrity] CLOSED trade ${trade.id} has invalid finalPnl: ${trade.finalPnl}. Skipping.`
+          );
+          continue;
+        }
+
         if (finalPnl === 0) continue;
 
         // endDate에 실현손익 집계
         if (trade.endDate) {
-          const dateStr = new Date(trade.endDate).toISOString().split("T")[0];
-          const currentPnl = pnlByDate.get(dateStr) || 0;
-          pnlByDate.set(dateStr, currentPnl + finalPnl);
+          try {
+            const endDate = new Date(trade.endDate);
+            if (isNaN(endDate.getTime())) {
+              console.error(
+                `[Data Integrity] CLOSED trade ${trade.id} has invalid endDate: ${trade.endDate}. Skipping.`
+              );
+              continue;
+            }
+
+            const dateStr = endDate.toISOString().split("T")[0];
+            const currentPnl = pnlByDate.get(dateStr) || 0;
+            pnlByDate.set(dateStr, currentPnl + finalPnl);
+          } catch (error) {
+            console.error(
+              `[Data Integrity] CLOSED trade ${trade.id} has invalid endDate: ${trade.endDate}. Skipping.`,
+              error
+            );
+            continue;
+          }
         }
       } else {
         // 진행중인 거래: calculateTradeMetrics로 계산 (통계 API와 동일)
