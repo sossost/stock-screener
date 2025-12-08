@@ -200,12 +200,20 @@ export async function GET(req: Request) {
     // 결과 변환
     const data = transformResults(results, params.justTurned ?? false);
 
-    return NextResponse.json({
-      count: data.length,
-      trade_date: tradeDate,
-      lookback_days: params.justTurned ? params.lookbackDays : null,
-      data,
-    });
+    return NextResponse.json(
+      {
+        count: data.length,
+        trade_date: tradeDate,
+        lookback_days: params.justTurned ? params.lookbackDays : null,
+        data,
+      },
+      {
+        headers: {
+          "Cache-Control":
+            "public, s-maxage=86400, stale-while-revalidate=43200",
+        },
+      }
+    );
   } catch (error) {
     logError(error, "Screener Stocks API");
     const apiError = handleApiError(error);
