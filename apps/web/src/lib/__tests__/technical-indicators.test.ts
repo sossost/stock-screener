@@ -5,6 +5,7 @@ import {
   calculateRSIWithTime,
   calculateMACDWithTime,
   calculateMAWithTime,
+  calculateIchimokuWithTime,
   type OHLCData,
 } from "../technical-indicators";
 
@@ -193,6 +194,125 @@ describe("technical-indicators", () => {
         (closes[0] + closes[1] + closes[2] + closes[3] + closes[4]) / 5;
 
       expect(ma5[4].value).toBeCloseTo(expected, 5);
+    });
+  });
+
+  describe("calculateIchimokuWithTime", () => {
+    // 일목균형표 테스트를 위해 최소 52일 데이터 필요
+    const ichimokuData: OHLCData[] = Array.from({ length: 100 }, (_, i) => ({
+      time: `2024-${String(Math.floor(i / 28) + 1).padStart(2, "0")}-${String((i % 28) + 1).padStart(2, "0")}`,
+      open: 100 + Math.sin(i * 0.1) * 10,
+      high: 105 + Math.sin(i * 0.1) * 10,
+      low: 95 + Math.sin(i * 0.1) * 10,
+      close: 100 + Math.sin(i * 0.1) * 10 + (i % 5),
+    }));
+
+    it("최소 52일 데이터가 없으면 모든 값이 null이어야 한다", () => {
+      const shortData = sampleData.slice(0, 30);
+      const ichimoku = calculateIchimokuWithTime(shortData);
+
+      expect(ichimoku.length).toBe(shortData.length);
+      ichimoku.forEach((d) => {
+        expect(d.tenkanSen).toBeNull();
+        expect(d.kijunSen).toBeNull();
+        expect(d.senkouSpanA).toBeNull();
+        expect(d.senkouSpanB).toBeNull();
+      });
+    });
+
+    it("52일 이상 데이터에서 전환선이 계산되어야 한다", () => {
+      const ichimoku = calculateIchimokuWithTime(ichimokuData);
+
+      // 9일 이후부터 전환선 값이 있어야 함 (data[8] = 9일째)
+      expect(ichimoku[7].tenkanSen).toBeNull(); // 7일째는 아직 계산 불가
+      expect(ichimoku[8].tenkanSen).not.toBeNull(); // 8일째(9일째)부터 계산 가능
+      expect(typeof ichimoku[8].tenkanSen).toBe("number");
+    });
+
+    it("52일 이상 데이터에서 기준선이 계산되어야 한다", () => {
+      const ichimoku = calculateIchimokuWithTime(ichimokuData);
+
+      // 26일 이후부터 기준선 값이 있어야 함 (data[25] = 26일째)
+      expect(ichimoku[24].kijunSen).toBeNull(); // 24일째는 아직 계산 불가
+      expect(ichimoku[25].kijunSen).not.toBeNull(); // 25일째(26일째)부터 계산 가능
+      expect(typeof ichimoku[25].kijunSen).toBe("number");
+    });
+
+    it("전환선은 9일 고저 평균이어야 한다", () => {
+      const ichimoku = calculateIchimokuWithTime(ichimokuData);
+
+      // 9일째 데이터의 전환선 계산
+      const day9 = ichimokuData[9];
+      const highs = ichimokuData.slice(1, 10).map((d) => d.high);
+      const lows = ichimokuData.slice(1, 10).map((d) => d.low);
+      const maxHigh = Math.max(...highs);
+      const minLow = Math.min(...lows);
+      const expected = (maxHigh + minLow) / 2;
+
+      expect(ichimoku[9].tenkanSen).toBeCloseTo(expected, 5);
+    });
+
+    it("기준선은 26일 고저 평균이어야 한다", () => {
+      const ichimoku = calculateIchimokuWithTime(ichimokuData);
+
+      // 26일째 데이터의 기준선 계산
+      const highs = ichimokuData.slice(1, 27).map((d) => d.high);
+      const lows = ichimokuData.slice(1, 27).map((d) => d.low);
+      const maxHigh = Math.max(...highs);
+      const minLow = Math.min(...lows);
+      const expected = (maxHigh + minLow) / 2;
+
+      expect(ichimoku[26].kijunSen).toBeCloseTo(expected, 5);
+    });
+
+    it("선행스팬 A는 (전환선 + 기준선) / 2 이어야 한다", () => {
+      const ichimoku = calculateIchimokuWithTime(ichimokuData);
+
+      // 26일째 이후부터 선행스팬 A 계산 가능
+      const day26 = ichimoku[26];
+      if (day26.tenkanSen !== null && day26.kijunSen !== null) {
+        const expected = (day26.tenkanSen + day26.kijunSen) / 2;
+        // 선행스팬 A는 26일 앞으로 이동하므로 day26 + 26 = day52에 표시
+        expect(ichimoku[52].senkouSpanA).toBeCloseTo(expected, 5);
+      }
+    });
+
+    it("선행스팬 B는 52일 고저 평균이어야 한다", () => {
+      const ichimoku = calculateIchimokuWithTime(ichimokuData);
+
+      // 52일째 데이터의 선행스팬 B 계산
+      const highs = ichimokuData.slice(1, 53).map((d) => d.high);
+      const lows = ichimokuData.slice(1, 53).map((d) => d.low);
+      const maxHigh = Math.max(...highs);
+      const minLow = Math.min(...lows);
+      const expected = (maxHigh + minLow) / 2;
+
+      // 선행스팬 B는 26일 앞으로 이동하므로 day52 + 26 = day78에 표시
+      expect(ichimoku[78].senkouSpanB).toBeCloseTo(expected, 5);
+    });
+
+    it("선행스팬 A/B는 26일 앞으로 이동해야 한다", () => {
+      const ichimoku = calculateIchimokuWithTime(ichimokuData);
+
+      // 26일째에 계산된 선행스팬 A는 52일째(26일 앞)에 표시되어야 함
+      expect(ichimoku[25].senkouSpanA).toBeNull();
+      expect(ichimoku[26].senkouSpanA).toBeNull(); // 아직 이동 전
+      expect(ichimoku[52].senkouSpanA).not.toBeNull(); // 26일 앞으로 이동
+
+      // 52일째에 계산된 선행스팬 B는 78일째(26일 앞)에 표시되어야 함
+      expect(ichimoku[51].senkouSpanB).toBeNull();
+      expect(ichimoku[52].senkouSpanB).toBeNull(); // 아직 이동 전
+      expect(ichimoku[78].senkouSpanB).not.toBeNull(); // 26일 앞으로 이동
+    });
+
+    it("time 속성이 올바르게 매핑되어야 한다", () => {
+      const ichimoku = calculateIchimokuWithTime(ichimokuData);
+
+      expect(ichimoku.length).toBe(ichimokuData.length);
+      expect(ichimoku[0].time).toBe(ichimokuData[0].time);
+      expect(ichimoku[ichimoku.length - 1].time).toBe(
+        ichimokuData[ichimokuData.length - 1].time
+      );
     });
   });
 });

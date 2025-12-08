@@ -28,6 +28,14 @@ export interface MACDData {
   histogram: number;
 }
 
+export interface IchimokuData {
+  time: string; // 'YYYY-MM-DD'
+  tenkanSen: number | null; // 전환선
+  kijunSen: number | null; // 기준선
+  senkouSpanA: number | null; // 선행스팬 A (26일 앞으로 이동)
+  senkouSpanB: number | null; // 선행스팬 B (26일 앞으로 이동)
+}
+
 export interface MAData {
   time: string;
   value: number;
@@ -319,4 +327,124 @@ export function calculateATR(
   }
 
   return atr;
+}
+
+/**
+ * 일목균형표 계산
+ * @param data OHLC 데이터 (최소 52일 이상 필요)
+ * @returns IchimokuData 배열
+ */
+export function calculateIchimokuWithTime(data: OHLCData[]): IchimokuData[] {
+  if (data.length < 52) {
+    return data.map((d) => ({
+      time: d.time,
+      tenkanSen: null,
+      kijunSen: null,
+      senkouSpanA: null,
+      senkouSpanB: null,
+    }));
+  }
+
+  // 1. 전환선 계산 (9일 고저 평균)
+  const tenkanSen: number[] = [];
+  for (let i = 8; i < data.length; i++) {
+    const highs = data.slice(i - 8, i + 1).map((d) => d.high);
+    const lows = data.slice(i - 8, i + 1).map((d) => d.low);
+    const maxHigh = Math.max(...highs);
+    const minLow = Math.min(...lows);
+    tenkanSen.push((maxHigh + minLow) / 2);
+  }
+
+  // 2. 기준선 계산 (26일 고저 평균)
+  const kijunSen: number[] = [];
+  for (let i = 25; i < data.length; i++) {
+    const highs = data.slice(i - 25, i + 1).map((d) => d.high);
+    const lows = data.slice(i - 25, i + 1).map((d) => d.low);
+    const maxHigh = Math.max(...highs);
+    const minLow = Math.min(...lows);
+    kijunSen.push((maxHigh + minLow) / 2);
+  }
+
+  // 3. 선행스팬 A 계산: (전환선 + 기준선) / 2
+  const senkouSpanA: number[] = [];
+  // 전환선과 기준선이 모두 계산 가능한 지점부터 시작 (26일째부터)
+  for (let i = 0; i < Math.min(tenkanSen.length, kijunSen.length); i++) {
+    senkouSpanA.push((tenkanSen[i] + kijunSen[i]) / 2);
+  }
+
+  // 4. 선행스팬 B 계산 (52일 고저 평균)
+  const senkouSpanB: number[] = [];
+  for (let i = 51; i < data.length; i++) {
+    const highs = data.slice(i - 51, i + 1).map((d) => d.high);
+    const lows = data.slice(i - 51, i + 1).map((d) => d.low);
+    const maxHigh = Math.max(...highs);
+    const minLow = Math.min(...lows);
+    senkouSpanB.push((maxHigh + minLow) / 2);
+  }
+
+  // 5. 결과 조합
+  const result: IchimokuData[] = [];
+
+  // 초기 데이터는 null로 채움
+  for (let i = 0; i < data.length; i++) {
+    result.push({
+      time: data[i].time,
+      tenkanSen: null, // 나중에 채움
+      kijunSen: null, // 나중에 채움
+      senkouSpanA: null, // 나중에 26일 앞으로 이동하여 채움
+      senkouSpanB: null, // 나중에 26일 앞으로 이동하여 채움
+    });
+  }
+
+  // 전환선 배치 (data[8]부터, 9일째)
+  for (let i = 8; i < data.length; i++) {
+    const tenkanIdx = i - 8;
+    if (tenkanIdx >= 0 && tenkanIdx < tenkanSen.length) {
+      result[i].tenkanSen = tenkanSen[tenkanIdx];
+    }
+  }
+
+  // 기준선 배치 (data[25]부터, 26일째)
+  // 기준선은 26일째부터 계산 가능하므로 data[25] (26일째)부터 배치
+  for (let i = 25; i < data.length; i++) {
+    const kijunIdx = i - 25;
+    if (kijunIdx >= 0 && kijunIdx < kijunSen.length) {
+      result[i].kijunSen = kijunSen[kijunIdx];
+    }
+  }
+
+  // 선행스팬 A 계산: (전환선 + 기준선) / 2
+  // 기준선이 계산된 지점(data[25])부터 시작
+  // 이 시점에서 전환선은 이미 계산됨 (tenkanSen[17] = data[25])
+  for (let i = 25; i < data.length; i++) {
+    const kijunIdx = i - 25;
+    const tenkanIdx = i - 8; // 같은 데이터 인덱스의 전환선
+    if (
+      kijunIdx >= 0 &&
+      kijunIdx < kijunSen.length &&
+      tenkanIdx >= 0 &&
+      tenkanIdx < tenkanSen.length
+    ) {
+      const senkouA = (tenkanSen[tenkanIdx] + kijunSen[kijunIdx]) / 2;
+      // 선행스팬 A는 26일 앞으로 이동
+      const futureIdx = i + 26;
+      if (futureIdx < result.length) {
+        result[futureIdx].senkouSpanA = senkouA;
+      }
+    }
+  }
+
+  // 선행스팬 B 배치 (data[51]부터 계산, 52일째)
+  for (let i = 51; i < data.length; i++) {
+    const senkouBIdx = i - 51;
+    if (senkouBIdx >= 0 && senkouBIdx < senkouSpanB.length) {
+      // 선행스팬 B는 26일 앞으로 이동
+      const futureIdx = i + 26;
+      if (futureIdx < result.length) {
+        result[futureIdx].senkouSpanB = senkouSpanB[senkouBIdx];
+      }
+    }
+  }
+
+  return result;
 }
