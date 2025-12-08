@@ -193,4 +193,3 @@ describe("getTradesList - 쿼리 최적화", () => {
     expect(db.execute).not.toHaveBeenCalled();
   });
 });
-

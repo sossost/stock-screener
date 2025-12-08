@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { TradeStatus } from "@/lib/trades/types";
-import { getTradesList, getCashBalance } from "@/lib/trades/queries";
+import { getTradesList, getTradesCount } from "@/lib/trades/queries";
 import TradesClient from "./TradesClient";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; filter?: string }>;
 }
 
 function TradesSkeleton() {
@@ -28,18 +28,25 @@ function TradesSkeleton() {
   );
 }
 
-async function TradesContent({ status }: { status: TradeStatus }) {
+async function TradesContent({
+  status,
+  filter,
+}: {
+  status: TradeStatus;
+  filter?: "profit" | "loss" | "all";
+}) {
   // 병렬 fetch
-  const [trades, cashBalance] = await Promise.all([
+  const [trades, counts] = await Promise.all([
     getTradesList(status),
-    getCashBalance(),
+    getTradesCount(),
   ]);
 
   return (
     <TradesClient
       initialTrades={trades}
       initialStatus={status}
-      initialCashBalance={cashBalance}
+      initialCounts={counts}
+      initialFilter={filter}
     />
   );
 }
@@ -49,10 +56,11 @@ export default async function TradesPage({ searchParams }: PageProps) {
   const status = (
     params.status === "CLOSED" ? "CLOSED" : "OPEN"
   ) as TradeStatus;
+  const filter = params.filter as "profit" | "loss" | "all" | undefined;
 
   return (
     <Suspense fallback={<TradesSkeleton />}>
-      <TradesContent status={status} />
+      <TradesContent status={status} filter={filter} />
     </Suspense>
   );
 }

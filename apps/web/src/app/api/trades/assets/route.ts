@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
         endDate: trades.endDate,
         commissionRate: trades.commissionRate,
         planStopLoss: trades.planStopLoss,
+        finalPnl: trades.finalPnl, // 통계 API와 동일하게 사용
       })
       .from(trades)
       .where(and(...tradesConditions))
@@ -83,6 +84,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 날짜별 실현손익 계산
+    // 통계 API와 동일한 방식: 완료된 거래는 finalPnl 사용, 진행중인 거래는 calculateTradeMetrics 사용
     const pnlByDate = new Map<string, number>();
 
     for (const trade of allTradesList) {
@@ -92,41 +94,84 @@ export async function GET(request: NextRequest) {
       const hasSellActions = actions.some((a) => a.actionType === "SELL");
       if (!hasSellActions) continue;
 
-      const commissionRate = trade.commissionRate
-        ? parseFloat(trade.commissionRate) || DEFAULT_COMMISSION_RATE
-        : DEFAULT_COMMISSION_RATE;
+      if (trade.status === "CLOSED" && trade.finalPnl) {
+        // 완료된 거래: 통계 API와 동일하게 finalPnl 사용
+        const finalPnl = parseFloat(trade.finalPnl);
+        if (finalPnl === 0) continue;
 
-      const calculated = calculateTradeMetrics(
-        actions,
-        trade.planStopLoss,
-        commissionRate
-      );
-
-      // 실현 손익이 없으면 스킵
-      if (calculated.realizedPnl === 0) continue;
-
-      // 완료된 거래: endDate 기준
-      // 진행중인 거래: 마지막 매도 액션 날짜 기준
-      let dateToUse: Date;
-      if (trade.status === "CLOSED" && trade.endDate) {
-        dateToUse = new Date(trade.endDate);
+        // endDate에 실현손익 집계
+        if (trade.endDate) {
+          const dateStr = new Date(trade.endDate).toISOString().split("T")[0];
+          const currentPnl = pnlByDate.get(dateStr) || 0;
+          pnlByDate.set(dateStr, currentPnl + finalPnl);
+        }
       } else {
-        // 진행중인 거래: 마지막 매도 액션 날짜 사용
-        const sellActions = actions
-          .filter((a) => a.actionType === "SELL")
-          .sort(
-            (a, b) =>
-              new Date(b.actionDate).getTime() -
-              new Date(a.actionDate).getTime()
-          );
-        if (sellActions.length === 0) continue;
-        dateToUse = new Date(sellActions[0].actionDate);
-      }
+        // 진행중인 거래: calculateTradeMetrics로 계산 (통계 API와 동일)
+        const commissionRate = trade.commissionRate
+          ? parseFloat(trade.commissionRate) || DEFAULT_COMMISSION_RATE
+          : DEFAULT_COMMISSION_RATE;
 
-      // 날짜 문자열로 변환 (YYYY-MM-DD)
-      const dateStr = dateToUse.toISOString().split("T")[0];
-      const currentPnl = pnlByDate.get(dateStr) || 0;
-      pnlByDate.set(dateStr, currentPnl + calculated.realizedPnl);
+        const calculated = calculateTradeMetrics(
+          actions,
+          trade.planStopLoss,
+          commissionRate
+        );
+
+        // 실현 손익이 없으면 스킵
+        if (calculated.realizedPnl === 0) continue;
+
+        // 날짜순으로 정렬
+        const sortedActions = [...actions].sort(
+          (a, b) =>
+            new Date(a.actionDate).getTime() - new Date(b.actionDate).getTime()
+        );
+
+        // 매도 액션들을 날짜순으로 정렬
+        const sellActions = sortedActions
+          .filter((a) => a.actionType === "SELL")
+          .map((a) => ({
+            date: new Date(a.actionDate).toISOString().split("T")[0],
+            price: parseFloat(a.price),
+            quantity: a.quantity,
+          }));
+
+        if (sellActions.length === 0) continue;
+
+        // 각 매도 액션별로 실현손익 계산 (통계 API와 동일한 방식)
+        const commissionRateDecimal = commissionRate / 100;
+        const avgEntryPrice = calculated.avgEntryPrice;
+
+        // 각 매도 액션별로 실현손익 계산
+        for (const sellAction of sellActions) {
+          // 해당 매도 액션의 매도 금액
+          const sellAmount = sellAction.price * sellAction.quantity;
+
+          // 해당 매도 액션의 총 수수료 계산
+          // 통계 API 방식: (매수 금액 + 매도 금액) * 수수료율
+          // 각 매도 액션별로는 매도 수량 비율로 매수 수수료 분배
+          const sellQuantityRatio =
+            calculated.totalSellQuantity > 0
+              ? sellAction.quantity / calculated.totalSellQuantity
+              : 0;
+          const allocatedBuyCommission =
+            calculated.totalBuyAmount *
+            commissionRateDecimal *
+            sellQuantityRatio;
+          const sellCommission = sellAmount * commissionRateDecimal;
+          const totalSellCommission = allocatedBuyCommission + sellCommission;
+
+          // 해당 매도 액션의 실현손익 (통계 API와 동일한 방식)
+          // grossPnl = (매도가 - 평균진입가) * 매도수량
+          const sellGrossPnl =
+            (sellAction.price - avgEntryPrice) * sellAction.quantity;
+          // realizedPnl = grossPnl - 수수료
+          const sellRealizedPnl = sellGrossPnl - totalSellCommission;
+
+          // 매도 날짜에 실현손익 추가
+          const currentPnl = pnlByDate.get(sellAction.date) || 0;
+          pnlByDate.set(sellAction.date, currentPnl + sellRealizedPnl);
+        }
+      }
     }
 
     // 날짜별로 정렬하고 누적 계산
