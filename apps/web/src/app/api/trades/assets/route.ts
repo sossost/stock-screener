@@ -94,8 +94,16 @@ export async function GET(request: NextRequest) {
       const hasSellActions = actions.some((a) => a.actionType === "SELL");
       if (!hasSellActions) continue;
 
-      if (trade.status === "CLOSED" && trade.finalPnl) {
+      if (trade.status === "CLOSED") {
         // 완료된 거래: 통계 API와 동일하게 finalPnl 사용
+        // 데이터 무결성 검증: CLOSED 거래는 반드시 finalPnl이 있어야 함
+        if (!trade.finalPnl) {
+          console.error(
+            `[Data Integrity] CLOSED trade ${trade.id} missing finalPnl. Skipping.`
+          );
+          continue;
+        }
+
         const finalPnl = parseFloat(trade.finalPnl);
         if (finalPnl === 0) continue;
 
@@ -110,7 +118,6 @@ export async function GET(request: NextRequest) {
         const commissionRate = trade.commissionRate
           ? parseFloat(trade.commissionRate) || DEFAULT_COMMISSION_RATE
           : DEFAULT_COMMISSION_RATE;
-
         const calculated = calculateTradeMetrics(
           actions,
           trade.planStopLoss,

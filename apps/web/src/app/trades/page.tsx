@@ -56,7 +56,11 @@ export default async function TradesPage({ searchParams }: PageProps) {
   const status = (
     params.status === "CLOSED" ? "CLOSED" : "OPEN"
   ) as TradeStatus;
-  const filter = params.filter as "profit" | "loss" | "all" | undefined;
+  // URL 파라미터 filter 값 검증 (입력 검증)
+  const filter =
+    params.filter === "profit" || params.filter === "loss"
+      ? params.filter
+      : "all";
 
   return (
     <Suspense fallback={<TradesSkeleton />}>
