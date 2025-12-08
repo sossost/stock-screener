@@ -10,9 +10,9 @@ const LOOKBACK_6M = 126;
 const LOOKBACK_3M = 63;
 
 // 가중치: 최근 모멘텀을 더 강조
-const WEIGHT_12M = 0.3;
+const WEIGHT_12M = 0.2;
 const WEIGHT_6M = 0.3;
-const WEIGHT_3M = 0.4; // 최근 모멘텀 강조
+const WEIGHT_3M = 0.5; // 최근 모멘텀 강조
 
 async function computeRsForDate(targetDate: string) {
   console.log(`📊 Computing RS for ${targetDate}...`);

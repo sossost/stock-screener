@@ -99,7 +99,7 @@ export const screenerColumns: ScreenerColumn[] = [
     sortable: true,
     sortKey: "rs_score",
     tooltip:
-      "상대강도(RS): 최근 12/6/3개월 성과를 가중합(0.3/0.3/0.4)한 점수입니다.\n높을수록 최근까지 상대적으로 강한 흐름입니다.",
+      "상대강도(RS): 최근 12/6/3개월 성과를 가중합(0.2/0.3/0.5)한 점수입니다.\n높을수록 최근까지 상대적으로 강한 흐름입니다.",
     type: "text",
     skeletonWidth: "w-16",
   },
