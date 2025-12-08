@@ -5,6 +5,7 @@ import { eq, and, gte, inArray } from "drizzle-orm";
 import { getUserIdFromRequest } from "@/lib/auth/user";
 import {
   calculateTradeMetrics,
+  calculateSellActionPnl,
   DEFAULT_COMMISSION_RATE,
 } from "@/lib/trades/calculations";
 
@@ -53,6 +54,7 @@ export async function GET(request: NextRequest) {
         endDate: trades.endDate,
         commissionRate: trades.commissionRate,
         planStopLoss: trades.planStopLoss,
+        finalPnl: trades.finalPnl, // 통계 API와 동일하게 사용
       })
       .from(trades)
       .where(and(...tradesConditions))
@@ -83,6 +85,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 날짜별 실현손익 계산
+    // 통계 API와 동일한 방식: 완료된 거래는 finalPnl 사용, 진행중인 거래는 calculateTradeMetrics 사용
     const pnlByDate = new Map<string, number>();
 
     for (const trade of allTradesList) {
@@ -92,41 +95,104 @@ export async function GET(request: NextRequest) {
       const hasSellActions = actions.some((a) => a.actionType === "SELL");
       if (!hasSellActions) continue;
 
-      const commissionRate = trade.commissionRate
-        ? parseFloat(trade.commissionRate) || DEFAULT_COMMISSION_RATE
-        : DEFAULT_COMMISSION_RATE;
-
-      const calculated = calculateTradeMetrics(
-        actions,
-        trade.planStopLoss,
-        commissionRate
-      );
-
-      // 실현 손익이 없으면 스킵
-      if (calculated.realizedPnl === 0) continue;
-
-      // 완료된 거래: endDate 기준
-      // 진행중인 거래: 마지막 매도 액션 날짜 기준
-      let dateToUse: Date;
-      if (trade.status === "CLOSED" && trade.endDate) {
-        dateToUse = new Date(trade.endDate);
-      } else {
-        // 진행중인 거래: 마지막 매도 액션 날짜 사용
-        const sellActions = actions
-          .filter((a) => a.actionType === "SELL")
-          .sort(
-            (a, b) =>
-              new Date(b.actionDate).getTime() -
-              new Date(a.actionDate).getTime()
+      if (trade.status === "CLOSED") {
+        // 완료된 거래: 통계 API와 동일하게 finalPnl 사용
+        // 데이터 무결성 검증: CLOSED 거래는 반드시 finalPnl이 있어야 함
+        if (!trade.finalPnl) {
+          console.error(
+            `[Data Integrity] CLOSED trade ${trade.id} missing finalPnl. Skipping.`
           );
-        if (sellActions.length === 0) continue;
-        dateToUse = new Date(sellActions[0].actionDate);
-      }
+          continue;
+        }
 
-      // 날짜 문자열로 변환 (YYYY-MM-DD)
-      const dateStr = dateToUse.toISOString().split("T")[0];
-      const currentPnl = pnlByDate.get(dateStr) || 0;
-      pnlByDate.set(dateStr, currentPnl + calculated.realizedPnl);
+        const finalPnl = parseFloat(trade.finalPnl);
+        if (isNaN(finalPnl)) {
+          console.error(
+            `[Data Integrity] CLOSED trade ${trade.id} has invalid finalPnl: ${trade.finalPnl}. Skipping.`
+          );
+          continue;
+        }
+
+        if (finalPnl === 0) continue;
+
+        // endDate에 실현손익 집계
+        if (trade.endDate) {
+          try {
+            const endDate = new Date(trade.endDate);
+            if (isNaN(endDate.getTime())) {
+              console.error(
+                `[Data Integrity] CLOSED trade ${trade.id} has invalid endDate: ${trade.endDate}. Skipping.`
+              );
+              continue;
+            }
+
+            const dateStr = endDate.toISOString().split("T")[0];
+            const currentPnl = pnlByDate.get(dateStr) || 0;
+            pnlByDate.set(dateStr, currentPnl + finalPnl);
+          } catch (error) {
+            console.error(
+              `[Data Integrity] CLOSED trade ${trade.id} has invalid endDate: ${trade.endDate}. Skipping.`,
+              error
+            );
+            continue;
+          }
+        }
+      } else {
+        // 진행중인 거래: calculateTradeMetrics로 계산 (통계 API와 동일)
+        const commissionRate = trade.commissionRate
+          ? parseFloat(trade.commissionRate) || DEFAULT_COMMISSION_RATE
+          : DEFAULT_COMMISSION_RATE;
+        const calculated = calculateTradeMetrics(
+          actions,
+          trade.planStopLoss,
+          commissionRate
+        );
+
+        // 실현 손익이 없으면 스킵
+        if (calculated.realizedPnl === 0) continue;
+
+        // 날짜순으로 정렬
+        const sortedActions = [...actions].sort(
+          (a, b) =>
+            new Date(a.actionDate).getTime() - new Date(b.actionDate).getTime()
+        );
+
+        // 매도 액션들을 날짜순으로 정렬
+        const sellActions = sortedActions
+          .filter((a) => a.actionType === "SELL")
+          .map((a) => {
+            const price = parseFloat(a.price);
+            if (isNaN(price)) {
+              console.error(
+                `[Data Integrity] Trade ${trade.id} has invalid price: ${a.price}. Skipping sell action.`
+              );
+              return null;
+            }
+            return {
+              date: new Date(a.actionDate).toISOString().split("T")[0],
+              price,
+              quantity: a.quantity,
+            };
+          })
+          .filter((action): action is NonNullable<typeof action> => action !== null);
+
+        if (sellActions.length === 0) continue;
+
+        // 각 매도 액션별로 실현손익 계산 (통계 API와 동일한 방식)
+        const sellActionPnls = calculateSellActionPnl(
+          sellActions,
+          calculated.avgEntryPrice,
+          calculated.totalBuyAmount,
+          calculated.totalSellQuantity,
+          commissionRate
+        );
+
+        // 매도 날짜별로 실현손익 집계
+        for (const { date, realizedPnl } of sellActionPnls) {
+          const currentPnl = pnlByDate.get(date) || 0;
+          pnlByDate.set(date, currentPnl + realizedPnl);
+        }
+      }
     }
 
     // 날짜별로 정렬하고 누적 계산

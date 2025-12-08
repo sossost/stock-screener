@@ -19,14 +19,41 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+type ProfitFilter = "profit" | "loss" | "all";
+
 interface ClosedTradesTableProps {
   trades: TradeListItem[];
+  filter?: ProfitFilter;
 }
 
-export default function ClosedTradesTable({ trades }: ClosedTradesTableProps) {
+export default function ClosedTradesTable({
+  trades,
+  filter = "all",
+}: ClosedTradesTableProps) {
   const router = useRouter();
 
-  if (trades.length === 0) return null;
+  // 필터링 적용
+  const filteredTrades = trades.filter((trade) => {
+    if (filter === "all") return true;
+    const realizedPnl = trade.calculated.realizedPnl;
+    if (filter === "profit") return realizedPnl > 0;
+    if (filter === "loss") return realizedPnl < 0;
+    return true;
+  });
+
+  if (filteredTrades.length === 0) {
+    const filterMessage =
+      filter === "profit"
+        ? "수익으로 마친 거래가 없습니다"
+        : filter === "loss"
+          ? "손실로 마친 거래가 없습니다"
+          : "완료된 매매가 없습니다";
+    return (
+      <div className="bg-white border rounded-md p-8 text-center text-gray-500 text-sm">
+        {filterMessage}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border rounded-md overflow-hidden text-sm">
@@ -52,7 +79,7 @@ export default function ClosedTradesTable({ trades }: ClosedTradesTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {trades.map((trade) => {
+          {filteredTrades.map((trade) => {
             const {
               avgEntryPrice,
               realizedPnl,

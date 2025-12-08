@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TradeListItem, TradeStatus } from "@/lib/trades/types";
@@ -13,10 +13,19 @@ import { PageHeader } from "@/components/ui/page-header";
 import { FilterTabs } from "@/components/ui/filter-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { exportTradesToCsv } from "@/utils/export";
+import { formatPnl } from "@/utils/format";
+
+type ProfitFilter = "profit" | "loss" | "all";
 
 const FILTER_TABS = [
   { value: "OPEN" as const, label: "진행중" },
   { value: "CLOSED" as const, label: "완료" },
+];
+
+const PROFIT_FILTER_TABS: { value: ProfitFilter; label: string }[] = [
+  { value: "all", label: "전체" },
+  { value: "profit", label: "수익" },
+  { value: "loss", label: "손실" },
 ];
 
 const EMPTY_MESSAGES: Record<TradeStatus, string> = {
@@ -27,20 +36,74 @@ const EMPTY_MESSAGES: Record<TradeStatus, string> = {
 interface TradesClientProps {
   initialTrades: TradeListItem[];
   initialStatus: TradeStatus;
-  initialCashBalance: number;
+  initialCounts: { open: number; closed: number };
+  initialFilter?: ProfitFilter;
 }
 
 export default function TradesClient({
   initialTrades,
   initialStatus,
-  initialCashBalance,
+  initialCounts,
+  initialFilter = "all",
 }: TradesClientProps) {
   const router = useRouter();
   const [showNewTradeForm, setShowNewTradeForm] = useState(false);
   const [totalAssets, setTotalAssets] = useState(0);
+  const [profitFilter, setProfitFilter] = useState<ProfitFilter>(initialFilter);
+
+  // Sync profitFilter state when initialFilter prop changes from URL navigation
+  useEffect(() => {
+    if (profitFilter !== initialFilter) {
+      setProfitFilter(initialFilter);
+    }
+  }, [initialFilter, profitFilter]);
+
+  // 완료된 거래의 수익/손실 필터링 (메모이제이션)
+  const { closedTrades, profitTrades, lossTrades } = useMemo(() => {
+    const closed = initialStatus === "CLOSED" ? initialTrades : [];
+    const profit = closed.filter((trade) => trade.calculated.realizedPnl > 0);
+    const loss = closed.filter((trade) => trade.calculated.realizedPnl < 0);
+    return { closedTrades: closed, profitTrades: profit, lossTrades: loss };
+  }, [initialTrades, initialStatus]);
+
+  // 필터별 총합 계산 (메모이제이션)
+  const { totalPnl, totalProfit, totalLoss } = useMemo(() => {
+    const profit = profitTrades.reduce(
+      (sum, trade) => sum + trade.calculated.realizedPnl,
+      0
+    );
+    const loss = lossTrades.reduce(
+      (sum, trade) => sum + trade.calculated.realizedPnl,
+      0
+    );
+    let total = 0;
+    if (initialStatus === "CLOSED") {
+      if (profitFilter === "profit") total = profit;
+      else if (profitFilter === "loss") total = loss;
+      else
+        total = closedTrades.reduce(
+          (sum, trade) => sum + trade.calculated.realizedPnl,
+          0
+        );
+    }
+    return { totalPnl: total, totalProfit: profit, totalLoss: loss };
+  }, [closedTrades, profitTrades, lossTrades, initialStatus, profitFilter]);
 
   const handleStatusChange = (status: TradeStatus) => {
+    // 상태 변경 시 필터 초기화
     router.push(`/trades?status=${status}`);
+  };
+
+  const handleProfitFilterChange = (filter: ProfitFilter) => {
+    setProfitFilter(filter);
+    const params = new URLSearchParams(window.location.search);
+    params.set("status", initialStatus);
+    if (filter !== "all") {
+      params.set("filter", filter);
+    } else {
+      params.delete("filter");
+    }
+    router.push(`/trades?${params.toString()}`);
   };
 
   const handleTradeCreated = () => {
@@ -74,12 +137,51 @@ export default function TradesClient({
         }
       />
 
-      <div className="container mx-auto px-4 py-3">
+      <div className="container mx-auto px-4 py-3 space-y-3">
         <FilterTabs
-          tabs={FILTER_TABS}
+          tabs={[
+            { ...FILTER_TABS[0], count: initialCounts.open },
+            { ...FILTER_TABS[1], count: initialCounts.closed },
+          ]}
           value={initialStatus}
           onChange={handleStatusChange}
         />
+        {initialStatus === "CLOSED" && (
+          <div className="flex items-center justify-between">
+            <FilterTabs
+              tabs={[
+                { ...PROFIT_FILTER_TABS[0], count: closedTrades.length },
+                { ...PROFIT_FILTER_TABS[1], count: profitTrades.length },
+                { ...PROFIT_FILTER_TABS[2], count: lossTrades.length },
+              ]}
+              value={profitFilter}
+              onChange={handleProfitFilterChange}
+            />
+            {closedTrades.length > 0 && (
+              <div className="text-sm">
+                {profitFilter === "all" && (
+                  <span
+                    className={`font-semibold ${
+                      totalPnl >= 0 ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    총합: {formatPnl(totalPnl)}
+                  </span>
+                )}
+                {profitFilter === "profit" && (
+                  <span className="text-green-600 font-semibold">
+                    수익 총합: {formatPnl(totalProfit)}
+                  </span>
+                )}
+                {profitFilter === "loss" && (
+                  <span className="text-red-600 font-semibold">
+                    손실 총합: {formatPnl(totalLoss)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <main className="container mx-auto px-4 pb-6">
@@ -98,7 +200,6 @@ export default function TradesClient({
                 <PortfolioSummary
                   trades={initialTrades}
                   onTotalAssetsChange={setTotalAssets}
-                  initialCashBalance={initialCashBalance}
                 />
                 <OpenTradesTable
                   trades={initialTrades}
@@ -108,7 +209,7 @@ export default function TradesClient({
             )}
 
             {initialStatus === "CLOSED" && (
-              <ClosedTradesTable trades={initialTrades} />
+              <ClosedTradesTable trades={initialTrades} filter={profitFilter} />
             )}
           </div>
         )}

@@ -40,13 +40,6 @@ export async function updateCashBalanceForTrade(
     .from(portfolioSettings)
     .where(eq(portfolioSettings.userId, userId));
 
-  // 초기 잔액 설정 (없으면 0)
-  const initialBalance = currentSettings?.initialCashBalance
-    ? parseFloat(currentSettings.initialCashBalance)
-    : currentSettings?.cashBalance
-      ? parseFloat(currentSettings.cashBalance)
-      : 0;
-
   // 사용자의 모든 트레이드 조회
   const { trades } = await import("@/db/schema");
   const allTrades = await db
@@ -57,37 +50,17 @@ export async function updateCashBalanceForTrade(
     .from(trades)
     .where(eq(trades.userId, userId));
 
-  if (allTrades.length === 0) {
-    // 트레이드가 없으면 초기 잔액으로 설정
-    await db
-      .insert(portfolioSettings)
-      .values({
-        userId,
-        cashBalance: initialBalance.toString(),
-        initialCashBalance: initialBalance.toString(),
-      })
-      .onConflictDoUpdate({
-        target: portfolioSettings.userId,
-        set: {
-          cashBalance: initialBalance.toString(),
-          // initialCashBalance가 없으면 현재 cashBalance를 초기값으로 설정
-          initialCashBalance: currentSettings?.initialCashBalance
-            ? currentSettings.initialCashBalance
-            : initialBalance.toString(),
-          updatedAt: new Date(),
-        },
-      });
-    return;
-  }
-
   // 모든 트레이드의 모든 액션 조회
   const { tradeActions } = await import("@/db/schema");
   const { inArray } = await import("drizzle-orm");
   const tradeIds = allTrades.map((t) => t.id);
-  const allActions = await db
-    .select()
-    .from(tradeActions)
-    .where(inArray(tradeActions.tradeId, tradeIds));
+  const allActions =
+    tradeIds.length > 0
+      ? await db
+          .select()
+          .from(tradeActions)
+          .where(inArray(tradeActions.tradeId, tradeIds))
+      : [];
 
   // 트레이드별로 그룹핑하여 각 트레이드의 수수료율 적용
   const actionsByTradeId = new Map<number, typeof allActions>();
@@ -106,6 +79,44 @@ export async function updateCashBalanceForTrade(
       : 0.07;
     const cashChange = calculateCashChange(actions, commissionRate);
     totalCashChange += cashChange;
+  }
+
+  // 초기 잔액 설정
+  // initialCashBalance가 있으면 그것을 사용
+  // 없으면 현재 cashBalance에서 모든 액션 변화량을 빼서 역산
+  let initialBalance: number;
+  if (currentSettings?.initialCashBalance) {
+    initialBalance = parseFloat(currentSettings.initialCashBalance);
+  } else if (currentSettings?.cashBalance) {
+    // 현재 cashBalance에서 모든 액션 변화량을 빼서 초기값 역산
+    const currentBalance = parseFloat(currentSettings.cashBalance);
+    initialBalance = currentBalance - totalCashChange;
+  } else {
+    // 둘 다 없으면 0
+    initialBalance = 0;
+  }
+
+  if (allTrades.length === 0) {
+    // 트레이드가 없으면 초기 잔액으로 설정
+    await db
+      .insert(portfolioSettings)
+      .values({
+        userId,
+        cashBalance: initialBalance.toString(),
+        initialCashBalance: initialBalance.toString(),
+      })
+      .onConflictDoUpdate({
+        target: portfolioSettings.userId,
+        set: {
+          cashBalance: initialBalance.toString(),
+          // initialCashBalance는 기존 값 유지 (사용자가 설정한 초기값 보존)
+          initialCashBalance: currentSettings?.initialCashBalance
+            ? currentSettings.initialCashBalance
+            : initialBalance.toString(),
+          updatedAt: new Date(),
+        },
+      });
+    return;
   }
 
   // 최종 잔액 = 초기 잔액 + 모든 액션의 변화량

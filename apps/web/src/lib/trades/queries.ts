@@ -6,7 +6,7 @@ import {
   dailyPrices,
   portfolioSettings,
 } from "@/db/schema";
-import { eq, desc, and, inArray, sql } from "drizzle-orm";
+import { eq, desc, and, inArray, sql, count } from "drizzle-orm";
 import { getUserIdFromCookies } from "@/lib/auth/user";
 import {
   calculateTradeMetrics,
@@ -275,4 +275,29 @@ export async function getCashBalance(): Promise<number> {
     .limit(1);
 
   return settings?.cashBalance ? parseFloat(settings.cashBalance) : 0;
+}
+
+/**
+ * 거래 개수 조회 (서버 컴포넌트용)
+ */
+export async function getTradesCount(): Promise<{
+  open: number;
+  closed: number;
+}> {
+  const userId = await getUserIdFromCookies();
+
+  const [openResult] = await db
+    .select({ count: count() })
+    .from(trades)
+    .where(and(eq(trades.userId, userId), eq(trades.status, "OPEN")));
+
+  const [closedResult] = await db
+    .select({ count: count() })
+    .from(trades)
+    .where(and(eq(trades.userId, userId), eq(trades.status, "CLOSED")));
+
+  return {
+    open: openResult?.count ?? 0,
+    closed: closedResult?.count ?? 0,
+  };
 }
