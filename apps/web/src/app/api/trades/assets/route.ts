@@ -160,11 +160,21 @@ export async function GET(request: NextRequest) {
         // 매도 액션들을 날짜순으로 정렬
         const sellActions = sortedActions
           .filter((a) => a.actionType === "SELL")
-          .map((a) => ({
-            date: new Date(a.actionDate).toISOString().split("T")[0],
-            price: parseFloat(a.price),
-            quantity: a.quantity,
-          }));
+          .map((a) => {
+            const price = parseFloat(a.price);
+            if (isNaN(price)) {
+              console.error(
+                `[Data Integrity] Trade ${trade.id} has invalid price: ${a.price}. Skipping sell action.`
+              );
+              return null;
+            }
+            return {
+              date: new Date(a.actionDate).toISOString().split("T")[0],
+              price,
+              quantity: a.quantity,
+            };
+          })
+          .filter((action): action is NonNullable<typeof action> => action !== null);
 
         if (sellActions.length === 0) continue;
 
