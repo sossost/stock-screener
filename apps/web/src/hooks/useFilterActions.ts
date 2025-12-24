@@ -369,7 +369,9 @@ export function useFilterActions(
           previousState.ma200Above,
           filterState.setMa200Above
         );
-        await filterState.setBreakoutStrategy(previousState.breakoutStrategy);
+        await filterState.setBreakoutStrategy(
+          previousState.breakoutStrategy as "confirmed" | "retest" | null
+        );
         await setBooleanFilter(
           previousState.volumeFilter,
           filterState.setVolumeFilter

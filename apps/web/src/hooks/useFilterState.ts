@@ -1,161 +1,76 @@
-import {
-  useQueryState,
-  parseAsBoolean,
-  parseAsInteger,
-  parseAsStringLiteral,
-  parseAsString,
-} from "nuqs";
-import { filterDefaults, profitabilityValues } from "@/lib/filters/schema";
+import { useQueryStates, type Options } from "nuqs";
+import { useCallback, useMemo } from "react";
+import { filterParsers } from "@/lib/filters/schema";
 
 /**
- * 필터 상태 관리 커스텀 훅
- * 모든 필터 상태를 URL 쿼리 파라미터로 관리
+ * filterParsers에서 필터 타입 자동 추론
+ * 새 필터 추가 시 filterParsers만 수정하면 타입도 자동 반영
+ */
+type InferFilters<
+  T extends Record<string, { parse: (value: string) => unknown }>,
+> = {
+  [K in keyof T]: ReturnType<T[K]["parse"]>;
+};
+
+export type Filters = InferFilters<typeof filterParsers>;
+
+// setter 이름 생성 헬퍼 타입
+type SetterName<K extends string> = `set${Capitalize<K>}`;
+type FilterSetters = {
+  [K in keyof Filters as SetterName<K & string>]: (
+    value: Filters[K] | null,
+    options?: Options
+  ) => Promise<URLSearchParams>;
+};
+
+// 필터 키 목록 (filterParsers에서 자동 추출)
+const filterKeys = Object.keys(filterParsers) as (keyof typeof filterParsers)[];
+
+/**
+ * 필터 상태 관리 커스텀 훅 (스키마 기반)
+ *
+ * 단일 진실 공급원(SSOT): filterParsers 스키마 하나로 관리
+ * - URL 파싱, 직렬화, 타입 추론이 모두 filterParsers에서 파생
+ * - 새 필터 추가 시 filterParsers에 필드만 추가하면 자동 반영
  */
 export function useFilterState() {
-  const [ordered, setOrdered] = useQueryState("ordered", parseAsBoolean);
-  const [goldenCross, setGoldenCross] = useQueryState(
-    "goldenCross",
-    parseAsBoolean
-  );
-  const [justTurned, setJustTurned] = useQueryState(
-    "justTurned",
-    parseAsBoolean
-  );
-  const [lookbackDays, setLookbackDays] = useQueryState(
-    "lookbackDays",
-    parseAsInteger
+  const [filters, setFilters] = useQueryStates(filterParsers);
+
+  // 개별 setter 생성 함수
+  const createSetter = useCallback(
+    <K extends keyof Filters>(key: K) => {
+      return (value: Filters[K] | null, options?: Options) => {
+        return setFilters({ [key]: value } as Partial<Filters>, options);
+      };
+    },
+    [setFilters]
   );
 
-  const [profitability, setProfitability] = useQueryState(
-    "profitability",
-    parseAsStringLiteral(
-      profitabilityValues as Array<"all" | "profitable" | "unprofitable">
-    ).withDefault(filterDefaults.profitability)
-  );
-  const [turnAround, setTurnAround] = useQueryState(
-    "turnAround",
-    parseAsBoolean.withDefault(filterDefaults.turnAround)
-  );
+  // setter 이름을 키의 첫 글자 대문자로 변환 (예: ordered -> setOrdered)
+  const capitalize = (str: string) =>
+    str.charAt(0).toUpperCase() + str.slice(1);
 
-  const [revenueGrowth, setRevenueGrowth] = useQueryState(
-    "revenueGrowth",
-    parseAsBoolean.withDefault(filterDefaults.revenueGrowth)
-  );
-  const [incomeGrowth, setIncomeGrowth] = useQueryState(
-    "incomeGrowth",
-    parseAsBoolean.withDefault(filterDefaults.incomeGrowth)
-  );
-  const [revenueGrowthQuarters, setRevenueGrowthQuarters] = useQueryState(
-    "revenueGrowthQuarters",
-    parseAsInteger.withDefault(filterDefaults.revenueGrowthQuarters)
-  );
-  const [incomeGrowthQuarters, setIncomeGrowthQuarters] = useQueryState(
-    "incomeGrowthQuarters",
-    parseAsInteger.withDefault(filterDefaults.incomeGrowthQuarters)
-  );
-  const [revenueGrowthRate, setRevenueGrowthRate] = useQueryState(
-    "revenueGrowthRate",
-    parseAsInteger
-  );
-  const [incomeGrowthRate, setIncomeGrowthRate] = useQueryState(
-    "incomeGrowthRate",
-    parseAsInteger
-  );
+  // 모든 필터에 대한 setter를 동적으로 생성
+  const setters = useMemo(() => {
+    const result = {} as FilterSetters;
+    for (const key of filterKeys) {
+      const setterName = `set${capitalize(key)}` as SetterName<typeof key>;
+      (result as Record<string, unknown>)[setterName] = createSetter(key);
+    }
+    return result;
+  }, [createSetter]);
 
-  const [pegFilter, setPegFilter] = useQueryState(
-    "pegFilter",
-    parseAsBoolean.withDefault(false)
-  );
-
-  const [ma20Above, setMa20Above] = useQueryState("ma20Above", parseAsBoolean);
-  const [ma50Above, setMa50Above] = useQueryState("ma50Above", parseAsBoolean);
-  const [ma100Above, setMa100Above] = useQueryState(
-    "ma100Above",
-    parseAsBoolean
-  );
-  const [ma200Above, setMa200Above] = useQueryState(
-    "ma200Above",
-    parseAsBoolean
-  );
-
-  const [breakoutStrategyRaw, setBreakoutStrategyRaw] = useQueryState(
-    "breakoutStrategy",
-    parseAsString
-  );
-
-  // breakoutStrategy를 "confirmed" | "retest" | null로 변환
-  const breakoutStrategy: "confirmed" | "retest" | null =
-    breakoutStrategyRaw === "confirmed" || breakoutStrategyRaw === "retest"
-      ? breakoutStrategyRaw
-      : null;
-
-  const setBreakoutStrategy = async (
-    value: "confirmed" | "retest" | null
-  ): Promise<URLSearchParams> => {
-    return setBreakoutStrategyRaw(value);
-  };
-
-  const [volumeFilter, setVolumeFilter] = useQueryState(
-    "volumeFilter",
-    parseAsBoolean.withDefault(filterDefaults.volumeFilter)
-  );
-  const [vcpFilter, setVcpFilter] = useQueryState(
-    "vcpFilter",
-    parseAsBoolean.withDefault(filterDefaults.vcpFilter)
-  );
-  const [bodyFilter, setBodyFilter] = useQueryState(
-    "bodyFilter",
-    parseAsBoolean.withDefault(filterDefaults.bodyFilter)
-  );
-  const [maConvergenceFilter, setMaConvergenceFilter] = useQueryState(
-    "maConvergenceFilter",
-    parseAsBoolean.withDefault(filterDefaults.maConvergenceFilter)
-  );
-
+  // 기존 인터페이스와 호환되는 형태로 반환
   return {
-    ordered,
-    setOrdered,
-    goldenCross,
-    setGoldenCross,
-    justTurned,
-    setJustTurned,
-    lookbackDays,
-    setLookbackDays,
-    profitability,
-    setProfitability,
-    turnAround,
-    setTurnAround,
-    revenueGrowth,
-    setRevenueGrowth,
-    incomeGrowth,
-    setIncomeGrowth,
-    revenueGrowthQuarters,
-    setRevenueGrowthQuarters,
-    incomeGrowthQuarters,
-    setIncomeGrowthQuarters,
-    revenueGrowthRate,
-    setRevenueGrowthRate,
-    incomeGrowthRate,
-    setIncomeGrowthRate,
-    pegFilter,
-    setPegFilter,
-    ma20Above,
-    setMa20Above,
-    ma50Above,
-    setMa50Above,
-    ma100Above,
-    setMa100Above,
-    ma200Above,
-    setMa200Above,
-    breakoutStrategy,
-    setBreakoutStrategy,
-    volumeFilter,
-    setVolumeFilter,
-    vcpFilter,
-    setVcpFilter,
-    bodyFilter,
-    setBodyFilter,
-    maConvergenceFilter,
-    setMaConvergenceFilter,
+    // 필터 값들 (filterParsers에서 자동 추론)
+    ...filters,
+    // 개별 setter들 (filterParsers에서 자동 생성)
+    ...setters,
+    // 전체 필터와 setter도 함께 제공 (고급 사용)
+    filters,
+    setFilters,
   };
 }
+
+// 훅 반환 타입 export
+export type FilterStateReturn = ReturnType<typeof useFilterState>;

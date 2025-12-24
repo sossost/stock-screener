@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  parseAsBoolean,
+  parseAsInteger,
+  parseAsStringLiteral,
+  createParser,
+} from "nuqs";
 
 export const profitabilityOptions = [
   { value: "all", label: "전체" },
@@ -31,6 +37,69 @@ export const filterDefaults = {
   vcpFilter: false,
   bodyFilter: false,
   maConvergenceFilter: false,
+};
+
+// breakoutStrategy 파서: "confirmed" | "retest" | null
+const parseAsBreakoutStrategy = createParser({
+  parse: (value: string) => {
+    if (value === "confirmed" || value === "retest") {
+      return value;
+    }
+    return null;
+  },
+  serialize: (value: "confirmed" | "retest" | null) => value ?? "",
+});
+
+/**
+ * nuqs 파서 정의 (Single Source of Truth)
+ * 새 필터 추가 시 이 객체에만 추가하면 URL/상태/타입이 자동 반영됨
+ */
+export const filterParsers = {
+  // 이동평균 필터
+  ordered: parseAsBoolean,
+  goldenCross: parseAsBoolean,
+  justTurned: parseAsBoolean,
+  lookbackDays: parseAsInteger,
+
+  // 수익성 필터
+  profitability: parseAsStringLiteral([
+    "all",
+    "profitable",
+    "unprofitable",
+  ] as const).withDefault(filterDefaults.profitability),
+  turnAround: parseAsBoolean.withDefault(filterDefaults.turnAround),
+
+  // 성장성 필터
+  revenueGrowth: parseAsBoolean.withDefault(filterDefaults.revenueGrowth),
+  incomeGrowth: parseAsBoolean.withDefault(filterDefaults.incomeGrowth),
+  revenueGrowthQuarters: parseAsInteger.withDefault(
+    filterDefaults.revenueGrowthQuarters
+  ),
+  incomeGrowthQuarters: parseAsInteger.withDefault(
+    filterDefaults.incomeGrowthQuarters
+  ),
+  revenueGrowthRate: parseAsInteger,
+  incomeGrowthRate: parseAsInteger,
+
+  // 밸류에이션 필터
+  pegFilter: parseAsBoolean.withDefault(false),
+
+  // 이동평균선 위 필터
+  ma20Above: parseAsBoolean,
+  ma50Above: parseAsBoolean,
+  ma100Above: parseAsBoolean,
+  ma200Above: parseAsBoolean,
+
+  // 돌파매매 전략 필터
+  breakoutStrategy: parseAsBreakoutStrategy,
+
+  // 노이즈 필터
+  volumeFilter: parseAsBoolean.withDefault(filterDefaults.volumeFilter),
+  vcpFilter: parseAsBoolean.withDefault(filterDefaults.vcpFilter),
+  bodyFilter: parseAsBoolean.withDefault(filterDefaults.bodyFilter),
+  maConvergenceFilter: parseAsBoolean.withDefault(
+    filterDefaults.maConvergenceFilter
+  ),
 };
 
 // 문자열 "true"/"false"를 boolean으로 변환하는 커스텀 스키마
@@ -115,8 +184,6 @@ export function parseFilters(
     }
   });
 
-  // URL 파라미터가 없으면 기본값 사용 (MA 필터는 false로 설정)
-  const hasAnyParams = Object.keys(normalized).length > 0;
   const result = filterSchema.safeParse(normalized);
   if (result.success) {
     const data = result.data;
